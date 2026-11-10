@@ -1,10 +1,18 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="py-4">
+    <h1 class="display-6">Helpdesk</h1>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <p class="text-muted">Signed in as @User.Identity.Name.</p>
+    }
+    else
+    {
+        <p class="text-muted">A small ticketing system. Please sign in to continue.</p>
+        <a class="btn btn-primary" asp-page="/Account/Login">Sign in</a>
+    }
 </div>
