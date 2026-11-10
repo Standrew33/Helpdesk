@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -74,7 +74,7 @@ public class LoginModel(
     }
 
     private IActionResult RedirectAfterLogin(string? returnUrl)
-        => !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : RedirectToPage("/Index");
+        => !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : RedirectToPage("/Tickets/Index");
 
     public class InputModel
     {
@@ -89,3 +89,4 @@ public class LoginModel(
         public bool RememberMe { get; set; }
     }
 }
+

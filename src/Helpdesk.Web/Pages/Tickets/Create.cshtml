@@ -1,0 +1,36 @@
+@page
+@model Helpdesk.Web.Pages.Tickets.CreateModel
+@{
+    ViewData["Title"] = "New ticket";
+}
+
+<h1 class="h3 mb-3">New ticket</h1>
+
+<div class="row">
+    <div class="col-lg-8">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Subject" class="form-label"></label>
+                <input asp-for="Input.Subject" class="form-control" />
+                <span asp-validation-for="Input.Subject" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Description" class="form-label"></label>
+                <textarea asp-for="Input.Description" class="form-control" rows="6"></textarea>
+                <span asp-validation-for="Input.Description" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Priority" class="form-label"></label>
+                <select asp-for="Input.Priority" class="form-select" asp-items="Helpdesk.Web.Pages.Tickets.CreateModel.PriorityOptions"></select>
+            </div>
+            <button type="submit" class="btn btn-primary">Create</button>
+            <a class="btn btn-link" asp-page="Index">Cancel</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

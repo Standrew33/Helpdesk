@@ -1,0 +1,61 @@
+@page
+@model Helpdesk.Web.Pages.Tickets.IndexModel
+@{
+    ViewData["Title"] = "Tickets";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Tickets</h1>
+    @if (Model.IsCustomer)
+    {
+        <a class="btn btn-primary" asp-page="Create">New ticket</a>
+    }
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<TicketStatus>()">
+            <option value="">All statuses</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary">Filter</button>
+    </div>
+</form>
+
+@if (Model.Items.Count == 0)
+{
+    <p class="text-muted">No tickets found.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Customer</th>
+                    <th>Assignee</th>
+                    <th>Due</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>@item.Id</td>
+                        <td><a asp-page="Details" asp-route-id="@item.Id">@item.Subject</a></td>
+                        <td><span class="badge @TicketDisplay.StatusBadge(item.Status)">@TicketDisplay.StatusText(item.Status)</span></td>
+                        <td><span class="badge @TicketDisplay.PriorityBadge(item.Priority)">@item.Priority</span></td>
+                        <td>@item.CustomerName</td>
+                        <td>@(item.AssigneeName ?? "-")</td>
+                        <td class="@(item.IsOverdue ? "text-danger fw-semibold" : "")">@TicketDisplay.Date(item.DueAt)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
