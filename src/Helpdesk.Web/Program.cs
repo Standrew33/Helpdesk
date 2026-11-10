@@ -1,4 +1,5 @@
 using Helpdesk.Web.Data;
+using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<TicketService>();
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
 
 builder.Services.AddDbContext<HelpdeskDbContext>(options =>
