@@ -14,6 +14,17 @@ Work in progress.
 - xUnit tests (business rules and integration tests)
 - CI on GitHub Actions
 
+## Structure
+
+```
+src/
+  Helpdesk.Core   domain model and business rules, no dependencies
+  Helpdesk.Web    Razor Pages, EF Core, Identity, Blob Storage, e-mail
+tests/
+  Helpdesk.Core.Tests          unit tests for business rules
+  Helpdesk.IntegrationTests    web app tests against a real SQL Server
+```
+
 ## Configuration
 
 Copy `src/Helpdesk.Web/appsettings.example.json` and fill in the values using
@@ -25,3 +36,4 @@ user secrets or environment variables. Do not commit secrets.
 dotnet build
 dotnet test
 ```
+
