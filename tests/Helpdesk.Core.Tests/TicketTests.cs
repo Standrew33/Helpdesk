@@ -13,7 +13,17 @@ public class TicketTests
     private static readonly Actor Admin = new("admin-1", UserRole.Admin);
 
     private static Ticket NewTicket(TicketPriority priority = TicketPriority.Normal)
-        => Ticket.Create("Printer is down", "It prints blank pages.", priority, Customer, Now);
+    {
+        // Customers cannot open urgent tickets; staff raises the priority afterwards.
+        var ticket = Ticket.Create("Printer is down", "It prints blank pages.", priority == TicketPriority.Urgent ? TicketPriority.High : priority, Customer, Now);
+
+        if (priority == TicketPriority.Urgent)
+        {
+            ticket.ChangePriority(Operator, TicketPriority.Urgent, Now);
+        }
+
+        return ticket;
+    }
 
     [Fact]
     public void Create_sets_initial_state_and_deadline()
@@ -58,6 +68,12 @@ public class TicketTests
     public void Create_is_allowed_for_customers_only()
     {
         Assert.Throws<DomainException>(() => Ticket.Create("s", "d", TicketPriority.Normal, Operator, Now));
+    }
+
+    [Fact]
+    public void Create_does_not_allow_customers_to_set_urgent_priority()
+    {
+        Assert.Throws<DomainException>(() => Ticket.Create("s", "d", TicketPriority.Urgent, Customer, Now));
     }
 
     [Fact]

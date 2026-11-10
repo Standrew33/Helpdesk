@@ -57,6 +57,11 @@ public sealed class Ticket
             throw new DomainException("Only customers can open tickets.");
         }
 
+        if (priority == TicketPriority.Urgent)
+        {
+            throw new DomainException("Only staff can set urgent priority.");
+        }
+
         var ticket = new Ticket
         {
             Subject = RequireText(subject, "Subject", MaxSubjectLength),
