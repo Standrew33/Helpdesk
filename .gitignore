@@ -1,0 +1,17 @@
+﻿bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+.env
+*.log
+TestResults/
+
+# local working notes and tooling, not part of the project
+helpdesk-context.md
+CLAUDE.md
+.claude/
