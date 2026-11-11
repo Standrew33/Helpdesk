@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      microsoft:
+        patterns:
+          - "Microsoft.*"
+          - "dotnet-ef"
+      testing:
+        patterns:
+          - "xunit*"
+          - "Testcontainers*"
+          - "coverlet*"
+    ignore:
+      # The project targets .NET 10; major versions of EF Core and ASP.NET Core packages
+      # for other target frameworks must not be proposed.
+      - dependency-name: "Microsoft.EntityFrameworkCore*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.AspNetCore.*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

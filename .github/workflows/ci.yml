@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Helpdesk.slnx
+
+      - name: Check formatting
+        run: dotnet format Helpdesk.slnx --verify-no-changes --no-restore
+
+      - name: Build
+        run: dotnet build Helpdesk.slnx --no-restore --configuration Release
+
+      # Integration tests start a SQL Server container; Docker is available on the runner.
+      - name: Test
+        run: >
+          dotnet test Helpdesk.slnx --no-build --configuration Release
+          --collect:"XPlat Code Coverage" --results-directory TestResults
+          --logger trx
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+          if-no-files-found: ignore
