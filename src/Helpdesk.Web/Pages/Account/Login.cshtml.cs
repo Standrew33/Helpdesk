@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Authorization;

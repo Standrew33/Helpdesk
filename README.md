@@ -1,5 +1,7 @@
 ﻿# Helpdesk
 
+[![CI](https://github.com/Standrew33/Helpdesk/actions/workflows/ci.yml/badge.svg)](https://github.com/Standrew33/Helpdesk/actions/workflows/ci.yml)
+
 A small ticketing system built with ASP.NET Core Razor Pages, EF Core and SQL Server.
 
 Work in progress.
