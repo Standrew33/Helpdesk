@@ -37,3 +37,15 @@ dotnet build
 dotnet test
 ```
 
+Integration tests run against a real SQL Server. By default they start a SQL Server
+container (Docker is required). To use an existing server instead, for example LocalDB,
+set the connection string without a database name:
+
+```
+$env:HELPDESK_TEST_SQL = "Server=(localdb)\MSSQLLocalDB;Trusted_Connection=True;TrustServerCertificate=True"
+dotnet test
+```
+
+Each test creates its own temporary database and removes it afterwards.
+
+
