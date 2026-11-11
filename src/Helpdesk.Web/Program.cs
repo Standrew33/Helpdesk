@@ -70,3 +70,6 @@ app.MapRazorPages()
    .WithStaticAssets();
 
 app.Run();
+
+// Makes the entry point visible to the integration tests.
+public partial class Program;
