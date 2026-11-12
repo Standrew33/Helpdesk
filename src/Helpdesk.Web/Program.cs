@@ -12,7 +12,10 @@ builder.Services.AddScoped<TicketService>();
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
 
 builder.Services.AddDbContext<HelpdeskDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("Default"),
+        // Serverless Azure SQL pauses when idle and needs a moment to resume; retry transient failures.
+        sql => sql.EnableRetryOnFailure()));
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -41,7 +44,7 @@ builder.Services.AddAuthorizationBuilder()
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 {
     await using var scope = app.Services.CreateAsyncScope();
     await scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>().Database.MigrateAsync();
