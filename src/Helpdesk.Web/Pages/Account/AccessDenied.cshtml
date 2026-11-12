@@ -4,6 +4,10 @@
     ViewData["Title"] = "Access denied";
 }
 
-<h1 class="h3">Access denied</h1>
-<p class="text-muted">Your account has no permission to open this page.</p>
-<a asp-page="/Index">Back to the start page</a>
+<div class="card auth-wrap">
+    <div class="empty-state">
+        <h1 class="h4">Access denied</h1>
+        <p>Your account has no permission to open this page.</p>
+        <a class="btn btn-primary" asp-page="/Index">Back to the start page</a>
+    </div>
+</div>

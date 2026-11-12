@@ -4,58 +4,76 @@
     ViewData["Title"] = "Tickets";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Tickets</h1>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Tickets</h1>
+        <p class="page-subtitle">
+            @(Model.IsCustomer ? "Your requests" : "All requests")
+            &middot; @Model.Items.Count shown
+        </p>
+    </div>
     @if (Model.IsCustomer)
     {
         <a class="btn btn-primary" asp-page="Create">New ticket</a>
     }
 </div>
 
-<form method="get" class="row g-2 mb-3">
-    <div class="col-auto">
-        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<TicketStatus>()">
-            <option value="">All statuses</option>
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-outline-secondary">Filter</button>
-    </div>
-</form>
+<nav class="filter-chips" aria-label="Filter by status">
+    <a asp-page="Index" class="@(Model.Status is null ? "active" : "")">All</a>
+    @foreach (var status in Enum.GetValues<TicketStatus>())
+    {
+        <a asp-page="Index" asp-route-status="@status" class="@(Model.Status == status ? "active" : "")">@TicketDisplay.StatusText(status)</a>
+    }
+</nav>
 
 @if (Model.Items.Count == 0)
 {
-    <p class="text-muted">No tickets found.</p>
+    <div class="card">
+        <div class="empty-state">
+            <h2>No tickets found</h2>
+            @if (Model.IsCustomer)
+            {
+                <p>Create a ticket and the support team will pick it up.</p>
+                <a class="btn btn-primary" asp-page="Create">New ticket</a>
+            }
+            else
+            {
+                <p>Nothing matches this filter.</p>
+            }
+        </div>
+    </div>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Subject</th>
-                    <th>Status</th>
-                    <th>Priority</th>
-                    <th>Customer</th>
-                    <th>Assignee</th>
-                    <th>Due</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model.Items)
-                {
+    <div class="card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle ticket-table">
+                <thead>
                     <tr>
-                        <td>@item.Id</td>
-                        <td><a asp-page="Details" asp-route-id="@item.Id">@item.Subject</a></td>
-                        <td><span class="badge @TicketDisplay.StatusBadge(item.Status)">@TicketDisplay.StatusText(item.Status)</span></td>
-                        <td><span class="badge @TicketDisplay.PriorityBadge(item.Priority)">@item.Priority</span></td>
-                        <td>@item.CustomerName</td>
-                        <td>@(item.AssigneeName ?? "-")</td>
-                        <td class="@(item.IsOverdue ? "text-danger fw-semibold" : "")">@TicketDisplay.Date(item.DueAt)</td>
+                        <th>#</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Customer</th>
+                        <th>Assignee</th>
+                        <th>Due</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td class="ticket-id">@item.Id</td>
+                            <td><a class="ticket-subject" asp-page="Details" asp-route-id="@item.Id">@item.Subject</a></td>
+                            <td><span class="@TicketDisplay.StatusClass(item.Status)">@TicketDisplay.StatusText(item.Status)</span></td>
+                            <td><span class="@TicketDisplay.PriorityClass(item.Priority)">@item.Priority</span></td>
+                            <td>@item.CustomerName</td>
+                            <td>@(item.AssigneeName ?? "–")</td>
+                            <td class="text-nowrap @(item.IsOverdue ? "overdue" : "")">@TicketDisplay.Date(item.DueAt)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 }

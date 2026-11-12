@@ -1,66 +1,69 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var page = ViewContext.RouteData.Values["page"] as string ?? "";
+    var isSignedIn = User.Identity?.IsAuthenticated == true;
+    var displayName = User.Identity?.Name ?? "";
+    var role = User.IsInRole(RoleNames.Admin) ? RoleNames.Admin
+        : User.IsInRole(RoleNames.Operator) ? RoleNames.Operator
+        : User.IsInRole(RoleNames.Customer) ? RoleNames.Customer
+        : "";
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#4f46e5" />
     <title>@ViewData["Title"] - Helpdesk</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Helpdesk.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">Helpdesk</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Tickets/Index">Tickets</a>
-                            </li>
-                        }
-                    </ul>
-                    <ul class="navbar-nav">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item d-flex align-items-center me-2 text-muted">@User.Identity.Name</li>
-                            <li class="nav-item">
-                                <form method="post" asp-page="/Account/Logout">
-                                    <button type="submit" class="btn btn-link nav-link text-dark">Sign out</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Account/Login">Sign in</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <a class="brand" asp-page="/Index">
+                <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+                    <rect width="30" height="30" rx="8" fill="#4f46e5" />
+                    <path d="M9 11h12M9 15h12M9 19h7" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none" />
+                </svg>
+                <span>Helpdesk</span>
+            </a>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Helpdesk
+            <nav class="topnav" aria-label="Main">
+                @if (isSignedIn)
+                {
+                    <a asp-page="/Tickets/Index" class="@(page.StartsWith("/Tickets") ? "active" : "")">Tickets</a>
+                }
+            </nav>
+
+            <div class="topbar-user">
+                @if (isSignedIn)
+                {
+                    <div class="user-chip">
+                        <span class="avatar" aria-hidden="true">@(displayName.Length > 0 ? displayName[..1] : "?")</span>
+                        <span class="user-meta">
+                            <span class="user-name">@displayName</span>
+                            <span class="user-role">@role</span>
+                        </span>
+                    </div>
+                    <form method="post" asp-page="/Account/Logout">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Sign out</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="btn btn-primary btn-sm" asp-page="/Account/Login">Sign in</a>
+                }
+            </div>
         </div>
+    </header>
+
+    <main class="container page" role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">&copy; 2026 Helpdesk</div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -70,4 +73,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-

@@ -13,22 +13,22 @@ public static class TicketDisplay
         _ => status.ToString(),
     };
 
-    public static string StatusBadge(TicketStatus status) => status switch
+    public static string StatusClass(TicketStatus status) => status switch
     {
-        TicketStatus.New => "text-bg-primary",
-        TicketStatus.InProgress => "text-bg-info",
-        TicketStatus.WaitingForCustomer => "text-bg-warning",
-        TicketStatus.Closed => "text-bg-secondary",
-        _ => "text-bg-light",
+        TicketStatus.New => "pill pill-new",
+        TicketStatus.InProgress => "pill pill-progress",
+        TicketStatus.WaitingForCustomer => "pill pill-waiting",
+        TicketStatus.Closed => "pill pill-closed",
+        _ => "pill",
     };
 
-    public static string PriorityBadge(TicketPriority priority) => priority switch
+    public static string PriorityClass(TicketPriority priority) => priority switch
     {
-        TicketPriority.Urgent => "text-bg-danger",
-        TicketPriority.High => "text-bg-warning",
-        TicketPriority.Normal => "text-bg-light border",
-        TicketPriority.Low => "text-bg-light border",
-        _ => "text-bg-light",
+        TicketPriority.Urgent => "tag tag-urgent",
+        TicketPriority.High => "tag tag-high",
+        TicketPriority.Normal => "tag tag-normal",
+        TicketPriority.Low => "tag tag-low",
+        _ => "tag",
     };
 
     public static string Date(DateTimeOffset value) => value.UtcDateTime.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) + " UTC";

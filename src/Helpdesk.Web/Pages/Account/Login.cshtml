@@ -4,24 +4,25 @@
     ViewData["Title"] = "Sign in";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <h1 class="h3 mb-3">Sign in</h1>
+<div class="auth-wrap">
+    <div class="card auth-card">
+        <h1 class="h4 fw-bold mb-1">Sign in</h1>
+        <p class="text-secondary mb-4">Welcome back. Enter your details to continue.</p>
 
         <form method="post" asp-route-returnUrl="@Model.ReturnUrl">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
 
             <div class="mb-3">
                 <label asp-for="Input.Email" class="form-label"></label>
                 <input asp-for="Input.Email" class="form-control" autocomplete="username" />
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+                <span asp-validation-for="Input.Email" class="field-validation-error"></span>
             </div>
             <div class="mb-3">
                 <label asp-for="Input.Password" class="form-label"></label>
                 <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
+                <span asp-validation-for="Input.Password" class="field-validation-error"></span>
             </div>
-            <div class="form-check mb-3">
+            <div class="form-check mb-4">
                 <input asp-for="Input.RememberMe" class="form-check-input" />
                 <label asp-for="Input.RememberMe" class="form-check-label"></label>
             </div>
@@ -30,13 +31,20 @@
 
         @if (Model.DemoEnabled)
         {
-            <hr />
-            <p class="text-muted mb-2">Demo: sign in without a password as</p>
-            <div class="d-flex gap-2">
-                @foreach (var role in new[] { "Customer", "Operator", "Admin" })
+            <div class="divider">or try the demo, no password needed</div>
+            <div class="d-grid gap-2">
+                @foreach (var (role, description) in new[]
                 {
-                    <form method="post" asp-page-handler="Demo" asp-route-role="@role" asp-route-returnUrl="@Model.ReturnUrl" class="flex-fill">
-                        <button type="submit" class="btn btn-outline-secondary w-100">@role</button>
+                    ("Customer", "Opens tickets and follows their own requests"),
+                    ("Operator", "Works the queue, assigns and answers tickets"),
+                    ("Admin", "Full access to every ticket"),
+                })
+                {
+                    <form method="post" asp-page-handler="Demo" asp-route-role="@role" asp-route-returnUrl="@Model.ReturnUrl">
+                        <button type="submit" class="demo-role">
+                            <strong>Continue as @role</strong>
+                            <span>@description</span>
+                        </button>
                     </form>
                 }
             </div>

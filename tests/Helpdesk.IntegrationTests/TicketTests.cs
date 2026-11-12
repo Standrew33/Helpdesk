@@ -126,7 +126,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
 
         var html = await FollowedHtmlAsync(customer, response);
         Assert.Contains("is not allowed", html);
-        Assert.Contains("badge text-bg-primary", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
+        Assert.Contains("pill pill-new", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
     }
 
     [Fact]
@@ -169,8 +169,8 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         await customer.PostTicketActionAsync(id, "Comment", Fields(("body", "Here are the details")));
 
         var html = await customer.GetHtmlAsync($"/Tickets/Details/{id}");
-        Assert.Contains("badge text-bg-info", html);
-        Assert.DoesNotContain("badge text-bg-warning\">Waiting", html);
+        Assert.Contains("pill pill-progress", html);
+        Assert.DoesNotContain("pill pill-waiting\">Waiting", html);
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var stale = await op.PostTicketActionAsync(id, "Priority", Fields(("priority", "Low")), staleVersion);
 
         Assert.Contains("changed by someone else", await FollowedHtmlAsync(op, stale));
-        Assert.DoesNotContain("badge text-bg-light border\">Low", await op.GetHtmlAsync($"/Tickets/Details/{id}"));
+        Assert.DoesNotContain("tag tag-low\">Low", await op.GetHtmlAsync($"/Tickets/Details/{id}"));
     }
 
     [Fact]
