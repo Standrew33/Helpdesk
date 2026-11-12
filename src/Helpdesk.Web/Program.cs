@@ -44,15 +44,31 @@ builder.Services.AddAuthorizationBuilder()
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
-{
-    await using var scope = app.Services.CreateAsyncScope();
-    await scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>().Database.MigrateAsync();
-}
+var migrate = app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Database:MigrateOnStartup");
 
-await using (var scope = app.Services.CreateAsyncScope())
+// A paused serverless database can need longer than one connection attempt to wake up,
+// so the start-up work is retried a few times before the application gives up.
+const int startupAttempts = 6;
+
+for (var attempt = 1; ; attempt++)
 {
-    await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
+    try
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+
+        if (migrate)
+        {
+            await scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>().Database.MigrateAsync();
+        }
+
+        await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
+        break;
+    }
+    catch (Exception ex) when (attempt < startupAttempts)
+    {
+        StartupLog.DatabaseNotReady(app.Logger, ex, attempt, startupAttempts);
+        await Task.Delay(TimeSpan.FromSeconds(10));
+    }
 }
 
 if (!app.Environment.IsDevelopment())
