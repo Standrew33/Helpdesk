@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Helpdesk.Web.Pages.Tickets;
 
+// Slightly above the file limit, so oversized uploads are cut off early and answered with a clear message.
+[RequestSizeLimit(AttachmentPolicy.MaxFileBytes + 512 * 1024)]
 public class DetailsModel(TicketService tickets) : PageModel
 {
     [FromRoute]
@@ -49,6 +51,32 @@ public class DetailsModel(TicketService tickets) : PageModel
 
     public Task<IActionResult> OnPostCommentAsync(string? rowVersion, string? body, bool isInternal)
         => RunAsync(actor => tickets.AddCommentAsync(Id, actor, rowVersion, body ?? string.Empty, isInternal));
+
+    public async Task<IActionResult> OnPostAttachmentAsync(string? rowVersion, IFormFile? file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            Error = "Choose a file to attach.";
+            return RedirectToPage(new { id = Id });
+        }
+
+        await using var content = file.OpenReadStream();
+        return await RunAsync(actor => tickets.AddAttachmentAsync(Id, actor, rowVersion, file.FileName, file.Length, content, ct));
+    }
+
+    public async Task<IActionResult> OnGetDownloadAsync(int attachmentId, CancellationToken ct)
+    {
+        var download = await tickets.OpenAttachmentAsync(Id, attachmentId, User.ToActor(), ct);
+
+        if (download is null)
+        {
+            return NotFound();
+        }
+
+        // Served as a download, never rendered by the browser, whatever the file contains.
+        Response.Headers.XContentTypeOptions = "nosniff";
+        return File(download.Content, download.ContentType, download.FileName);
+    }
 
     public Task<IActionResult> OnPostStatusAsync(string? rowVersion, TicketStatus status)
         => RunAsync(actor => tickets.ChangeStatusAsync(Id, actor, rowVersion, status));

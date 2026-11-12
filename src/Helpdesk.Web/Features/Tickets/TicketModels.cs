@@ -14,6 +14,8 @@ public sealed record TicketListItem(
 
 public sealed record AssigneeOption(string Id, string Name);
 
+public sealed record AttachmentDownload(string FileName, string ContentType, Stream Content);
+
 public sealed class TicketDetails
 {
     public TicketDetails(Ticket ticket, IReadOnlyList<Comment> comments, IReadOnlyDictionary<string, string> userNames)

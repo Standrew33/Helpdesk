@@ -35,6 +35,44 @@
             </div>
         </div>
 
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title-sm">Attachments</h2>
+                @if (ticket.Attachments.Count == 0)
+                {
+                    <p class="text-secondary mb-0">No files attached.</p>
+                }
+                else
+                {
+                    <ul class="file-list">
+                        @foreach (var file in ticket.Attachments.OrderBy(a => a.UploadedAt))
+                        {
+                            <li>
+                                <a asp-page-handler="Download" asp-route-id="@ticket.Id" asp-route-attachmentId="@file.Id">@file.FileName</a>
+                                <span class="text-secondary small">
+                                    @TicketDisplay.FileSize(file.Size) &middot; @Model.Details.NameOf(file.UploadedById) &middot; @TicketDisplay.Date(file.UploadedAt)
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                @if (ticket.Status != TicketStatus.Closed && ticket.Attachments.Count < AttachmentPolicy.MaxFilesPerTicket)
+                {
+                    <form method="post" asp-page-handler="Attachment" enctype="multipart/form-data" class="file-form">
+                        <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
+                        <input type="file" name="file" class="form-control form-control-sm" required
+                               accept="@string.Join(',', AttachmentPolicy.AllowedExtensions.Order())" />
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Attach</button>
+                    </form>
+                    <p class="text-secondary small mb-0 mt-2">
+                        Up to @AttachmentPolicy.MaxFilesPerTicket files, @(AttachmentPolicy.MaxFileBytes / (1024 * 1024)) MB each.
+                        Allowed: @string.Join(", ", AttachmentPolicy.AllowedExtensions.Order()).
+                    </p>
+                }
+            </div>
+        </div>
+
         <h2 class="section-title">Comments</h2>
         @if (Model.Details.Comments.Count == 0)
         {
@@ -154,6 +192,10 @@
                                 @if (entry.Field == "Created")
                                 {
                                     <text>Ticket created</text>
+                                }
+                                else if (entry.Field == "Attachment")
+                                {
+                                    <text>Attached @entry.NewValue</text>
                                 }
                                 else if (entry.Field == "Assignee")
                                 {

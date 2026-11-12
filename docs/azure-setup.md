@@ -90,3 +90,25 @@ In the repository, Settings, Secrets and variables, Actions, **Variables**, add:
 
 Run the `Deploy` workflow once from the Actions tab (Run workflow). After that every
 push to `main` is deployed once CI has passed. The site is at `https://<app>.azurewebsites.net`.
+
+## 6. Attachment storage (Blob Storage)
+
+Ticket attachments are kept in a private Blob Storage container. The web app reaches it with its
+own managed identity, so no keys or connection strings are stored anywhere. Without these
+settings the app keeps attachments in a local folder (development and tests only).
+
+Limits enforced by the application: 5 files per ticket, 5 MB each, a short list of file types
+(images, PDF, text, CSV, Word, Excel). This keeps storage use, and cost, very small.
+
+1. Create a **Storage account** in the portal: same resource group and region as the web app,
+   Performance **Standard**, Redundancy **LRS**, access tier **Hot**. On the Advanced tab leave
+   anonymous access disabled and keep minimum TLS version 1.2.
+2. Web App, Settings, **Identity**, tab *System assigned*: turn it **On** and save.
+3. Storage account, **Access Control (IAM)**, Add role assignment: role **Storage Blob Data
+   Contributor**, assign access to *Managed identity*, select the web app. The role can take a few
+   minutes to apply.
+4. Web App, Settings, **Environment variables**, App settings, add
+   `BlobStorage__AccountUrl` = `https://<storage account name>.blob.core.windows.net`.
+   The container (`attachments`, private) is created by the app on the first upload.
+5. In the Azure portal create a budget alert (Cost Management, Budgets) so any unexpected cost is
+   noticed early.

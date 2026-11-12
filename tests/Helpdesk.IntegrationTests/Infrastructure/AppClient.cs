@@ -83,6 +83,24 @@ public sealed partial class AppClient : IDisposable
         return await PostFormAsync(url, $"{url}?handler={handler}", form);
     }
 
+    /// <summary>Uploads a file through the attachment form of the ticket page.</summary>
+    public async Task<HttpResponseMessage> UploadAttachmentAsync(int ticketId, string fileName, byte[] content, string? rowVersion = null)
+    {
+        var url = $"/Tickets/Details/{ticketId}";
+        var html = await GetHtmlAsync(url);
+
+        using var form = new MultipartFormDataContent
+        {
+            { new StringContent(TokenPattern().Match(html).Groups[1].Value), "__RequestVerificationToken" },
+            { new StringContent(rowVersion ?? ExtractRowVersion(html)), "rowVersion" },
+        };
+
+        var file = new ByteArrayContent(content);
+        form.Add(file, "file", fileName);
+
+        return await _http.PostAsync($"{url}?handler=Attachment", form);
+    }
+
     public static string ExtractRowVersion(string html)
         => RowVersionPattern().Match(html).Groups[1].Value;
 

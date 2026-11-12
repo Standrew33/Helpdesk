@@ -2,12 +2,13 @@ using Helpdesk.Core;
 using Helpdesk.Core.Tickets;
 using Helpdesk.Core.Users;
 using Helpdesk.Web.Data;
+using Helpdesk.Web.Features.Attachments;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Helpdesk.Web.Features.Tickets;
 
-public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> userManager, TimeProvider time)
+public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> userManager, IAttachmentStore attachments, TimeProvider time)
 {
     private const int MaxListSize = 200;
 
@@ -49,6 +50,7 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
         var ticket = await db.Tickets
             .AsNoTracking()
             .Include(t => t.Comments)
+            .Include(t => t.Attachments)
             .Include(t => t.History)
             .AsSplitQuery()
             .FirstOrDefaultAsync(t => t.Id == id, ct);
@@ -68,6 +70,7 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
         }
 
         userIds.UnionWith(comments.Select(c => c.AuthorId));
+        userIds.UnionWith(ticket.Attachments.Select(a => a.UploadedById));
         userIds.UnionWith(ticket.History.Select(h => h.ActorId));
 
         // Assignee changes store user ids as values; resolve them too.
@@ -113,6 +116,52 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
     public Task<ServiceResult> AddCommentAsync(int id, Actor actor, string? rowVersion, string body, bool isInternal)
         => UpdateAsync(id, actor, rowVersion, (ticket, now) => ticket.AddComment(actor, body, isInternal, now));
 
+    /// <summary>
+    /// Attaches a file: the rules are checked first, then the content is stored, then the ticket is saved.
+    /// When the save fails the stored content is removed again, so storage never keeps files no ticket knows about.
+    /// </summary>
+    public async Task<ServiceResult> AddAttachmentAsync(
+        int id, Actor actor, string? rowVersion, string? fileName, long length, Stream content, CancellationToken ct = default)
+    {
+        string? storedName = null;
+
+        var result = await UpdateAsync(id, actor, rowVersion, async (ticket, now) =>
+        {
+            var name = Guid.NewGuid().ToString("N");
+            var attachment = ticket.AddAttachment(actor, fileName, length, name, now);
+            await attachments.SaveAsync(name, content, attachment.ContentType, ct);
+            storedName = name;
+        });
+
+        if (!result.Succeeded && storedName is not null)
+        {
+            await attachments.DeleteAsync(storedName, CancellationToken.None);
+        }
+
+        return result;
+    }
+
+    /// <summary>Opens an attachment the actor may see; null when the ticket or file is not available to them.</summary>
+    public async Task<AttachmentDownload?> OpenAttachmentAsync(int ticketId, int attachmentId, Actor actor, CancellationToken ct = default)
+    {
+        var ticket = await db.Tickets
+            .AsNoTracking()
+            .Include(t => t.Attachments)
+            .FirstOrDefaultAsync(t => t.Id == ticketId, ct);
+
+        var attachment = ticket is not null && ticket.CanBeViewedBy(actor)
+            ? ticket.Attachments.FirstOrDefault(a => a.Id == attachmentId)
+            : null;
+
+        if (attachment is null)
+        {
+            return null;
+        }
+
+        var stream = await attachments.OpenReadAsync(attachment.StoredName, ct);
+        return stream is null ? null : new AttachmentDownload(attachment.FileName, attachment.ContentType, stream);
+    }
+
     public async Task<ServiceResult> AssignAsync(int id, Actor actor, string? rowVersion, string? assigneeId)
     {
         if (!string.IsNullOrEmpty(assigneeId))
@@ -131,9 +180,16 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
         return await UpdateAsync(id, actor, rowVersion, (ticket, now) => ticket.Assign(actor, target, now));
     }
 
-    private async Task<ServiceResult> UpdateAsync(int id, Actor actor, string? rowVersion, Action<Ticket, DateTimeOffset> change)
+    private Task<ServiceResult> UpdateAsync(int id, Actor actor, string? rowVersion, Action<Ticket, DateTimeOffset> change)
+        => UpdateAsync(id, actor, rowVersion, (ticket, now) =>
+        {
+            change(ticket, now);
+            return Task.CompletedTask;
+        });
+
+    private async Task<ServiceResult> UpdateAsync(int id, Actor actor, string? rowVersion, Func<Ticket, DateTimeOffset, Task> change)
     {
-        var ticket = await db.Tickets.FirstOrDefaultAsync(t => t.Id == id);
+        var ticket = await db.Tickets.Include(t => t.Attachments).FirstOrDefaultAsync(t => t.Id == id);
 
         if (ticket is null || !ticket.CanBeViewedBy(actor))
         {
@@ -150,7 +206,7 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
 
         try
         {
-            change(ticket, time.GetUtcNow());
+            await change(ticket, time.GetUtcNow());
             await db.SaveChangesAsync();
             return ServiceResult.Success();
         }

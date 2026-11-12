@@ -1,4 +1,5 @@
 using Helpdesk.Web.Data;
+using Helpdesk.Web.Features.Attachments;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Identity;
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddAttachmentStore(builder.Configuration);
 builder.Services.AddScoped<TicketService>();
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
 

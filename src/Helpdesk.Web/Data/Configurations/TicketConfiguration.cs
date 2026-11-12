@@ -31,12 +31,18 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
             .HasForeignKey(c => c.TicketId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasMany(t => t.Attachments)
+            .WithOne()
+            .HasForeignKey(a => a.TicketId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasMany(t => t.History)
             .WithOne()
             .HasForeignKey(h => h.TicketId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(t => t.Comments).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(t => t.Attachments).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(t => t.History).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.HasIndex(t => t.CustomerId);

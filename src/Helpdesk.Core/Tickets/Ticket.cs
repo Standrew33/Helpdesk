@@ -9,6 +9,7 @@ public sealed class Ticket
     public const int MaxCommentLength = 4000;
 
     private readonly List<Comment> _comments = [];
+    private readonly List<Attachment> _attachments = [];
     private readonly List<TicketHistoryEntry> _history = [];
 
     // Required by EF Core.
@@ -45,6 +46,8 @@ public sealed class Ticket
     public byte[] RowVersion { get; private set; } = [];
 
     public IReadOnlyList<Comment> Comments => _comments;
+
+    public IReadOnlyList<Attachment> Attachments => _attachments;
 
     public IReadOnlyList<TicketHistoryEntry> History => _history;
 
@@ -162,6 +165,48 @@ public sealed class Ticket
         }
 
         return comment;
+    }
+
+    /// <summary>
+    /// Records a file attached to the ticket. <paramref name="storedName"/> is where the content was
+    /// (or will be) saved; the caller keeps the two in step.
+    /// </summary>
+    public Attachment AddAttachment(Actor actor, string? fileName, long size, string storedName, DateTimeOffset now)
+    {
+        EnsureCanView(actor);
+        EnsureNotClosed();
+
+        var name = AttachmentPolicy.CleanFileName(fileName);
+
+        if (name.Length == 0)
+        {
+            throw new DomainException("The file has no name.");
+        }
+
+        var contentType = AttachmentPolicy.ContentTypeFor(name)
+            ?? throw new DomainException(
+                $"Files of this type are not accepted. Allowed: {string.Join(", ", AttachmentPolicy.AllowedExtensions.Order())}.");
+
+        if (size <= 0)
+        {
+            throw new DomainException("The file is empty.");
+        }
+
+        if (size > AttachmentPolicy.MaxFileBytes)
+        {
+            throw new DomainException($"The file is larger than {AttachmentPolicy.MaxFileBytes / (1024 * 1024)} MB.");
+        }
+
+        if (_attachments.Count >= AttachmentPolicy.MaxFilesPerTicket)
+        {
+            throw new DomainException($"A ticket can have at most {AttachmentPolicy.MaxFilesPerTicket} files.");
+        }
+
+        var attachment = new Attachment(name, contentType, size, storedName, actor.Id, now);
+        _attachments.Add(attachment);
+        Record(actor, "Attachment", null, name, now);
+        UpdatedAt = now;
+        return attachment;
     }
 
     /// <summary>True when the ticket is not resolved in time, or was closed after its deadline.</summary>
