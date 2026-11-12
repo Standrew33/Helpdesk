@@ -17,9 +17,18 @@ public class AuthenticationTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
-    public async Task Home_page_is_public()
+    public async Task Home_page_sends_anonymous_visitors_to_the_sign_in_page()
     {
         var response = await NewClient().GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/Account/Login", response.Headers.Location!.OriginalString);
+    }
+
+    [Fact]
+    public async Task Sign_in_page_is_public()
+    {
+        var response = await NewClient().GetAsync("/Account/Login");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

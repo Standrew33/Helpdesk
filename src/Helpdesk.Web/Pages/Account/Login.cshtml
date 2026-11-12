@@ -1,56 +1,56 @@
 @page
 @model LoginModel
 @{
+    Layout = "_AuthLayout";
     ViewData["Title"] = "Sign in";
 }
 
-<div class="auth-wrap">
-    <div class="card auth-card">
-        <h1 class="h4 fw-bold mb-1">Sign in</h1>
-        <p class="text-secondary mb-4">Welcome back. Enter your details to continue.</p>
+<h1 class="h3 fw-bold mb-1">Sign in</h1>
+<p class="text-secondary mb-4">Use your account to open the ticket queue.</p>
 
-        <form method="post" asp-route-returnUrl="@Model.ReturnUrl">
-            <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
+<form method="post" asp-route-returnUrl="@Model.ReturnUrl">
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
 
-            <div class="mb-3">
-                <label asp-for="Input.Email" class="form-label"></label>
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" />
-                <span asp-validation-for="Input.Email" class="field-validation-error"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.Password" class="form-label"></label>
-                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
-                <span asp-validation-for="Input.Password" class="field-validation-error"></span>
-            </div>
-            <div class="form-check mb-4">
-                <input asp-for="Input.RememberMe" class="form-check-input" />
-                <label asp-for="Input.RememberMe" class="form-check-label"></label>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Sign in</button>
-        </form>
+    <div class="mb-3">
+        <label asp-for="Input.Email" class="form-label"></label>
+        <input asp-for="Input.Email" class="form-control" autocomplete="username" />
+        <span asp-validation-for="Input.Email" class="field-validation-error"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Password" class="form-label"></label>
+        <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+        <span asp-validation-for="Input.Password" class="field-validation-error"></span>
+    </div>
+    <div class="form-check mb-4">
+        <input asp-for="Input.RememberMe" class="form-check-input" />
+        <label asp-for="Input.RememberMe" class="form-check-label"></label>
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Sign in</button>
+</form>
 
-        @if (Model.DemoEnabled)
+@if (Model.DemoEnabled)
+{
+    <div class="divider">Explore the demo as</div>
+    <div class="d-grid gap-2">
+        @foreach (var (role, description) in new[]
         {
-            <div class="divider">or try the demo, no password needed</div>
-            <div class="d-grid gap-2">
-                @foreach (var (role, description) in new[]
-                {
-                    ("Customer", "Opens tickets and follows their own requests"),
-                    ("Operator", "Works the queue, assigns and answers tickets"),
-                    ("Admin", "Full access to every ticket"),
-                })
-                {
-                    <form method="post" asp-page-handler="Demo" asp-route-role="@role" asp-route-returnUrl="@Model.ReturnUrl">
-                        <button type="submit" class="demo-role">
-                            <strong>Continue as @role</strong>
-                            <span>@description</span>
-                        </button>
-                    </form>
-                }
-            </div>
+            ("Customer", "Opens tickets and follows only their own requests"),
+            ("Operator", "Works the queue: assigns, answers, changes status and priority"),
+            ("Admin", "Sees every ticket and the full change history"),
+        })
+        {
+            <form method="post" asp-page-handler="Demo" asp-route-role="@role" asp-route-returnUrl="@Model.ReturnUrl">
+                <button type="submit" class="demo-role">
+                    <strong>@role</strong>
+                    <span>@description</span>
+                </button>
+            </form>
         }
     </div>
-</div>
+    <p class="text-secondary small mt-3 mb-0">
+        The demo uses sample data. Roles are switched with one click, so no registration is needed to try them.
+    </p>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

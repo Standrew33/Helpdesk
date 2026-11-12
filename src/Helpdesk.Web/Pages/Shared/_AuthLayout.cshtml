@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0e1c1b" />
+    <title>@ViewData["Title"] - Helpdesk</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="auth-split">
+        <section class="auth-aside">
+            <a class="brand" asp-page="/Index">
+                <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+                    <rect width="30" height="30" rx="8" fill="#14b8a6" />
+                    <path d="M9 11h12M9 15h12M9 19h7" stroke="#06211e" stroke-width="2" stroke-linecap="round" fill="none" />
+                </svg>
+                <span>Helpdesk</span>
+            </a>
+
+            <div class="auth-aside-body">
+                <h1>Support requests, resolved on schedule.</h1>
+                <p>
+                    A ticketing system for support teams: customers report problems,
+                    operators resolve them against a deadline that depends on priority,
+                    and administrators oversee the whole queue.
+                </p>
+                <ul class="auth-points">
+                    <li>Customers see only their own tickets; staff work the full queue</li>
+                    <li>Every priority has a deadline, overdue tickets are flagged</li>
+                    <li>Simultaneous edits are detected instead of silently overwritten</li>
+                    <li>Every status, priority and assignee change is recorded</li>
+                </ul>
+            </div>
+
+            <div class="auth-aside-foot">
+                <span>ASP.NET Core 10 &middot; EF Core &middot; SQL Server &middot; Azure</span>
+                <a href="https://github.com/Standrew33/Helpdesk" rel="noopener">Source code on GitHub</a>
+            </div>
+        </section>
+
+        <section class="auth-main">
+            <div class="auth-panel">
+                @RenderBody()
+            </div>
+        </section>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

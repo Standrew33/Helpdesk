@@ -6,39 +6,58 @@
         : User.IsInRole(RoleNames.Operator) ? RoleNames.Operator
         : User.IsInRole(RoleNames.Customer) ? RoleNames.Customer
         : "";
+    var statusFilter = Context.Request.Query["status"].ToString();
+    var onList = page == "/Tickets/Index";
+    var body = RenderBody();
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#4f46e5" />
+    <meta name="theme-color" content="#0e1c1b" />
     <title>@ViewData["Title"] - Helpdesk</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header class="topbar">
-        <div class="container topbar-inner">
-            <a class="brand" asp-page="/Index">
-                <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
-                    <rect width="30" height="30" rx="8" fill="#4f46e5" />
-                    <path d="M9 11h12M9 15h12M9 19h7" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none" />
-                </svg>
-                <span>Helpdesk</span>
-            </a>
+    @if (isSignedIn)
+    {
+        <div class="shell">
+            <aside class="sidebar">
+                <a class="brand" asp-page="/Tickets/Index">
+                    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+                        <rect width="30" height="30" rx="8" fill="#14b8a6" />
+                        <path d="M9 11h12M9 15h12M9 19h7" stroke="#06211e" stroke-width="2" stroke-linecap="round" fill="none" />
+                    </svg>
+                    <span>Helpdesk</span>
+                </a>
 
-            <nav class="topnav" aria-label="Main">
-                @if (isSignedIn)
-                {
-                    <a asp-page="/Tickets/Index" class="@(page.StartsWith("/Tickets") ? "active" : "")">Tickets</a>
-                }
-            </nav>
+                <nav class="side-nav" aria-label="Main">
+                    <a asp-page="/Tickets/Index" class="side-link @(onList && statusFilter == "" ? "active" : "")">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+                        All tickets
+                    </a>
+                    @if (role == RoleNames.Customer)
+                    {
+                        <a asp-page="/Tickets/Create" class="side-link @(page == "/Tickets/Create" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                            New ticket
+                        </a>
+                    }
 
-            <div class="topbar-user">
-                @if (isSignedIn)
-                {
+                    <div class="side-section">Status</div>
+                    @foreach (var status in Enum.GetValues<TicketStatus>())
+                    {
+                        <a asp-page="/Tickets/Index" asp-route-status="@status"
+                           class="side-link side-status @TicketDisplay.DotClass(status) @(onList && statusFilter == status.ToString() ? "active" : "")">
+                            @TicketDisplay.StatusText(status)
+                        </a>
+                    }
+                </nav>
+
+                <div class="side-user">
                     <div class="user-chip">
                         <span class="avatar" aria-hidden="true">@(displayName.Length > 0 ? displayName[..1] : "?")</span>
                         <span class="user-meta">
@@ -47,24 +66,35 @@
                         </span>
                     </div>
                     <form method="post" asp-page="/Account/Logout">
-                        <button type="submit" class="btn btn-outline-secondary btn-sm">Sign out</button>
+                        <button type="submit" class="btn btn-signout btn-sm">Sign out</button>
                     </form>
-                }
-                else
-                {
-                    <a class="btn btn-primary btn-sm" asp-page="/Account/Login">Sign in</a>
-                }
+                </div>
+            </aside>
+
+            <div class="content">
+                <main class="page" role="main">
+                    @body
+                </main>
             </div>
         </div>
-    </header>
-
-    <main class="container page" role="main">
-        @RenderBody()
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">&copy; 2026 Helpdesk</div>
-    </footer>
+    }
+    else
+    {
+        <header class="plain-top">
+            <div class="container py-3">
+                <a class="brand" asp-page="/Index">
+                    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+                        <rect width="30" height="30" rx="8" fill="#0f8f7e" />
+                        <path d="M9 11h12M9 15h12M9 19h7" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none" />
+                    </svg>
+                    <span>Helpdesk</span>
+                </a>
+            </div>
+        </header>
+        <main class="container" role="main">
+            @body
+        </main>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

@@ -18,7 +18,7 @@
     }
 </div>
 
-<nav class="filter-chips" aria-label="Filter by status">
+<nav class="filter-chips d-lg-none" aria-label="Filter by status">
     <a asp-page="Index" class="@(Model.Status is null ? "active" : "")">All</a>
     @foreach (var status in Enum.GetValues<TicketStatus>())
     {
