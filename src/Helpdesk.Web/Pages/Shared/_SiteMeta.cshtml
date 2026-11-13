@@ -1,0 +1,5 @@
+@inject Microsoft.Extensions.Options.IOptions<SiteOptions> Site
+@if (!string.IsNullOrWhiteSpace(Site.Value.GoogleSiteVerification))
+{
+    <meta name="google-site-verification" content="@Site.Value.GoogleSiteVerification" />
+}

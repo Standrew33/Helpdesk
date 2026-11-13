@@ -1,5 +1,6 @@
 using Helpdesk.Web.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Helpdesk.IntegrationTests.Infrastructure;
@@ -31,7 +32,7 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    protected AppClient NewClient(HelpdeskWebFactory? factory = null)
+    protected AppClient NewClient(WebApplicationFactory<Program>? factory = null)
     {
         var client = new AppClient(factory ?? Factory);
         _clients.Add(client);

@@ -1,5 +1,7 @@
 using System.Net;
 using Helpdesk.IntegrationTests.Infrastructure;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 
 namespace Helpdesk.IntegrationTests;
 
@@ -31,6 +33,25 @@ public class AuthenticationTests(SqlServerFixture sql) : WebTestBase(sql)
         var response = await NewClient().GetAsync("/Account/Login");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Search_console_verification_tag_is_written_when_configured()
+    {
+        using var factory = Factory.WithWebHostBuilder(builder => builder.ConfigureAppConfiguration((_, config) =>
+            config.AddInMemoryCollection(new Dictionary<string, string?> { ["Site:GoogleSiteVerification"] = "token-123" })));
+
+        var html = await NewClient(factory).GetHtmlAsync("/Account/Login");
+
+        Assert.Contains("<meta name=\"google-site-verification\" content=\"token-123\"", html);
+    }
+
+    [Fact]
+    public async Task Search_console_verification_tag_is_absent_by_default()
+    {
+        var html = await NewClient().GetHtmlAsync("/Account/Login");
+
+        Assert.DoesNotContain("google-site-verification", html);
     }
 
     [Fact]

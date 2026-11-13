@@ -14,6 +14,7 @@ builder.Services.AddAttachmentStore(builder.Configuration);
 builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
+builder.Services.Configure<SiteOptions>(builder.Configuration.GetSection(SiteOptions.SectionName));
 
 builder.Services.AddDbContext<HelpdeskDbContext>(options =>
     options.UseSqlServer(

@@ -112,3 +112,11 @@ Limits enforced by the application: 5 files per ticket, 5 MB each, a short list 
    The container (`attachments`, private) is created by the app on the first upload.
 5. In the Azure portal create a budget alert (Cost Management, Budgets) so any unexpected cost is
    noticed early.
+
+## 7. Google Search Console (optional)
+
+Browsers can show a "dangerous site" warning for a host on the shared `azurewebsites.net` domain.
+To ask Google to review it, add the site in Search Console as a *URL prefix* property, choose the
+**HTML tag** verification method and copy the value of the `content` attribute. Put it into an app
+setting of the web app, `Site__GoogleSiteVerification`, and press Verify in Search Console.
+The application then writes the `google-site-verification` meta tag into every page.

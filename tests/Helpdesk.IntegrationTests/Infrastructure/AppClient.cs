@@ -9,7 +9,7 @@ public sealed partial class AppClient : IDisposable
 {
     private readonly HttpClient _http;
 
-    public AppClient(HelpdeskWebFactory factory)
+    public AppClient(WebApplicationFactory<Program> factory)
     {
         _http = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
