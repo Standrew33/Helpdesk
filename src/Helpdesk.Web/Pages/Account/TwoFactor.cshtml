@@ -1,0 +1,117 @@
+@page
+@model TwoFactorModel
+@{
+    ViewData["Title"] = "Two-factor authentication";
+}
+
+<a class="back-link" asp-page="Settings">&larr; Account</a>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Two-factor authentication</h1>
+        <p class="page-subtitle">A code from your phone is asked for after the password.</p>
+    </div>
+</div>
+
+@if (Model.Notice is not null)
+{
+    <div class="alert alert-success" role="status">@Model.Notice</div>
+}
+
+@if (Model.IsReadOnly)
+{
+    <div class="alert alert-secondary" role="status">
+        This is a shared demo account without a password of its own, so it cannot use a second step.
+        Create your own account to try two-factor authentication.
+    </div>
+}
+else
+{
+    @if (Model.NewRecoveryCodes is { Count: > 0 } codes)
+    {
+        <div class="card mb-4">
+            <div class="card-body p-4">
+                <h2 class="h5 mb-2">Your recovery codes</h2>
+                <p class="text-secondary">
+                    Keep these codes somewhere safe. Each one works once if you lose your phone. They are shown only now.
+                </p>
+                <ul class="recovery-codes">
+                    @foreach (var code in codes)
+                    {
+                        <li><code>@code</code></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+
+    @if (Model.Enabled)
+    {
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-body p-4">
+                        <h2 class="h5 mb-1">Recovery codes</h2>
+                        <p class="text-secondary">@Model.RecoveryCodesLeft of 10 codes left. Make new ones when few remain; the old ones stop working.</p>
+                        <form method="post" asp-page-handler="NewCodes">
+                            <div class="mb-3">
+                                <label asp-for="Confirm.Password" class="form-label"></label>
+                                <input asp-for="Confirm.Password" class="form-control" autocomplete="current-password" />
+                                <span asp-validation-for="Confirm.Password" class="field-validation-error"></span>
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary">Make new codes</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-body p-4">
+                        <h2 class="h5 mb-1">Turn off</h2>
+                        <p class="text-secondary">Sign-in goes back to the password alone.</p>
+                        <form method="post" asp-page-handler="Disable">
+                            <div class="mb-3">
+                                <label for="DisablePassword" class="form-label">Your password</label>
+                                <input asp-for="Confirm.Password" class="form-control" autocomplete="current-password" id="DisablePassword" />
+                                <span asp-validation-for="Confirm.Password" class="field-validation-error"></span>
+                            </div>
+                            <button type="submit" class="btn btn-outline-danger">Turn off</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body p-4">
+                <ol class="setup-steps">
+                    <li>Install an authenticator app, for example Microsoft Authenticator, Google Authenticator or Aegis.</li>
+                    <li>
+                        Scan this picture with the app, or type the key in by hand.
+                        <div class="qr-box">
+                            <img src="@Model.QrCode" width="180" height="180" alt="QR code for the authenticator app" />
+                            <p class="mb-0"><span class="text-secondary small">Key:</span> <code>@Model.SharedKey</code></p>
+                        </div>
+                    </li>
+                    <li>
+                        Enter the six-digit code the app shows.
+                        <form method="post" asp-page-handler="Enable" class="code-form">
+                            <div class="mb-3">
+                                <label asp-for="Verify.Code" class="form-label"></label>
+                                <input asp-for="Verify.Code" class="form-control" inputmode="numeric" autocomplete="one-time-code" />
+                                <span asp-validation-for="Verify.Code" class="field-validation-error"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Turn on</button>
+                        </form>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -3,12 +3,18 @@ using Helpdesk.Core.Tickets;
 using Helpdesk.Core.Users;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Attachments;
+using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Helpdesk.Web.Features.Tickets;
 
-public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> userManager, IAttachmentStore attachments, TimeProvider time)
+public class TicketService(
+    HelpdeskDbContext db,
+    UserManager<ApplicationUser> userManager,
+    IAttachmentStore attachments,
+    TimeProvider time,
+    ILogger<TicketService> logger)
 {
     public const int PageSize = 15;
 
@@ -22,6 +28,11 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
         if (!actor.Role.IsStaff())
         {
             tickets = tickets.Where(t => t.CustomerId == actor.Id);
+        }
+        else if (actor.IsDemo)
+        {
+            // The shared demo staff work on demo data only; tickets of real visitors are out of their sight.
+            tickets = tickets.Where(t => db.Users.Any(u => u.Id == t.CustomerId && u.Email!.EndsWith(DatabaseSeeder.DemoDomain)));
         }
 
         if (filter.Status is not null)
@@ -90,7 +101,7 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
         // A ticket the user may not see looks the same as a ticket that does not exist.
-        if (ticket is null || !ticket.CanBeViewedBy(actor))
+        if (ticket is null || !await CanSeeAsync(ticket, actor, ct))
         {
             return null;
         }
@@ -163,6 +174,7 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
         {
             var name = Guid.NewGuid().ToString("N");
             var attachment = ticket.AddAttachment(actor, fileName, length, name, now);
+            await EnsureContentMatchesNameAsync(id, fileName, content, ct);
             await attachments.SaveAsync(name, content, attachment.ContentType, ct);
             storedName = name;
         });
@@ -183,7 +195,7 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
             .Include(t => t.Attachments)
             .FirstOrDefaultAsync(t => t.Id == ticketId, ct);
 
-        var attachment = ticket is not null && ticket.CanBeViewedBy(actor)
+        var attachment = ticket is not null && await CanSeeAsync(ticket, actor, ct)
             ? ticket.Attachments.FirstOrDefault(a => a.Id == attachmentId)
             : null;
 
@@ -225,7 +237,7 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
     {
         var ticket = await db.Tickets.Include(t => t.Attachments).FirstOrDefaultAsync(t => t.Id == id);
 
-        if (ticket is null || !ticket.CanBeViewedBy(actor))
+        if (ticket is null || !await CanSeeAsync(ticket, actor))
         {
             return ServiceResult.NotFound();
         }
@@ -251,6 +263,46 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
         catch (DbUpdateConcurrencyException)
         {
             return ServiceResult.Conflict("The ticket was changed by someone else. Reload the page and try again.");
+        }
+    }
+
+    /// <summary>The domain rule on who may see a ticket, plus the rule that demo staff never reach tickets of real visitors.</summary>
+    private async Task<bool> CanSeeAsync(Ticket ticket, Actor actor, CancellationToken ct = default)
+    {
+        var allowed = ticket.CanBeViewedBy(actor);
+
+        if (allowed && actor.IsDemo && actor.Role.IsStaff())
+        {
+            allowed = await db.Users.AnyAsync(u => u.Id == ticket.CustomerId && u.Email!.EndsWith(DatabaseSeeder.DemoDomain), ct);
+        }
+
+        if (!allowed)
+        {
+            SecurityLog.TicketAccessRefused(logger, actor.Id, ticket.Id);
+        }
+
+        return allowed;
+    }
+
+    /// <summary>A file is accepted by its name, but what the name claims must be true: an .exe renamed to .png is refused.</summary>
+    private async Task EnsureContentMatchesNameAsync(int ticketId, string? fileName, Stream content, CancellationToken ct)
+    {
+        var name = AttachmentPolicy.CleanFileName(fileName);
+
+        // Names with a type that is not accepted get the domain's own message.
+        if (AttachmentPolicy.ContentTypeFor(name) is null)
+        {
+            return;
+        }
+
+        var header = new byte[AttachmentPolicy.HeaderLength];
+        var read = await content.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false, ct);
+        content.Position = 0;
+
+        if (!AttachmentPolicy.ContentMatchesName(name, header.AsSpan(0, read)))
+        {
+            SecurityLog.UploadRefused(logger, ticketId);
+            throw new DomainException("The content of the file does not match its type.");
         }
     }
 

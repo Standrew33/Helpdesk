@@ -19,6 +19,12 @@ public sealed class HelpdeskWebFactory(string connectionString, bool demoEnabled
             ["Demo:Enabled"] = demoEnabled.ToString(),
             ["Demo:SeedUsers"] = "true",
             ["BlobStorage:LocalPath"] = _attachmentsPath,
+            // Hashing is slow on purpose in production; tests create many users. Limits are lifted unless a test sets its own.
+            ["Security:PasswordHashIterations"] = "1000",
+            ["RequestLimits:SignInAttemptsPerMinute"] = "1000",
+            ["RequestLimits:RegistrationsPerHour"] = "1000",
+            ["RequestLimits:TicketChangesPer10Minutes"] = "1000",
+            ["RequestLimits:UploadsPerHour"] = "1000",
         }));
     }
 

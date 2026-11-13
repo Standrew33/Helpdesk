@@ -10,16 +10,28 @@ namespace Helpdesk.Web.Features.Users;
 public sealed record UserRow(string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsSelf, bool IsProtected);
 
 /// <summary>Lets an administrator see the users, change their role and switch accounts on or off.</summary>
-public class UserAdminService(HelpdeskDbContext db, UserManager<ApplicationUser> userManager, IOptions<DemoOptions> demo)
+public class UserAdminService(
+    HelpdeskDbContext db,
+    UserManager<ApplicationUser> userManager,
+    IOptions<DemoOptions> demo,
+    ILogger<UserAdminService> logger)
 {
     public const int MaxListSize = 100;
+
+    private const string DemoAdminMessage = "The demo administrator can look at accounts but cannot change them.";
 
     // Roles ordered from the most to the least powerful; a user shows as the first one they have.
     private static readonly string[] RoleOrder = [RoleNames.Admin, RoleNames.Operator, RoleNames.Customer];
 
-    public async Task<IReadOnlyList<UserRow>> ListAsync(string currentUserId, string? search, CancellationToken ct = default)
+    /// <summary>The shared demo administrator only sees demo accounts, never the e-mail addresses of real visitors.</summary>
+    public async Task<IReadOnlyList<UserRow>> ListAsync(string currentUserId, bool isDemo, string? search, CancellationToken ct = default)
     {
         var users = db.Users.AsNoTracking();
+
+        if (isDemo)
+        {
+            users = users.Where(u => u.Email!.EndsWith(DatabaseSeeder.DemoDomain));
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -55,8 +67,13 @@ public class UserAdminService(HelpdeskDbContext db, UserManager<ApplicationUser>
             .ToList();
     }
 
-    public async Task<ServiceResult> ChangeRoleAsync(string currentUserId, string userId, string role)
+    public async Task<ServiceResult> ChangeRoleAsync(string currentUserId, bool isDemo, string userId, string role)
     {
+        if (isDemo)
+        {
+            return ServiceResult.Invalid(DemoAdminMessage);
+        }
+
         if (!RoleOrder.Contains(role))
         {
             return ServiceResult.Invalid("Unknown role.");
@@ -96,11 +113,17 @@ public class UserAdminService(HelpdeskDbContext db, UserManager<ApplicationUser>
 
         // The role is part of the sign-in cookie; a new stamp makes the old cookie invalid, so the change applies at once.
         await userManager.UpdateSecurityStampAsync(user);
+        SecurityLog.RoleChanged(logger, currentUserId, user.Id, role);
         return ServiceResult.Success();
     }
 
-    public async Task<ServiceResult> SetActiveAsync(string currentUserId, string userId, bool active)
+    public async Task<ServiceResult> SetActiveAsync(string currentUserId, bool isDemo, string userId, bool active)
     {
+        if (isDemo)
+        {
+            return ServiceResult.Invalid(DemoAdminMessage);
+        }
+
         var user = await userManager.FindByIdAsync(userId);
 
         if (user is null)
@@ -126,6 +149,7 @@ public class UserAdminService(HelpdeskDbContext db, UserManager<ApplicationUser>
         }
 
         await userManager.UpdateSecurityStampAsync(user);
+        SecurityLog.ActiveChanged(logger, currentUserId, user.Id, active);
         return ServiceResult.Success();
     }
 

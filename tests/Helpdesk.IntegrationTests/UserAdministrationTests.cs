@@ -64,7 +64,7 @@ public class UserAdministrationTests(SqlServerFixture sql) : WebTestBase(sql)
     public async Task The_administrator_sees_the_users_with_their_roles()
     {
         await CreateUserAsync("Customer", "zoe@example.test");
-        var admin = await SignedInAsync("Admin");
+        var admin = await RealAdminAsync();
 
         var html = await admin.GetHtmlAsync("/Admin/Users");
 
@@ -78,7 +78,7 @@ public class UserAdministrationTests(SqlServerFixture sql) : WebTestBase(sql)
     {
         await CreateUserAsync("Customer", "zoe@example.test");
         await CreateUserAsync("Customer", "adam@example.test");
-        var admin = await SignedInAsync("Admin");
+        var admin = await RealAdminAsync();
 
         var html = await admin.GetHtmlAsync("/Admin/Users?q=zoe");
 

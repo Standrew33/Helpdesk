@@ -903,3 +903,59 @@ a.user-chip.active {
   font-weight: 700;
   margin-bottom: 0.9rem;
 }
+
+/* Spam trap: present for programs that fill in every field, out of sight and reach for people. */
+.hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Two-factor setup */
+.setup-steps {
+  padding-left: 1.25rem;
+  margin: 0;
+}
+
+.setup-steps > li {
+  margin-bottom: 1.5rem;
+}
+
+.setup-steps > li:last-child {
+  margin-bottom: 0;
+}
+
+.qr-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.qr-box img {
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(127, 127, 127, 0.3));
+}
+
+.code-form {
+  max-width: 18rem;
+  margin-top: 0.75rem;
+}
+
+.recovery-codes {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.recovery-codes code {
+  font-size: 1rem;
+}

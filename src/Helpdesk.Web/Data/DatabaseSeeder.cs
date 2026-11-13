@@ -9,13 +9,13 @@ namespace Helpdesk.Web.Data;
 
 public static class DatabaseSeeder
 {
-    private const string DemoDomain = "@helpdesk.test";
+    public const string DemoDomain = "@helpdesk.test";
 
     public static string DemoEmail(string role) => $"{role.ToLowerInvariant()}{DemoDomain}";
 
     /// <summary>True for the addresses reserved for the demo users.</summary>
     public static bool IsDemoAddress(string? email)
-        => email is not null && email.EndsWith(DemoDomain, StringComparison.OrdinalIgnoreCase);
+        => email is not null && email.Trim().EndsWith(DemoDomain, StringComparison.OrdinalIgnoreCase);
 
     public static async Task SeedAsync(IServiceProvider services)
     {

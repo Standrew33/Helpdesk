@@ -12,7 +12,7 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
     private readonly List<AppClient> _clients = [];
     private readonly List<HelpdeskWebFactory> _extraFactories = [];
 
-    protected const string TestPassword = "Test-password-1234";
+    protected const string TestPassword = "Quiet-river-bridge-7421";
 
     protected HelpdeskWebFactory Factory { get; private set; } = null!;
 

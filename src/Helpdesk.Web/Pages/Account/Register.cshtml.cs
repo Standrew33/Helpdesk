@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Helpdesk.Web.Data;
+using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace Helpdesk.Web.Pages.Account;
 
 [AllowAnonymous]
-public class RegisterModel(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager) : PageModel
+public class RegisterModel(
+    UserManager<ApplicationUser> userManager,
+    SignInManager<ApplicationUser> signInManager,
+    ILogger<RegisterModel> logger) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -18,19 +22,27 @@ public class RegisterModel(UserManager<ApplicationUser> userManager, SignInManag
 
     public async Task<IActionResult> OnPostAsync()
     {
+        // A person never sees the hidden "Website" field; only a program that fills in every field does.
+        if (!string.IsNullOrEmpty(Input.Website))
+        {
+            SecurityLog.RegistrationTrapped(logger);
+            return RedirectToPage("Login");
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
         }
 
+        var email = Input.Email.Trim();
+
         // The demo addresses belong to the built-in demo users.
-        if (DatabaseSeeder.IsDemoAddress(Input.Email))
+        if (DatabaseSeeder.IsDemoAddress(email))
         {
             ModelState.AddModelError("Input.Email", "This address is reserved. Use your own e-mail address.");
             return Page();
         }
 
-        var email = Input.Email.Trim();
         var user = new ApplicationUser { UserName = email, Email = email, DisplayName = Input.DisplayName.Trim() };
 
         var created = await userManager.CreateAsync(user, Input.Password);
@@ -56,6 +68,7 @@ public class RegisterModel(UserManager<ApplicationUser> userManager, SignInManag
             return Page();
         }
 
+        SecurityLog.Registered(logger, user.Id);
         await signInManager.SignInAsync(user, isPersistent: false);
         return RedirectToPage("/Tickets/Index");
     }
@@ -76,6 +89,7 @@ public class RegisterModel(UserManager<ApplicationUser> userManager, SignInManag
     {
         [Required]
         [StringLength(100)]
+        [SafeText]
         [Display(Name = "Your name")]
         public string DisplayName { get; set; } = string.Empty;
 
@@ -86,11 +100,16 @@ public class RegisterModel(UserManager<ApplicationUser> userManager, SignInManag
 
         [Required]
         [DataType(DataType.Password)]
+        [StringLength(256)]
         public string Password { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]
         [Display(Name = "Repeat password")]
         [Compare(nameof(Password), ErrorMessage = "The passwords do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        /// <summary>Hidden from people by the style sheet. A filled-in value means a program submitted the form.</summary>
+        [StringLength(200)]
+        public string? Website { get; set; }
     }
 }

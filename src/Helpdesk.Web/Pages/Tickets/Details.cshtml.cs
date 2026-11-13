@@ -73,8 +73,11 @@ public class DetailsModel(TicketService tickets) : PageModel
             return NotFound();
         }
 
-        // Served as a download, never rendered by the browser, whatever the file contains.
+        // Served as a download, never rendered by the browser, whatever the file contains: attachment disposition,
+        // no content sniffing, and a policy that would block every script even if a browser did open it.
         Response.Headers.XContentTypeOptions = "nosniff";
+        Response.Headers.ContentSecurityPolicy = SecurityHeaders.DownloadContentSecurityPolicy;
+        Response.Headers.CacheControl = "private, no-store";
         return File(download.Content, download.ContentType, download.FileName);
     }
 

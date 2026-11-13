@@ -65,6 +65,21 @@ else
                 </div>
             </div>
         </div>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div>
+                        <h2 class="h5 mb-1">Two-factor authentication</h2>
+                        <p class="text-secondary mb-0">
+                            @(Model.TwoFactorEnabled
+                                ? "On. Signing in needs a code from your authenticator app."
+                                : "Off. Add a second step to sign-in with an authenticator app, so a stolen password is not enough.")
+                        </p>
+                    </div>
+                    <a asp-page="TwoFactor" class="btn btn-outline-primary">@(Model.TwoFactorEnabled ? "Manage" : "Set up")</a>
+                </div>
+            </div>
+        </div>
     </div>
 }
 

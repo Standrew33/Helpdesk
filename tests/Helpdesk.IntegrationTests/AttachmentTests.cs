@@ -7,7 +7,12 @@ namespace Helpdesk.IntegrationTests;
 
 public class AttachmentTests(SqlServerFixture sql) : WebTestBase(sql)
 {
+    private const char Rlo = (char)0x202E;
     private static readonly byte[] Content = Encoding.UTF8.GetBytes("printer log line 1\nprinter log line 2\n");
+
+    private static readonly byte[] PdfContent = Encoding.ASCII.GetBytes("%PDF-1.4\n1 0 obj\n<<>>\nendobj\n");
+
+    private static readonly byte[] PngContent = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D];
 
     private static async Task<string> FollowedHtmlAsync(AppClient client, HttpResponseMessage redirect)
         => await (await client.FollowAsync(redirect)).Content.ReadAsStringAsync();
@@ -42,7 +47,7 @@ public class AttachmentTests(SqlServerFixture sql) : WebTestBase(sql)
     {
         var customer = await SignedInAsync("Customer");
         var id = await customer.CreateTicketAsync("With a file");
-        await customer.UploadAttachmentAsync(id, "report.pdf", Content);
+        await customer.UploadAttachmentAsync(id, "report.pdf", PdfContent);
 
         var op = await SignedInAsync("Operator");
         var html = await op.GetHtmlAsync($"/Tickets/Details/{id}");
@@ -98,6 +103,7 @@ public class AttachmentTests(SqlServerFixture sql) : WebTestBase(sql)
         var id = await customer.CreateTicketAsync("Huge file");
 
         var tooBig = new byte[AttachmentPolicy.MaxFileBytes + 1];
+        PdfContent.CopyTo(tooBig, 0);
         var html = await FollowedHtmlAsync(customer, await customer.UploadAttachmentAsync(id, "big.pdf", tooBig));
 
         Assert.Contains("larger than", html);
@@ -131,6 +137,74 @@ public class AttachmentTests(SqlServerFixture sql) : WebTestBase(sql)
 
         Assert.Contains("changed by someone else", html);
         Assert.DoesNotContain("late.txt", html);
+    }
+
+    [Theory]
+    [InlineData("holiday.png")]
+    [InlineData("holiday.jpg")]
+    [InlineData("contract.pdf")]
+    [InlineData("sheet.xlsx")]
+    public async Task A_program_renamed_to_look_like_a_document_is_refused(string name)
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("Disguised file");
+        var program = new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00 };
+
+        var html = await FollowedHtmlAsync(customer, await customer.UploadAttachmentAsync(id, name, program));
+
+        Assert.Contains("does not match its type", html);
+        Assert.Contains("No files attached", html);
+    }
+
+    [Fact]
+    public async Task A_text_file_with_binary_content_is_refused()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("Binary as text");
+
+        var html = await FollowedHtmlAsync(customer, await customer.UploadAttachmentAsync(id, "notes.txt", [0x41, 0x00, 0x42, 0x00]));
+
+        Assert.Contains("does not match its type", html);
+    }
+
+    [Fact]
+    public async Task A_genuine_picture_is_accepted()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("A real picture");
+
+        var html = await FollowedHtmlAsync(customer, await customer.UploadAttachmentAsync(id, "screen.png", PngContent));
+
+        Assert.Contains("screen.png", html);
+        Assert.DoesNotContain("does not match", html);
+    }
+
+    [Fact]
+    public async Task The_direction_override_trick_in_a_file_name_is_removed()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("Tricky name");
+
+        var html = await FollowedHtmlAsync(customer, await customer.UploadAttachmentAsync(id, "invoice" + Rlo + "fdp.txt", Content));
+
+        Assert.DoesNotContain(Rlo.ToString(), html, StringComparison.Ordinal);
+        Assert.Contains("invoicefdp.txt", html);
+    }
+
+    [Fact]
+    public async Task Downloads_cannot_run_anything_in_the_browser()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("With a file");
+        var html = await FollowedHtmlAsync(customer, await customer.UploadAttachmentAsync(id, "notes.txt", Content));
+        var link = System.Text.RegularExpressions.Regex.Match(html, "href=\"([^\"]*handler=Download[^\"]*)\"").Groups[1].Value.Replace("&amp;", "&", StringComparison.Ordinal);
+
+        var download = await customer.GetAsync(link);
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal("default-src 'none'; sandbox", download.Headers.GetValues("Content-Security-Policy").Single());
+        Assert.Contains("attachment", download.Content.Headers.ContentDisposition?.DispositionType);
+        Assert.Contains("no-store", download.Headers.CacheControl?.ToString());
     }
 
     [Fact]

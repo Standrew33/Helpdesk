@@ -11,7 +11,8 @@ namespace Helpdesk.Web.Pages.Account;
 public class SettingsModel(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
-    IOptions<DemoOptions> demo) : PageModel
+    IOptions<DemoOptions> demo,
+    ILogger<SettingsModel> logger) : PageModel
 {
     // The two forms are bound per handler, so one form never fails validation because of the other.
     public ProfileInput Profile { get; private set; } = new();
@@ -22,6 +23,8 @@ public class SettingsModel(
     public string? Notice { get; set; }
 
     public string Email { get; private set; } = string.Empty;
+
+    public bool TwoFactorEnabled { get; private set; }
 
     /// <summary>The public demo accounts are shared by every visitor, so they cannot be edited.</summary>
     public bool IsReadOnly { get; private set; }
@@ -84,6 +87,12 @@ public class SettingsModel(
 
         if (!result.Succeeded)
         {
+            // Guessing the current password here must not be easier than guessing it at the sign-in page.
+            if (result.Errors.Any(e => e.Code == "PasswordMismatch"))
+            {
+                await userManager.AccessFailedAsync(user);
+            }
+
             // A field shows one message, so the problems of one field are joined into a single sentence.
             foreach (var field in result.Errors.GroupBy(e => e.Code == "PasswordMismatch" ? "Password.CurrentPassword" : "Password.NewPassword"))
             {
@@ -93,6 +102,7 @@ public class SettingsModel(
             return Page();
         }
 
+        SecurityLog.PasswordChanged(logger, user.Id);
         await signInManager.RefreshSignInAsync(user);
         Notice = "Your password was changed.";
         return RedirectToPage();
@@ -105,6 +115,7 @@ public class SettingsModel(
         if (user is not null)
         {
             Email = user.Email ?? string.Empty;
+            TwoFactorEnabled = await userManager.GetTwoFactorEnabledAsync(user);
             IsReadOnly = demo.Value.Enabled && DatabaseSeeder.IsDemoAddress(user.Email);
         }
 
@@ -115,6 +126,7 @@ public class SettingsModel(
     {
         [Required]
         [StringLength(100)]
+        [SafeText]
         [Display(Name = "Your name")]
         public string DisplayName { get; set; } = string.Empty;
     }

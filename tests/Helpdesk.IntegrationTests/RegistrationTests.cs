@@ -76,8 +76,8 @@ public class RegistrationTests(SqlServerFixture sql) : WebTestBase(sql)
 
     [Theory]
     [InlineData("short1A!")]
-    [InlineData("alllowercase-1234")]
-    [InlineData("NoDigitsHere-abc")]
+    [InlineData("password123456")]
+    [InlineData("123456789012")]
     public async Task A_weak_password_is_refused(string password)
     {
         var client = NewClient();

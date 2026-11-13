@@ -14,11 +14,19 @@ public sealed partial class AppClient : IDisposable
         _http = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false,
+            BaseAddress = new Uri("https://localhost"),
             HandleCookies = true,
         });
     }
 
+    /// <summary>Sends this header with every request, for example X-Forwarded-For as a proxy would.</summary>
+    public void AddHeader(string name, string value) => _http.DefaultRequestHeaders.Add(name, value);
+
     public Task<HttpResponseMessage> GetAsync(string url) => _http.GetAsync(url);
+
+    /// <summary>A form post as a forged request from another site would send it: cookies, but no anti-forgery token.</summary>
+    public Task<HttpResponseMessage> PostWithoutTokenAsync(string url, IDictionary<string, string>? fields = null)
+        => _http.PostAsync(url, new FormUrlEncodedContent(fields ?? new Dictionary<string, string>()));
 
     public async Task<string> GetHtmlAsync(string url)
     {

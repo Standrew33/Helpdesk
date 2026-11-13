@@ -21,6 +21,7 @@ public class ErrorModel : PageModel
     {
         404 => "Page not found",
         403 => "Access denied",
+        429 => "Too many attempts",
         _ => "Something went wrong",
     };
 
@@ -28,6 +29,7 @@ public class ErrorModel : PageModel
     {
         404 => "The page does not exist, or you do not have access to it.",
         403 => "Your account is not allowed to open this page.",
+        429 => "You have sent too many requests in a short time. Wait a minute and try again.",
         _ => "An error occurred while processing your request. Please try again.",
     };
 
