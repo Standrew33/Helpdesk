@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.RegularExpressions;
 using Helpdesk.IntegrationTests.Infrastructure;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -52,6 +53,26 @@ public class AuthenticationTests(SqlServerFixture sql) : WebTestBase(sql)
         var html = await NewClient().GetHtmlAsync("/Account/Login");
 
         Assert.DoesNotContain("google-site-verification", html);
+    }
+
+    [Theory]
+    [InlineData("/favicon.svg", "image/svg+xml")]
+    [InlineData("/favicon.ico", "image/x-icon")]
+    [InlineData("/apple-touch-icon.png", "image/png")]
+    public async Task Icons_are_public_and_linked_from_the_pages(string path, string contentType)
+    {
+        var client = NewClient();
+
+        var response = await client.GetAsync(path);
+        var html = await client.GetHtmlAsync("/Account/Login");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(contentType, response.Content.Headers.ContentType?.MediaType);
+
+        // Static files are linked with a content fingerprint in the name, e.g. /favicon.abc123.svg.
+        var stem = Regex.Escape(Path.GetFileNameWithoutExtension(path));
+        var extension = Regex.Escape(Path.GetExtension(path));
+        Assert.Matches($"href=\"/{stem}(\\.[a-z0-9]+)?{extension}\"", html);
     }
 
     [Fact]
