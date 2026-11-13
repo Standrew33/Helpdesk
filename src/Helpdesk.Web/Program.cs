@@ -1,16 +1,18 @@
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Attachments;
 using Helpdesk.Web.Features.Tickets;
+using Helpdesk.Web.Features.Users;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options => options.Conventions.AuthorizeFolder("/Admin", Policies.AdminOnly));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAttachmentStore(builder.Configuration);
 builder.Services.AddScoped<TicketService>();
+builder.Services.AddScoped<UserAdminService>();
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
 
 builder.Services.AddDbContext<HelpdeskDbContext>(options =>
@@ -26,7 +28,11 @@ builder.Services
         options.Password.RequiredLength = 10;
         options.Lockout.MaxFailedAccessAttempts = 5;
     })
-    .AddEntityFrameworkStores<HelpdeskDbContext>();
+    .AddEntityFrameworkStores<HelpdeskDbContext>()
+    .AddClaimsPrincipalFactory<AppClaimsPrincipalFactory>();
+
+// Deactivating a user or changing a role must take effect on the next request, not after the default 30 minutes.
+builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -78,6 +84,9 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+
+// Missing pages and refused requests get the same friendly page as errors do.
+app.UseStatusCodePagesWithReExecute("/Error", "?code={0}");
 
 app.UseHttpsRedirection();
 

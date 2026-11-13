@@ -12,6 +12,30 @@ public sealed record TicketListItem(
     DateTimeOffset DueAt,
     bool IsOverdue);
 
+/// <summary>Narrows the queue for staff; customers always see only their own tickets.</summary>
+public enum TicketScope
+{
+    Mine,
+    Unassigned,
+    Overdue,
+}
+
+public sealed record TicketFilter(
+    string? Search = null,
+    TicketStatus? Status = null,
+    TicketPriority? Priority = null,
+    TicketScope? Scope = null,
+    int Page = 1);
+
+public sealed record PagedList<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize)
+{
+    public int PageCount => Math.Max(1, (int)Math.Ceiling(Total / (double)PageSize));
+
+    public bool HasPrevious => Page > 1;
+
+    public bool HasNext => Page < PageCount;
+}
+
 public sealed record AssigneeOption(string Id, string Name);
 
 public sealed record AttachmentDownload(string FileName, string ContentType, Stream Content);

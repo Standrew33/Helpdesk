@@ -28,6 +28,10 @@
     <button type="submit" class="btn btn-primary w-100">Sign in</button>
 </form>
 
+<p class="text-secondary mt-4 mb-0">
+    New here? <a asp-page="Register">Create an account</a>
+</p>
+
 @if (Model.DemoEnabled)
 {
     <div class="divider">Explore the demo as</div>
@@ -36,7 +40,7 @@
         {
             ("Customer", "Opens tickets and follows only their own requests"),
             ("Operator", "Works the queue: assigns, answers, changes status and priority"),
-            ("Admin", "Sees every ticket and the full change history"),
+            ("Admin", "Manages users and roles, sees every ticket and its history"),
         })
         {
             <form method="post" asp-page-handler="Demo" asp-route-role="@role" asp-route-returnUrl="@Model.ReturnUrl">
@@ -48,7 +52,7 @@
         }
     </div>
     <p class="text-secondary small mt-3 mb-0">
-        The demo uses sample data. Roles are switched with one click, so no registration is needed to try them.
+        The demo uses sample data, so you can look around as each role without an account.
     </p>
 }
 

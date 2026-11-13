@@ -1,14 +1,14 @@
 ﻿@page
 @model ErrorModel
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = Model.Heading;
 }
 
 <div class="card auth-wrap">
     <div class="empty-state">
-        <h1 class="h4">Something went wrong</h1>
-        <p>An error occurred while processing your request. Please try again.</p>
-        @if (Model.ShowRequestId)
+        <h1 class="h4">@Model.Heading</h1>
+        <p>@Model.Message</p>
+        @if (Model.Code >= 500 && Model.ShowRequestId)
         {
             <p class="small">Request ID: <code>@Model.RequestId</code></p>
         }

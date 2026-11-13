@@ -108,6 +108,28 @@ public class AuthenticationTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task Unknown_addresses_show_a_friendly_not_found_page()
+    {
+        var client = await SignedInAsync("Customer");
+
+        var response = await client.GetAsync("/Tickets/Details/999999");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Contains("Page not found", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Refused_posts_to_missing_tickets_also_show_the_friendly_page()
+    {
+        var client = await SignedInAsync("Customer");
+
+        var response = await client.PostFormAsync("/Tickets", "/Tickets/Details/999999?handler=Comment", new Dictionary<string, string>());
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Contains("Page not found", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Admin_cannot_open_the_page_for_creating_tickets()
     {
         var admin = await SignedInAsync("Admin");

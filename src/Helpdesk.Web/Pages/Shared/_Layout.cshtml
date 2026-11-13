@@ -1,13 +1,15 @@
 ﻿@{
     var page = ViewContext.RouteData.Values["page"] as string ?? "";
     var isSignedIn = User.Identity?.IsAuthenticated == true;
-    var displayName = User.Identity?.Name ?? "";
+    var displayName = User.DisplayName();
     var role = User.IsInRole(RoleNames.Admin) ? RoleNames.Admin
         : User.IsInRole(RoleNames.Operator) ? RoleNames.Operator
         : User.IsInRole(RoleNames.Customer) ? RoleNames.Customer
         : "";
     var statusFilter = Context.Request.Query["status"].ToString();
+    var scopeFilter = Context.Request.Query["scope"].ToString();
     var onList = page == "/Tickets/Index";
+    var isStaff = role is RoleNames.Operator or RoleNames.Admin;
     var body = RenderBody();
 }
 <!DOCTYPE html>
@@ -35,10 +37,17 @@
                 </a>
 
                 <nav class="side-nav" aria-label="Main">
-                    <a asp-page="/Tickets/Index" class="side-link @(onList && statusFilter == "" ? "active" : "")">
+                    <a asp-page="/Tickets/Index" class="side-link @(onList && statusFilter == "" && scopeFilter == "" ? "active" : "")">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
                         All tickets
                     </a>
+                    @if (isStaff)
+                    {
+                        foreach (var (scope, label) in new[] { ("Mine", "Assigned to me"), ("Unassigned", "Unassigned"), ("Overdue", "Overdue") })
+                        {
+                            <a asp-page="/Tickets/Index" asp-route-scope="@scope" class="side-link side-sub @(onList && scopeFilter == scope ? "active" : "")">@label</a>
+                        }
+                    }
                     @if (role == RoleNames.Customer)
                     {
                         <a asp-page="/Tickets/Create" class="side-link @(page == "/Tickets/Create" ? "active" : "")">
@@ -55,16 +64,25 @@
                             @TicketDisplay.StatusText(status)
                         </a>
                     }
+
+                    @if (role == RoleNames.Admin)
+                    {
+                        <div class="side-section">Administration</div>
+                        <a asp-page="/Admin/Users" class="side-link @(page == "/Admin/Users" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                            Users
+                        </a>
+                    }
                 </nav>
 
                 <div class="side-user">
-                    <div class="user-chip">
-                        <span class="avatar" aria-hidden="true">@(displayName.Length > 0 ? displayName[..1] : "?")</span>
+                    <a asp-page="/Account/Settings" class="user-chip @(page == "/Account/Settings" ? "active" : "")" title="Account settings">
+                        <span class="avatar" aria-hidden="true">@(displayName.Length > 0 ? displayName[..1].ToUpperInvariant() : "?")</span>
                         <span class="user-meta">
                             <span class="user-name">@displayName</span>
                             <span class="user-role">@role</span>
                         </span>
-                    </div>
+                    </a>
                     <form method="post" asp-page="/Account/Logout">
                         <button type="submit" class="btn btn-signout btn-sm">Sign out</button>
                     </form>

@@ -1,0 +1,73 @@
+@page
+@model SettingsModel
+@{
+    ViewData["Title"] = "Account";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Account</h1>
+        <p class="page-subtitle">@Model.Email</p>
+    </div>
+</div>
+
+@if (Model.Notice is not null)
+{
+    <div class="alert alert-success" role="status">@Model.Notice</div>
+}
+
+@if (Model.IsReadOnly)
+{
+    <div class="alert alert-secondary" role="status">
+        This is a shared demo account, so its details cannot be changed. Create your own account to try these settings.
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-3">Profile</h2>
+                    <form method="post" asp-page-handler="Profile">
+                        <div class="mb-3">
+                            <label asp-for="Profile.DisplayName" class="form-label"></label>
+                            <input asp-for="Profile.DisplayName" class="form-control" autocomplete="name" />
+                            <span asp-validation-for="Profile.DisplayName" class="field-validation-error"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-3">Change password</h2>
+                    <form method="post" asp-page-handler="Password">
+                        <div class="mb-3">
+                            <label asp-for="Password.CurrentPassword" class="form-label"></label>
+                            <input asp-for="Password.CurrentPassword" class="form-control" autocomplete="current-password" />
+                            <span asp-validation-for="Password.CurrentPassword" class="field-validation-error"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Password.NewPassword" class="form-label"></label>
+                            <input asp-for="Password.NewPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="Password.NewPassword" class="field-validation-error"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="Password.ConfirmPassword" class="form-label"></label>
+                            <input asp-for="Password.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="Password.ConfirmPassword" class="field-validation-error"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Change password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

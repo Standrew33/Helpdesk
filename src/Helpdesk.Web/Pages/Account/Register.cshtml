@@ -1,0 +1,44 @@
+@page
+@model RegisterModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Create account";
+}
+
+<h1 class="h3 fw-bold mb-1">Create an account</h1>
+<p class="text-secondary mb-4">Register as a customer to open tickets and follow your requests.</p>
+
+<form method="post">
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
+
+    <div class="mb-3">
+        <label asp-for="Input.DisplayName" class="form-label"></label>
+        <input asp-for="Input.DisplayName" class="form-control" autocomplete="name" />
+        <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Email" class="form-label"></label>
+        <input asp-for="Input.Email" class="form-control" autocomplete="username" />
+        <span asp-validation-for="Input.Email" class="field-validation-error"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Password" class="form-label"></label>
+        <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
+        <div class="form-text">At least 10 characters with an upper-case letter, a lower-case letter, a digit and a symbol.</div>
+        <span asp-validation-for="Input.Password" class="field-validation-error"></span>
+    </div>
+    <div class="mb-4">
+        <label asp-for="Input.ConfirmPassword" class="form-label"></label>
+        <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="Input.ConfirmPassword" class="field-validation-error"></span>
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Create account</button>
+</form>
+
+<p class="text-secondary mt-4 mb-0">
+    Already have an account? <a asp-page="Login">Sign in</a>
+</p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -10,10 +10,13 @@ namespace Helpdesk.Web.Features.Tickets;
 
 public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> userManager, IAttachmentStore attachments, TimeProvider time)
 {
-    private const int MaxListSize = 200;
+    public const int PageSize = 15;
 
-    public async Task<IReadOnlyList<TicketListItem>> ListAsync(Actor actor, TicketStatus? status, CancellationToken ct = default)
+    private const int MaxSearchLength = 100;
+
+    public async Task<PagedList<TicketListItem>> ListAsync(Actor actor, TicketFilter filter, CancellationToken ct = default)
     {
+        var now = time.GetUtcNow();
         var tickets = db.Tickets.AsNoTracking();
 
         if (!actor.Role.IsStaff())
@@ -21,28 +24,59 @@ public class TicketService(HelpdeskDbContext db, UserManager<ApplicationUser> us
             tickets = tickets.Where(t => t.CustomerId == actor.Id);
         }
 
-        if (status is not null)
+        if (filter.Status is not null)
         {
-            tickets = tickets.Where(t => t.Status == status);
+            tickets = tickets.Where(t => t.Status == filter.Status);
         }
+
+        if (filter.Priority is not null)
+        {
+            tickets = tickets.Where(t => t.Priority == filter.Priority);
+        }
+
+        // The queue views are for staff; a customer's list is already limited to their own tickets.
+        if (filter.Scope is not null && actor.Role.IsStaff())
+        {
+            tickets = filter.Scope switch
+            {
+                TicketScope.Mine => tickets.Where(t => t.AssigneeId == actor.Id),
+                TicketScope.Unassigned => tickets.Where(t => t.AssigneeId == null),
+                _ => tickets.Where(t => t.Status != TicketStatus.Closed && t.DueAt < now),
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var term = filter.Search.Trim();
+            term = term.Length > MaxSearchLength ? term[..MaxSearchLength] : term;
+
+            // "#42" or "42" finds ticket 42; any text is looked up in the subject and the description.
+            var isNumber = int.TryParse(term.TrimStart('#'), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var number);
+            tickets = tickets.Where(t => t.Subject.Contains(term) || t.Description.Contains(term) || (isNumber && t.Id == number));
+        }
+
+        var total = await tickets.CountAsync(ct);
+        var pageCount = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
+        var page = Math.Clamp(filter.Page, 1, pageCount);
 
         var rows = await (
             from t in tickets
             join c in db.Users on t.CustomerId equals c.Id
             join a in db.Users on t.AssigneeId equals a.Id into assignees
             from a in assignees.DefaultIfEmpty()
-            orderby t.UpdatedAt descending
+            orderby t.UpdatedAt descending, t.Id descending
             select new { t.Id, t.Subject, t.Status, t.Priority, CustomerName = c.DisplayName, AssigneeName = a.DisplayName, t.DueAt })
-            .Take(MaxListSize)
+            .Skip((page - 1) * PageSize)
+            .Take(PageSize)
             .ToListAsync(ct);
 
-        var now = time.GetUtcNow();
-
-        return rows
+        var items = rows
             .Select(r => new TicketListItem(
                 r.Id, r.Subject, r.Status, r.Priority, r.CustomerName, r.AssigneeName, r.DueAt,
                 IsOverdue: r.Status != TicketStatus.Closed && now > r.DueAt))
             .ToList();
+
+        return new PagedList<TicketListItem>(items, total, page, PageSize);
     }
 
     public async Task<TicketDetails?> GetAsync(int id, Actor actor, CancellationToken ct = default)

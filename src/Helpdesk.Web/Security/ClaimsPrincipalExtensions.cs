@@ -6,6 +6,13 @@ namespace Helpdesk.Web.Security;
 
 public static class ClaimsPrincipalExtensions
 {
+    /// <summary>The name to show for the signed-in user; falls back to the sign-in name for older cookies.</summary>
+    public static string DisplayName(this ClaimsPrincipal principal)
+    {
+        ArgumentNullException.ThrowIfNull(principal);
+        return principal.FindFirstValue(AppClaimTypes.DisplayName) ?? principal.Identity?.Name ?? string.Empty;
+    }
+
     /// <summary>Maps the signed-in user to the actor the domain works with.</summary>
     public static Actor ToActor(this ClaimsPrincipal principal)
     {
