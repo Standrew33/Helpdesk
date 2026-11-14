@@ -11,7 +11,8 @@ namespace Helpdesk.Web.Pages.Account;
 public class SettingsModel(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
-    IOptions<DemoOptions> demo) : PageModel
+    IOptions<DemoOptions> demo,
+    ILogger<SettingsModel> logger) : PageModel
 {
     // The two forms are bound per handler, so one form never fails validation because of the other.
     public ProfileInput Profile { get; private set; } = new();
@@ -84,6 +85,12 @@ public class SettingsModel(
 
         if (!result.Succeeded)
         {
+            // Guessing the current password here must not be easier than guessing it at the sign-in page.
+            if (result.Errors.Any(e => e.Code == "PasswordMismatch"))
+            {
+                await userManager.AccessFailedAsync(user);
+            }
+
             // A field shows one message, so the problems of one field are joined into a single sentence.
             foreach (var field in result.Errors.GroupBy(e => e.Code == "PasswordMismatch" ? "Password.CurrentPassword" : "Password.NewPassword"))
             {
@@ -93,6 +100,7 @@ public class SettingsModel(
             return Page();
         }
 
+        SecurityLog.PasswordChanged(logger, user.Id);
         await signInManager.RefreshSignInAsync(user);
         Notice = "Your password was changed.";
         return RedirectToPage();

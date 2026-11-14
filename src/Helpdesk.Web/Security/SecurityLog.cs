@@ -6,6 +6,21 @@ namespace Helpdesk.Web.Security;
 /// </summary>
 public static partial class SecurityLog
 {
+    [LoggerMessage(EventId = 1001, Level = LogLevel.Information, Message = "User {UserId} signed in")]
+    public static partial void SignedIn(ILogger logger, string userId);
+
+    [LoggerMessage(EventId = 1002, Level = LogLevel.Warning, Message = "Failed sign-in for user {UserId}")]
+    public static partial void SignInFailed(ILogger logger, string userId);
+
+    [LoggerMessage(EventId = 1003, Level = LogLevel.Warning, Message = "Failed sign-in for an unknown or deactivated account")]
+    public static partial void SignInFailedUnknown(ILogger logger);
+
+    [LoggerMessage(EventId = 1004, Level = LogLevel.Warning, Message = "User {UserId} is locked out after repeated failures")]
+    public static partial void LockedOut(ILogger logger, string userId);
+
+    [LoggerMessage(EventId = 1007, Level = LogLevel.Information, Message = "User {UserId} changed the password")]
+    public static partial void PasswordChanged(ILogger logger, string userId);
+
     [LoggerMessage(EventId = 1013, Level = LogLevel.Warning, Message = "Too many requests to {Path} from {Client}")]
     public static partial void RequestLimited(ILogger logger, PathString path, string client);
 }

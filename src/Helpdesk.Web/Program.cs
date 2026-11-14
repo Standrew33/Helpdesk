@@ -23,6 +23,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAttachmentStore(builder.Configuration);
 builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<UserAdminService>();
+builder.Services.AddSingleton<SignInTimingGuard>();
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
 builder.Services.Configure<SiteOptions>(builder.Configuration.GetSection(SiteOptions.SectionName));
 
@@ -60,6 +61,8 @@ builder.Services
         options.Password.RequireNonAlphanumeric = false;
 
         options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.AllowedForNewUsers = true;
     })
     .AddEntityFrameworkStores<HelpdeskDbContext>()
     .AddPasswordValidator<PasswordPolicyValidator>()
