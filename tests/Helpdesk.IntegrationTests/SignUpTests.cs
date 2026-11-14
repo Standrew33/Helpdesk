@@ -95,6 +95,41 @@ public class SignUpTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task An_account_without_a_password_can_set_one_later()
+    {
+        var client = NewClient();
+        await SignUpAsync(client, Email);
+        Assert.Contains("Set a password", await client.GetHtmlAsync("/Account/Settings"));
+
+        var response = await client.PostFormAsync("/Account/Settings", "/Account/Settings?handler=SetPassword", new Dictionary<string, string>
+        {
+            ["NewPassword.Password"] = "tram7Lamp-ocean",
+            ["NewPassword.ConfirmPassword"] = "tram7Lamp-ocean",
+        });
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("Change password", await client.GetHtmlAsync("/Account/Settings"));
+        Assert.Equal(HttpStatusCode.Redirect, (await NewClient().SignInAsync(Email, "tram7Lamp-ocean")).StatusCode);
+    }
+
+    [Fact]
+    public async Task An_existing_password_cannot_be_replaced_without_the_current_one()
+    {
+        await CreateUserAsync("Customer", Email);
+        var client = NewClient();
+        await client.SignInAsync(Email, TestPassword);
+
+        var response = await client.PostFormAsync("/Account/Settings", "/Account/Settings?handler=SetPassword", new Dictionary<string, string>
+        {
+            ["NewPassword.Password"] = "tram7Lamp-ocean",
+            ["NewPassword.ConfirmPassword"] = "tram7Lamp-ocean",
+        });
+
+        Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect, (await NewClient().SignInAsync(Email, TestPassword)).StatusCode);
+    }
+
+    [Fact]
     public async Task The_demo_addresses_cannot_be_used()
     {
         var response = await NewClient().RequestCodeAsync("admin@helpdesk.test");

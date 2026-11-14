@@ -19,6 +19,11 @@ public class SettingsModel(
 
     public PasswordInput Password { get; private set; } = new();
 
+    public NewPasswordInput NewPassword { get; private set; } = new();
+
+    /// <summary>False for accounts created with an e-mail code that never set a password.</summary>
+    public bool HasPassword { get; private set; }
+
     [TempData]
     public string? Notice { get; set; }
 
@@ -106,6 +111,38 @@ public class SettingsModel(
         return RedirectToPage();
     }
 
+    /// <summary>Accounts created with an e-mail code have no password; their owner can add one as a second way in.</summary>
+    public async Task<IActionResult> OnPostSetPasswordAsync([Bind(Prefix = nameof(NewPassword))] NewPasswordInput input)
+    {
+        var user = await LoadAsync();
+
+        if (user is null || IsReadOnly || HasPassword)
+        {
+            return Forbid();
+        }
+
+        Profile.DisplayName = user.DisplayName;
+        NewPassword = input;
+
+        if (!ModelState.IsValid)
+        {
+            return Page();
+        }
+
+        var result = await userManager.AddPasswordAsync(user, input.Password);
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError("NewPassword.Password", string.Join(" ", result.Errors.Select(e => e.Description).Distinct()));
+            return Page();
+        }
+
+        SecurityLog.PasswordChanged(logger, user.Id);
+        await signInManager.RefreshSignInAsync(user);
+        Notice = "Your password was set. You can sign in with it or with a code from e-mail.";
+        return RedirectToPage();
+    }
+
     private async Task<ApplicationUser?> LoadAsync()
     {
         var user = await userManager.GetUserAsync(User);
@@ -113,6 +150,7 @@ public class SettingsModel(
         if (user is not null)
         {
             Email = user.Email ?? string.Empty;
+            HasPassword = await userManager.HasPasswordAsync(user);
             IsReadOnly = demo.Value.Enabled && DatabaseSeeder.IsDemoAddress(user.Email);
         }
 
@@ -143,6 +181,20 @@ public class SettingsModel(
         [DataType(DataType.Password)]
         [Display(Name = "Repeat new password")]
         [Compare(nameof(NewPassword), ErrorMessage = "The passwords do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    public class NewPasswordInput
+    {
+        [Required]
+        [DataType(DataType.Password)]
+        [StringLength(256)]
+        [Display(Name = "Password")]
+        public string Password { get; set; } = string.Empty;
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Repeat password")]
+        [Compare(nameof(Password), ErrorMessage = "The passwords do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

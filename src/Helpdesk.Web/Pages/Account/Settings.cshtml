@@ -43,25 +43,49 @@ else
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-body p-4">
-                    <h2 class="h5 mb-3">Change password</h2>
-                    <form method="post" asp-page-handler="Password">
-                        <div class="mb-3">
-                            <label asp-for="Password.CurrentPassword" class="form-label"></label>
-                            <input asp-for="Password.CurrentPassword" class="form-control" autocomplete="current-password" />
-                            <span asp-validation-for="Password.CurrentPassword" class="field-validation-error"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Password.NewPassword" class="form-label"></label>
-                            <input asp-for="Password.NewPassword" class="form-control" autocomplete="new-password" />
-                            <span asp-validation-for="Password.NewPassword" class="field-validation-error"></span>
-                        </div>
-                        <div class="mb-4">
-                            <label asp-for="Password.ConfirmPassword" class="form-label"></label>
-                            <input asp-for="Password.ConfirmPassword" class="form-control" autocomplete="new-password" />
-                            <span asp-validation-for="Password.ConfirmPassword" class="field-validation-error"></span>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Change password</button>
-                    </form>
+                    @if (!Model.HasPassword)
+                    {
+                        <h2 class="h5 mb-1">Set a password</h2>
+                        <p class="text-secondary small mb-3">
+                            You sign in with a code from e-mail. A password is an optional second way in.
+                        </p>
+                        <form method="post" asp-page-handler="SetPassword">
+                            <input type="hidden" value="@Model.Email" autocomplete="username" />
+                            <div class="mb-3">
+                                <label asp-for="NewPassword.Password" class="form-label"></label>
+                                <input asp-for="NewPassword.Password" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="NewPassword.Password" class="field-validation-error"></span>
+                            </div>
+                            <div class="mb-4">
+                                <label asp-for="NewPassword.ConfirmPassword" class="form-label"></label>
+                                <input asp-for="NewPassword.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="NewPassword.ConfirmPassword" class="field-validation-error"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Set password</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <h2 class="h5 mb-3">Change password</h2>
+                        <form method="post" asp-page-handler="Password">
+                            <div class="mb-3">
+                                <label asp-for="Password.CurrentPassword" class="form-label"></label>
+                                <input asp-for="Password.CurrentPassword" class="form-control" autocomplete="current-password" />
+                                <span asp-validation-for="Password.CurrentPassword" class="field-validation-error"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="Password.NewPassword" class="form-label"></label>
+                                <input asp-for="Password.NewPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="Password.NewPassword" class="field-validation-error"></span>
+                            </div>
+                            <div class="mb-4">
+                                <label asp-for="Password.ConfirmPassword" class="form-label"></label>
+                                <input asp-for="Password.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="Password.ConfirmPassword" class="field-validation-error"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Change password</button>
+                        </form>
+                    }
                 </div>
             </div>
         </div>
