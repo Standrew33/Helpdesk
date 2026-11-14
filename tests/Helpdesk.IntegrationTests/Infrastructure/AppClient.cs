@@ -21,6 +21,9 @@ public sealed partial class AppClient : IDisposable
         });
     }
 
+    /// <summary>Sends this header with every request, for example X-Forwarded-For as a proxy would.</summary>
+    public void AddHeader(string name, string value) => _http.DefaultRequestHeaders.Add(name, value);
+
     public Task<HttpResponseMessage> GetAsync(string url) => _http.GetAsync(url);
 
     /// <summary>A form post as a forged request from another site would send it: cookies, but no anti-forgery token.</summary>

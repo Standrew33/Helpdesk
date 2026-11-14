@@ -4,14 +4,19 @@ using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Features.Users;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Do not announce the web server software.
-builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
+// Do not announce the web server software; the request size is small unless a page asks for more (uploads do).
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.AddServerHeader = false;
+    options.Limits.MaxRequestBodySize = 1024 * 1024;
+});
 
 builder.Services.AddRazorPages(options => options.Conventions.AuthorizeFolder("/Admin", Policies.AdminOnly));
 builder.Services.AddSingleton(TimeProvider.System);
@@ -20,6 +25,17 @@ builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
 builder.Services.Configure<SiteOptions>(builder.Configuration.GetSection(SiteOptions.SectionName));
+
+builder.Services.AddRequestLimits(builder.Configuration);
+
+// The application runs behind the Azure front end, which is the only proxy in front of it. Its address is what
+// the request limits and the logs must see, and its scheme decides whether a request counts as secure.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 builder.Services.AddHsts(options => options.MaxAge = TimeSpan.FromDays(365));
 
@@ -117,6 +133,8 @@ for (var attempt = 1; ; attempt++)
     }
 }
 
+app.UseForwardedHeaders();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -131,6 +149,8 @@ app.UseStatusCodePagesWithReExecute("/Error", "?code={0}");
 app.UseHttpsRedirection();
 
 app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
