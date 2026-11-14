@@ -15,8 +15,8 @@ public class SignInTests(SqlServerFixture sql) : WebTestBase(sql)
         var unknown = await NewClient().SignInAsync("nobody@example.test", "wrong-password-1234");
 
         Assert.Equal(wrongPassword.StatusCode, unknown.StatusCode);
-        Assert.Contains(LoginModel.FailureMessage, await wrongPassword.Content.ReadAsStringAsync());
-        Assert.Contains(LoginModel.FailureMessage, await unknown.Content.ReadAsStringAsync());
+        Assert.Contains(PasswordModel.FailureMessage, await wrongPassword.Content.ReadAsStringAsync());
+        Assert.Contains(PasswordModel.FailureMessage, await unknown.Content.ReadAsStringAsync());
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public class SignInTests(SqlServerFixture sql) : WebTestBase(sql)
         var locked = await client.SignInAsync("alice@example.test", TestPassword);
 
         Assert.Equal(HttpStatusCode.OK, locked.StatusCode);
-        Assert.Contains(LoginModel.FailureMessage, await locked.Content.ReadAsStringAsync());
+        Assert.Contains(PasswordModel.FailureMessage, await locked.Content.ReadAsStringAsync());
     }
 
     [Fact]
@@ -56,6 +56,6 @@ public class SignInTests(SqlServerFixture sql) : WebTestBase(sql)
         var later = await NewClient().SignInAsync("alice@example.test", TestPassword);
 
         Assert.Equal(HttpStatusCode.OK, later.StatusCode);
-        Assert.Contains(LoginModel.FailureMessage, await later.Content.ReadAsStringAsync());
+        Assert.Contains(PasswordModel.FailureMessage, await later.Content.ReadAsStringAsync());
     }
 }

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Helpdesk.Web.Data;
+using Helpdesk.Web.Features.SignIn;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -9,19 +10,23 @@ using Microsoft.Extensions.Options;
 
 namespace Helpdesk.Web.Pages.Account;
 
+/// <summary>
+/// First step of signing in or signing up: the e-mail address. A code and a link go to that address whether or
+/// not it has an account, so the answer never tells which addresses are registered.
+/// </summary>
 [AllowAnonymous]
 public class LoginModel(
+    CodeMailer mailer,
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
-    SignInTimingGuard timing,
     IOptions<DemoOptions> demoOptions,
     ILogger<LoginModel> logger) : PageModel
 {
-    /// <summary>One message for every failure, so it does not reveal whether the address has an account or is locked.</summary>
-    public const string FailureMessage = "Invalid e-mail or password, or the account is temporarily locked. Try again later.";
-
     [BindProperty]
     public InputModel Input { get; set; } = new();
+
+    [TempData]
+    public string? Notice { get; set; }
 
     public bool DemoEnabled => demoOptions.Value.Enabled;
 
@@ -29,46 +34,53 @@ public class LoginModel(
 
     public void OnGet(string? returnUrl = null) => ReturnUrl = returnUrl;
 
-    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null, CancellationToken ct = default)
     {
         ReturnUrl = returnUrl;
+
+        // A person never sees the hidden "Website" field; only a program that fills in every field does.
+        if (!string.IsNullOrEmpty(Input.Website))
+        {
+            SecurityLog.RegistrationTrapped(logger);
+            return RedirectToPage();
+        }
 
         if (!ModelState.IsValid)
         {
             return Page();
         }
 
-        var user = await userManager.FindByEmailAsync(Input.Email.Trim());
+        var email = Input.Email.Trim();
 
-        if (user is { IsActive: true })
+        if (DatabaseSeeder.IsDemoAddress(email))
         {
-            var result = await signInManager.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: true);
-
-            if (result.Succeeded)
-            {
-                SecurityLog.SignedIn(logger, user.Id);
-                return RedirectAfterLogin(returnUrl);
-            }
-
-            if (result.IsLockedOut)
-            {
-                // A locked account is refused before its password is checked; do the work anyway so the answer is not quicker.
-                timing.SpendTheSameTime(Input.Password);
-                SecurityLog.LockedOut(logger, user.Id);
-            }
-            else
-            {
-                SecurityLog.SignInFailed(logger, user.Id);
-            }
-        }
-        else
-        {
-            timing.SpendTheSameTime(Input.Password);
-            SecurityLog.SignInFailedUnknown(logger);
+            ModelState.AddModelError("Input.Email", "This address belongs to the demo. Use your own e-mail address.");
+            return Page();
         }
 
-        ModelState.AddModelError(string.Empty, FailureMessage);
-        return Page();
+        var sent = await mailer.SendAsync(email, ChallengePurpose.SignIn, Request, ct);
+
+        switch (sent.Outcome)
+        {
+            case SendOutcome.Sent:
+                return RedirectToPage("Code", new { c = sent.ChallengeId, returnUrl });
+
+            case SendOutcome.AlreadySent when sent.ChallengeId is { } open:
+                Notice = "We sent you a code a moment ago. Use that one, or ask for a new one in a minute.";
+                return RedirectToPage("Code", new { c = open, returnUrl });
+
+            case SendOutcome.AlreadySent:
+                ModelState.AddModelError(string.Empty, $"A code was sent a moment ago. Try again in {Seconds(sent.RetryAfter)} seconds.");
+                return Page();
+
+            case SendOutcome.TooMany:
+                ModelState.AddModelError(string.Empty, $"Too many codes were asked for this address. Try again in {Minutes(sent.RetryAfter)} minutes.");
+                return Page();
+
+            default:
+                ModelState.AddModelError(string.Empty, "The e-mail could not be sent right now. Please try again in a minute.");
+                return Page();
+        }
     }
 
     public async Task<IActionResult> OnPostDemoAsync(string role, string? returnUrl = null)
@@ -87,25 +99,23 @@ public class LoginModel(
 
         await signInManager.SignInAsync(user, isPersistent: false);
         SecurityLog.SignedIn(logger, user.Id);
-        return RedirectAfterLogin(returnUrl);
+        return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : RedirectToPage("/Tickets/Index");
     }
 
-    private IActionResult RedirectAfterLogin(string? returnUrl)
-        => !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : RedirectToPage("/Tickets/Index");
+    private static int Seconds(TimeSpan time) => Math.Max(1, (int)Math.Ceiling(time.TotalSeconds));
+
+    private static int Minutes(TimeSpan time) => Math.Max(1, (int)Math.Ceiling(time.TotalMinutes));
 
     public class InputModel
     {
         [Required]
         [EmailAddress]
         [StringLength(256)]
+        [Display(Name = "E-mail")]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
-        [DataType(DataType.Password)]
-        [StringLength(256)]
-        public string Password { get; set; } = string.Empty;
-
-        [Display(Name = "Remember me")]
-        public bool RememberMe { get; set; }
+        /// <summary>Hidden from people by the style sheet. A filled-in value means a program submitted the form.</summary>
+        [StringLength(200)]
+        public string? Website { get; set; }
     }
 }

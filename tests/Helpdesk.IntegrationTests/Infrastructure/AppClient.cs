@@ -64,11 +64,22 @@ public sealed partial class AppClient : IDisposable
     }
 
     public Task<HttpResponseMessage> SignInAsync(string email, string password)
-        => PostFormAsync("/Account/Login", "/Account/Login", new Dictionary<string, string>
+        => PostFormAsync("/Account/Password", "/Account/Password", new Dictionary<string, string>
         {
             ["Input.Email"] = email,
             ["Input.Password"] = password,
         });
+
+    /// <summary>First step of the e-mail sign-in: asks for a code. A success redirects to the page for the code.</summary>
+    public Task<HttpResponseMessage> RequestCodeAsync(string email, string? returnUrl = null)
+    {
+        var url = returnUrl is null ? "/Account/Login" : $"/Account/Login?returnUrl={Uri.EscapeDataString(returnUrl)}";
+        return PostFormAsync("/Account/Login", url, new Dictionary<string, string> { ["Input.Email"] = email });
+    }
+
+    /// <summary>Second step: enters a code on the code page the first step redirected to.</summary>
+    public Task<HttpResponseMessage> EnterCodeAsync(Uri codePage, string code)
+        => PostFormAsync(codePage.OriginalString, codePage.OriginalString, new Dictionary<string, string> { ["Code"] = code });
 
     /// <summary>Creates a ticket as the signed-in customer and returns its id.</summary>
     public async Task<int> CreateTicketAsync(string subject, string description = "Something is broken.", string priority = "Normal")

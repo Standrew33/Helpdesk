@@ -10,7 +10,7 @@ public class RequestLimitOptions
 {
     public const string SectionName = "RequestLimits";
 
-    /// <summary>Password submissions per minute. The account lock-out works per account; this works per address.</summary>
+    /// <summary>Sign-in form submissions (address, code, link, password) per minute. Lock-outs work per account; this works per address.</summary>
     public int SignInAttemptsPerMinute { get; set; } = 10;
 
     /// <summary>New accounts per hour.</summary>
@@ -27,7 +27,7 @@ public static class RequestLimits
 {
     private static readonly string[] SignInPaths =
     [
-        "/Account/Login", "/Account/Settings",
+        "/Account/Login", "/Account/Password", "/Account/Code", "/Account/Link", "/Account/Settings",
     ];
 
     public static IServiceCollection AddRequestLimits(this IServiceCollection services, IConfiguration configuration)
@@ -105,7 +105,7 @@ public static class RequestLimits
             return Bucket.SignIn;
         }
 
-        if (path.Equals("/Account/Register", StringComparison.OrdinalIgnoreCase))
+        if (path.Equals("/Account/Welcome", StringComparison.OrdinalIgnoreCase))
         {
             return Bucket.Registration;
         }

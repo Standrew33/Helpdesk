@@ -62,7 +62,7 @@ public class SessionTests(SqlServerFixture sql) : WebTestBase(sql)
         await CreateUserAsync("Customer", "alice@example.test");
 
         var response = await NewClient().PostFormAsync(
-            "/Account/Login", "/Account/Login?returnUrl=https%3A%2F%2Fevil.example%2F",
+            "/Account/Password", "/Account/Password?returnUrl=https%3A%2F%2Fevil.example%2F",
             new Dictionary<string, string> { ["Input.Email"] = "alice@example.test", ["Input.Password"] = TestPassword });
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);

@@ -11,14 +11,6 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
         => Factory.WithWebHostBuilder(builder => builder.ConfigureAppConfiguration((_, config) =>
             config.AddInMemoryCollection(new Dictionary<string, string?> { [$"RequestLimits:{key}"] = value.ToString(System.Globalization.CultureInfo.InvariantCulture) })));
 
-    private static Dictionary<string, string> RegistrationForm(string email) => new()
-    {
-        ["Input.DisplayName"] = "Pat Example",
-        ["Input.Email"] = email,
-        ["Input.Password"] = "Brand-new-pass-42",
-        ["Input.ConfirmPassword"] = "Brand-new-pass-42",
-    };
-
     [Fact]
     public async Task Too_many_sign_in_attempts_from_one_address_are_stopped()
     {
@@ -70,14 +62,14 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
     {
         using var factory = WithLimit("RegistrationsPerHour", 2);
 
-        // Each registration comes from a fresh browser, but from the same address.
+        // Each account is created from a fresh browser, but from the same address.
         for (var i = 0; i < 2; i++)
         {
-            var response = await NewClient(factory).PostFormAsync("/Account/Register", "/Account/Register", RegistrationForm($"person{i}@example.test"));
+            var response = await SignUpAsync(NewClient(factory), $"person{i}@example.test");
             Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         }
 
-        var blocked = await NewClient(factory).PostFormAsync("/Account/Register", "/Account/Register", RegistrationForm("person9@example.test"));
+        var blocked = await SignUpAsync(NewClient(factory), "person9@example.test");
 
         Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode);
     }

@@ -912,3 +912,37 @@ a.user-chip.active {
   height: 1px;
   overflow: hidden;
 }
+
+/* Sign-in steps */
+.code-input {
+  font-size: 1.6rem;
+  letter-spacing: 0.4em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.step-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-top: 1.25rem;
+}
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--bs-link-color);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--bs-link-hover-color);
+}
+
+.optional-password summary {
+  cursor: pointer;
+  color: var(--bs-link-color);
+}

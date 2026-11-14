@@ -1,6 +1,9 @@
+using Helpdesk.Web.Features.Email;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Helpdesk.IntegrationTests.Infrastructure;
 
@@ -8,6 +11,9 @@ public sealed class HelpdeskWebFactory(string connectionString, bool demoEnabled
 {
     /// <summary>Attachments of this application instance are kept in a private temporary folder.</summary>
     private readonly string _attachmentsPath = Path.Combine(Path.GetTempPath(), "helpdesk-tests", Guid.NewGuid().ToString("N"));
+
+    /// <summary>Every e-mail this application instance sends.</summary>
+    public CapturingEmailSender Mail { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -29,6 +35,8 @@ public sealed class HelpdeskWebFactory(string connectionString, bool demoEnabled
             ["RequestLimits:TicketChangesPer10Minutes"] = "1000",
             ["RequestLimits:UploadsPerHour"] = "1000",
         }));
+
+        builder.ConfigureTestServices(services => services.AddSingleton<IEmailSender>(Mail));
     }
 
     protected override void Dispose(bool disposing)

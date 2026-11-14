@@ -1,0 +1,28 @@
+@page
+@model LinkModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Sign in";
+}
+
+@if (Model.NoLongerValid)
+{
+    <h1 class="h3 fw-bold mb-1">This link no longer works</h1>
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
+    <p class="text-secondary mb-4">
+        A link works once and only for a few minutes. It also stops working when a newer e-mail is sent.
+    </p>
+    <a asp-page="Login" class="btn btn-primary w-100">Get a new link</a>
+}
+else
+{
+    <h1 class="h3 fw-bold mb-1">Continue as @Model.MaskedEmail</h1>
+    <p class="text-secondary mb-4">Confirm that you want to sign in on this device.</p>
+
+    <form method="post">
+        <input type="hidden" asp-for="Token" />
+        <button type="submit" class="btn btn-primary w-100">Sign in</button>
+    </form>
+
+    <p class="text-secondary mt-4 mb-0">Not you? <a asp-page="Login">Use a different e-mail</a></p>
+}

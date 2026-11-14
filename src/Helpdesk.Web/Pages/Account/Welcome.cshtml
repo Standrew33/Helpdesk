@@ -1,0 +1,43 @@
+@page
+@model WelcomeModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Create your account";
+}
+
+<h1 class="h3 fw-bold mb-1">Welcome to Helpdesk</h1>
+<p class="text-secondary mb-4">
+    <strong class="text-body">@Model.Email</strong> is confirmed. One more step: how should the support team address you?
+</p>
+
+<form method="post">
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
+
+    <div class="mb-3">
+        <label asp-for="Input.DisplayName" class="form-label"></label>
+        <input asp-for="Input.DisplayName" class="form-control" autocomplete="name" autofocus />
+        <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
+    </div>
+
+    <details class="optional-password mb-4" open="@(Model.ModelState.ContainsKey("Input.Password") && Model.ModelState["Input.Password"]!.Errors.Count > 0)">
+        <summary>Also set a password (optional)</summary>
+        <p class="text-secondary small mt-2">You can always sign in with a code from e-mail. A password is a second way in.</p>
+        <input type="hidden" asp-for="Email" autocomplete="username" />
+        <div class="mb-3">
+            <label asp-for="Input.Password" class="form-label"></label>
+            <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
+            <span asp-validation-for="Input.Password" class="field-validation-error"></span>
+        </div>
+        <div>
+            <label asp-for="Input.ConfirmPassword" class="form-label"></label>
+            <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
+            <span asp-validation-for="Input.ConfirmPassword" class="field-validation-error"></span>
+        </div>
+    </details>
+
+    <button type="submit" class="btn btn-primary w-100">Create account</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

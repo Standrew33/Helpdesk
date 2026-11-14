@@ -46,6 +46,31 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
         return client;
     }
 
+    /// <summary>
+    /// Goes through the e-mail sign-in like a person: asks for a code, reads it from the e-mail and enters it.
+    /// Returns the response to the code (a redirect to the tickets, or to the welcome step for a new address).
+    /// </summary>
+    protected async Task<HttpResponseMessage> SignInWithCodeAsync(AppClient client, string email, string? returnUrl = null)
+    {
+        var codePage = (await client.RequestCodeAsync(email, returnUrl)).Headers.Location!;
+        return await client.EnterCodeAsync(codePage, CapturingEmailSender.CodeIn(Factory.Mail.LastTo(email)));
+    }
+
+    /// <summary>Signs up a new address with the e-mail code and the welcome step.</summary>
+    protected async Task<HttpResponseMessage> SignUpAsync(AppClient client, string email, string name = "Nina Novak", string? password = null)
+    {
+        await SignInWithCodeAsync(client, email);
+        var form = new Dictionary<string, string> { ["Input.DisplayName"] = name };
+
+        if (password is not null)
+        {
+            form["Input.Password"] = password;
+            form["Input.ConfirmPassword"] = password;
+        }
+
+        return await client.PostFormAsync("/Account/Welcome", "/Account/Welcome", form);
+    }
+
     /// <summary>A web application on a fresh database with demo sign-in switched off.</summary>
     protected async Task<HelpdeskWebFactory> CreateFactoryWithoutDemoAsync()
     {

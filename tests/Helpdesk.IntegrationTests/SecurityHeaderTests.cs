@@ -39,7 +39,7 @@ public partial class SecurityHeaderTests(SqlServerFixture sql) : WebTestBase(sql
         var pages = new List<(AppClient Client, string Url)>
         {
             (NewClient(), "/Account/Login"),
-            (NewClient(), "/Account/Register"),
+            (NewClient(), "/Account/Password"),
             (customer, "/Tickets"),
             (customer, "/Tickets/Create"),
             (customer, $"/Tickets/Details/{ticketId}"),

@@ -1,0 +1,49 @@
+@page
+@model CodeModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Check your e-mail";
+}
+
+@if (Model.Notice is not null)
+{
+    <div class="alert alert-info" role="status">@Model.Notice</div>
+}
+
+@if (Model.NoLongerValid)
+{
+    <h1 class="h3 fw-bold mb-1">This code no longer works</h1>
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
+    <p class="text-secondary mb-4">
+        A code works once and for @Model.LifetimeMinutes minutes. It also stops working when a newer one is sent
+        or after too many wrong tries.
+    </p>
+    <a asp-page="Login" asp-route-returnUrl="@Model.ReturnUrl" class="btn btn-primary w-100">Get a new code</a>
+}
+else
+{
+    <h1 class="h3 fw-bold mb-1">Check your e-mail</h1>
+    <p class="text-secondary mb-4">
+        We sent a six-digit code to <strong class="text-body">@Model.MaskedEmail</strong>.
+        Enter it here or open the link in the e-mail. It works for @Model.LifetimeMinutes minutes.
+    </p>
+
+    <form method="post" asp-route-c="@Model.ChallengeId" asp-route-returnUrl="@Model.ReturnUrl">
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
+        <div class="mb-4">
+            <label for="Code" class="form-label">Code</label>
+            <input id="Code" name="Code" class="form-control code-input" inputmode="numeric" autocomplete="one-time-code"
+                   maxlength="9" required autofocus />
+            <span asp-validation-for="Code" class="field-validation-error"></span>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Continue</button>
+    </form>
+
+    <div class="step-links">
+        <form method="post" asp-page-handler="Resend" asp-route-c="@Model.ChallengeId" asp-route-returnUrl="@Model.ReturnUrl">
+            <button type="submit" class="link-button">Send a new code</button>
+        </form>
+        <a asp-page="Login" asp-route-returnUrl="@Model.ReturnUrl">Use a different e-mail</a>
+    </div>
+    <p class="text-secondary small mt-3 mb-0">Nothing arrived? Look in the spam folder; it can take a minute.</p>
+}
