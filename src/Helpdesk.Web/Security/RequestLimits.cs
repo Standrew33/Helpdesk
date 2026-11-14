@@ -33,7 +33,7 @@ public static class RequestLimits
 {
     private static readonly string[] SignInPaths =
     [
-        "/Account/Login", "/Account/Password", "/Account/Code", "/Account/Link", "/Account/Settings",
+        "/Account/Login", "/Account/Password", "/Account/Code", "/Account/Link", "/Account/NewPassword", "/Account/Settings",
     ];
 
     public static IServiceCollection AddRequestLimits(this IServiceCollection services, IConfiguration configuration)
@@ -137,6 +137,7 @@ public static class RequestLimits
     /// <summary>Requests that make the application send an e-mail with a code.</summary>
     private static bool IsCodeRequest(PathString path, string handler)
         => (path.Equals("/Account/Login", StringComparison.OrdinalIgnoreCase) && handler.Length == 0)
+            || (path.Equals("/Account/ForgotPassword", StringComparison.OrdinalIgnoreCase) && handler.Length == 0)
             || (path.Equals("/Account/Code", StringComparison.OrdinalIgnoreCase) && string.Equals(handler, "Resend", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The client address; an IPv6 address stands for a whole /64 network, which one subscriber controls.</summary>

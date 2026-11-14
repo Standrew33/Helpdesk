@@ -47,12 +47,17 @@ public class LinkModel(OneTimeCodeService codes, EmailSignIn emailSignIn) : Page
             return Page();
         }
 
-        var outcome = await emailSignIn.CompleteAsync(HttpContext, result.Email!, returnUrl: null);
+        var outcome = result.Purpose == ChallengePurpose.PasswordReset
+            ? await emailSignIn.BeginPasswordResetAsync(HttpContext, result.Email!)
+            : await emailSignIn.CompleteAsync(HttpContext, result.Email!, returnUrl: null);
 
         switch (outcome)
         {
             case EmailSignInResult.NeedsProfile:
                 return RedirectToPage("Welcome");
+
+            case EmailSignInResult.PasswordResetReady:
+                return RedirectToPage("NewPassword");
 
             case EmailSignInResult.Deactivated:
                 ModelState.AddModelError(string.Empty, "This account has been deactivated. Contact the support team if you need it again.");

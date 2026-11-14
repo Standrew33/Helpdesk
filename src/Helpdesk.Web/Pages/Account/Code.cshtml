@@ -25,7 +25,8 @@ else
     <h1 class="h3 fw-bold mb-1">Check your e-mail</h1>
     <p class="text-secondary mb-4">
         We sent a six-digit code to <strong class="text-body">@Model.MaskedEmail</strong>.
-        Enter it here or open the link in the e-mail. It works for @Model.LifetimeMinutes minutes.
+        Enter it here or open the link in the e-mail@(Model.Purpose == Helpdesk.Web.Data.ChallengePurpose.PasswordReset ? " to choose a new password" : string.Empty).
+        It works for @Model.LifetimeMinutes minutes.
     </p>
 
     <form method="post" asp-route-c="@Model.ChallengeId" asp-route-returnUrl="@Model.ReturnUrl">

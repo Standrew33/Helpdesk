@@ -79,8 +79,12 @@ builder.Services
         options.Lockout.AllowedForNewUsers = true;
     })
     .AddEntityFrameworkStores<HelpdeskDbContext>()
+    .AddDefaultTokenProviders()
     .AddPasswordValidator<PasswordPolicyValidator>()
     .AddClaimsPrincipalFactory<AppClaimsPrincipalFactory>();
+
+// The reset token is held only between a proven reset code and the new password; it need not live long.
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(15));
 
 // Slower password hashing makes stolen hashes costlier to crack (OWASP: 210,000 for PBKDF2 with SHA-512).
 // Older hashes are upgraded the next time their owner signs in.

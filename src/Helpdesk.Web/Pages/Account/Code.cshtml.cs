@@ -20,6 +20,8 @@ public class CodeModel(OneTimeCodeService codes, CodeMailer mailer, EmailSignIn 
 
     public string MaskedEmail { get; private set; } = string.Empty;
 
+    public ChallengePurpose Purpose { get; private set; }
+
     public int LifetimeMinutes => (int)emailSignIn.CodeLifetime.TotalMinutes;
 
     /// <summary>The code was used, expired, replaced or guessed wrong too often; only a new one helps.</summary>
@@ -56,7 +58,9 @@ public class CodeModel(OneTimeCodeService codes, CodeMailer mailer, EmailSignIn 
                 return Page();
         }
 
-        var outcome = await emailSignIn.CompleteAsync(HttpContext, result.Email!, returnUrl);
+        var outcome = result.Purpose == ChallengePurpose.PasswordReset
+            ? await emailSignIn.BeginPasswordResetAsync(HttpContext, result.Email!)
+            : await emailSignIn.CompleteAsync(HttpContext, result.Email!, returnUrl);
 
         if (outcome == EmailSignInResult.Deactivated)
         {
@@ -65,9 +69,13 @@ public class CodeModel(OneTimeCodeService codes, CodeMailer mailer, EmailSignIn 
             return Page();
         }
 
-        return outcome == EmailSignInResult.NeedsProfile
-            ? RedirectToPage("Welcome")
-            : !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : RedirectToPage("/Tickets/Index");
+        return outcome switch
+        {
+            EmailSignInResult.NeedsProfile => RedirectToPage("Welcome"),
+            EmailSignInResult.PasswordResetReady => RedirectToPage("NewPassword"),
+            _ when !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) => LocalRedirect(returnUrl),
+            _ => RedirectToPage("/Tickets/Index"),
+        };
     }
 
     public async Task<IActionResult> OnPostResendAsync(Guid c, string? returnUrl = null, CancellationToken ct = default)
@@ -112,6 +120,7 @@ public class CodeModel(OneTimeCodeService codes, CodeMailer mailer, EmailSignIn 
             return false;
         }
 
+        Purpose = challenge.Purpose;
         MaskedEmail = SignInEmails.Mask(challenge.Email.ToLowerInvariant());
         return true;
     }

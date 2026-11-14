@@ -40,6 +40,7 @@ public partial class SecurityHeaderTests(SqlServerFixture sql) : WebTestBase(sql
         {
             (NewClient(), "/Account/Login"),
             (NewClient(), "/Account/Password"),
+            (NewClient(), "/Account/ForgotPassword"),
             (customer, "/Tickets"),
             (customer, "/Tickets/Create"),
             (customer, $"/Tickets/Details/{ticketId}"),
