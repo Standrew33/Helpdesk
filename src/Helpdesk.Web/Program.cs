@@ -1,5 +1,6 @@
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Attachments;
+using Helpdesk.Web.Features.Email;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Features.Users;
 using Helpdesk.Web.Security;
@@ -21,6 +22,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddRazorPages(options => options.Conventions.AuthorizeFolder("/Admin", Policies.AdminOnly));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAttachmentStore(builder.Configuration);
+builder.Services.AddEmail(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddSingleton<SignInTimingGuard>();
