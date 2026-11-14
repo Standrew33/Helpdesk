@@ -3,7 +3,9 @@ using Helpdesk.Web.Features.Attachments;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Features.Users;
 using Helpdesk.Web.Security;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,13 +42,43 @@ builder.Services
 // Deactivating a user or changing a role must take effect on the next request, not after the default 30 minutes.
 builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
 
+// Every cookie the application sets is invisible to scripts and sent over HTTPS only. The one exception is local
+// development over plain http (the "http" launch profile), where browsers refuse secure and "__Host-" cookies.
+var secureCookies = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+
+// The __Host- prefix makes browsers refuse the cookie unless it is secure, bound to this exact host and to the root path.
+var cookiePrefix = builder.Environment.IsDevelopment() ? string.Empty : "__Host-";
+
+builder.Services.ConfigureAll<CookieAuthenticationOptions>(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = secureCookies;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
     options.AccessDeniedPath = "/Account/AccessDenied";
-    options.Cookie.Name = "Helpdesk.Auth";
+    options.Cookie.Name = cookiePrefix + "Helpdesk.Auth";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
+});
+
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = cookiePrefix + "Helpdesk.Antiforgery";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = secureCookies;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+});
+
+builder.Services.Configure<CookieTempDataProviderOptions>(options =>
+{
+    options.Cookie.Name = cookiePrefix + "Helpdesk.TempData";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = secureCookies;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
 builder.Services.AddAuthorizationBuilder()

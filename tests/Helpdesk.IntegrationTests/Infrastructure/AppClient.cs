@@ -14,11 +14,18 @@ public sealed partial class AppClient : IDisposable
         _http = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false,
+
+            // Over HTTPS, as in production: secure cookies are not sent over plain http.
+            BaseAddress = new Uri("https://localhost"),
             HandleCookies = true,
         });
     }
 
     public Task<HttpResponseMessage> GetAsync(string url) => _http.GetAsync(url);
+
+    /// <summary>A form post as a forged request from another site would send it: cookies, but no anti-forgery token.</summary>
+    public Task<HttpResponseMessage> PostWithoutTokenAsync(string url, IDictionary<string, string>? fields = null)
+        => _http.PostAsync(url, new FormUrlEncodedContent(fields ?? new Dictionary<string, string>()));
 
     public async Task<string> GetHtmlAsync(string url)
     {
