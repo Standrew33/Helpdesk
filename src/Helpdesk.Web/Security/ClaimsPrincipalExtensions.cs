@@ -27,6 +27,13 @@ public static class ClaimsPrincipalExtensions
             : principal.IsInRole(RoleNames.Customer) ? UserRole.Customer
             : throw new InvalidOperationException("The user has no role.");
 
-        return new Actor(id, role);
+        return new Actor(id, role, principal.IsDemoAccount());
+    }
+
+    /// <summary>True for the shared public demo accounts, which must not reach data or users of real visitors.</summary>
+    public static bool IsDemoAccount(this ClaimsPrincipal principal)
+    {
+        ArgumentNullException.ThrowIfNull(principal);
+        return principal.HasClaim(AppClaimTypes.Demo, "true");
     }
 }

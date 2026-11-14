@@ -27,6 +27,15 @@ public static partial class SecurityLog
     [LoggerMessage(EventId = 1007, Level = LogLevel.Information, Message = "User {UserId} changed the password")]
     public static partial void PasswordChanged(ILogger logger, string userId);
 
+    [LoggerMessage(EventId = 1010, Level = LogLevel.Information, Message = "Administrator {ActorId} changed the role of {UserId} to {Role}")]
+    public static partial void RoleChanged(ILogger logger, string actorId, string userId, string role);
+
+    [LoggerMessage(EventId = 1011, Level = LogLevel.Information, Message = "Administrator {ActorId} set the account {UserId} active: {Active}")]
+    public static partial void ActiveChanged(ILogger logger, string actorId, string userId, bool active);
+
+    [LoggerMessage(EventId = 1012, Level = LogLevel.Warning, Message = "User {UserId} asked for ticket {TicketId} without being allowed to see it")]
+    public static partial void TicketAccessRefused(ILogger logger, string userId, int ticketId);
+
     [LoggerMessage(EventId = 1013, Level = LogLevel.Warning, Message = "Too many requests to {Path} from {Client}")]
     public static partial void RequestLimited(ILogger logger, PathString path, string client);
 }

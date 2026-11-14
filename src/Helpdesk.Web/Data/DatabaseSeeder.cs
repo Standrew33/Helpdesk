@@ -9,7 +9,7 @@ namespace Helpdesk.Web.Data;
 
 public static class DatabaseSeeder
 {
-    private const string DemoDomain = "@helpdesk.test";
+    public const string DemoDomain = "@helpdesk.test";
 
     public static string DemoEmail(string role) => $"{role.ToLowerInvariant()}{DemoDomain}";
 
