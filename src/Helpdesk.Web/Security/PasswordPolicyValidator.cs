@@ -10,7 +10,8 @@ namespace Helpdesk.Web.Security;
 /// </summary>
 public sealed class PasswordPolicyValidator : IPasswordValidator<ApplicationUser>
 {
-    private const int MinimumPartLength = 4;
+    /// <summary>Parts of a name or e-mail shorter than this are too common to look for ("Al", "Li").</summary>
+    public const int MinimumPartLength = 4;
 
     // Words that appear at the heart of most guessable passwords. Digits, symbols and letter swaps ("P@ssw0rd!") are looked through.
     private static readonly HashSet<string> CommonWords = new(StringComparer.Ordinal)
@@ -21,6 +22,9 @@ public sealed class PasswordPolicyValidator : IPasswordValidator<ApplicationUser
         "trustno", "trustnoone", "abcdefghijkl", "abcdefghijklmnop", "heslo", "zdravim", "praha", "company",
         "mypassword", "yourpassword", "newpassword", "userpassword", "loginlogin", "internet", "computer",
     };
+
+    /// <summary>The words above; the strength meter in the browser uses the same list (a test keeps them in step).</summary>
+    public static IReadOnlyCollection<string> KnownWords => CommonWords;
 
     public Task<IdentityResult> ValidateAsync(UserManager<ApplicationUser> manager, ApplicationUser user, string? password)
     {

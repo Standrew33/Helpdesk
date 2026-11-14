@@ -50,10 +50,10 @@ else
                             You sign in with a code from e-mail. A password is an optional second way in.
                         </p>
                         <form method="post" asp-page-handler="SetPassword">
-                            <input type="hidden" value="@Model.Email" autocomplete="username" />
+                            <input type="hidden" id="AccountEmail" value="@Model.Email" autocomplete="username" />
                             <div class="mb-3">
                                 <label asp-for="NewPassword.Password" class="form-label"></label>
-                                <input asp-for="NewPassword.Password" class="form-control" autocomplete="new-password" />
+                                <input asp-for="NewPassword.Password" class="form-control" autocomplete="new-password" data-strength data-strength-related="#AccountEmail, #Profile_DisplayName" />
                                 <span asp-validation-for="NewPassword.Password" class="field-validation-error"></span>
                             </div>
                             <div class="mb-4">
@@ -68,6 +68,7 @@ else
                     {
                         <h2 class="h5 mb-3">Change password</h2>
                         <form method="post" asp-page-handler="Password">
+                            <input type="hidden" id="AccountEmail" value="@Model.Email" autocomplete="username" />
                             <div class="mb-3">
                                 <label asp-for="Password.CurrentPassword" class="form-label"></label>
                                 <input asp-for="Password.CurrentPassword" class="form-control" autocomplete="current-password" />
@@ -75,7 +76,7 @@ else
                             </div>
                             <div class="mb-3">
                                 <label asp-for="Password.NewPassword" class="form-label"></label>
-                                <input asp-for="Password.NewPassword" class="form-control" autocomplete="new-password" />
+                                <input asp-for="Password.NewPassword" class="form-control" autocomplete="new-password" data-strength data-strength-related="#AccountEmail, #Profile_DisplayName" />
                                 <span asp-validation-for="Password.NewPassword" class="field-validation-error"></span>
                             </div>
                             <div class="mb-4">
@@ -94,4 +95,5 @@ else
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/password-strength.js" asp-append-version="true"></script>
 }

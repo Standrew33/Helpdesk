@@ -946,3 +946,47 @@ a.user-chip.active {
   cursor: pointer;
   color: var(--bs-link-color);
 }
+
+/* Password strength meter (js/password-strength.js) */
+.strength {
+  margin-top: 0.5rem;
+}
+
+.strength-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--hd-border);
+  overflow: hidden;
+}
+
+.strength-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+.strength-text {
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.strength[data-score="0"] .strength-bar span { width: 12%; background: #d92d20; }
+.strength[data-score="1"] .strength-bar span { width: 35%; background: #e8590c; }
+.strength[data-score="2"] .strength-bar span { width: 60%; background: #f0a800; }
+.strength[data-score="3"] .strength-bar span { width: 82%; background: #4caf50; }
+.strength[data-score="4"] .strength-bar span { width: 100%; background: #2e7d32; }
+
+.strength[data-score="0"] .strength-text { color: #b42318; }
+.strength[data-score="1"] .strength-text { color: #b54708; }
+.strength[data-score="2"] .strength-text { color: #8a6100; }
+.strength[data-score="3"] .strength-text { color: #2e7d32; }
+.strength[data-score="4"] .strength-text { color: #1b5e20; }
+
+@media (prefers-reduced-motion: reduce) {
+  .strength-bar span {
+    transition: none;
+  }
+}
