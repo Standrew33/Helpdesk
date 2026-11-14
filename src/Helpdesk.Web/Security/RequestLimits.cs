@@ -13,6 +13,12 @@ public class RequestLimitOptions
     /// <summary>Sign-in form submissions (address, code, link, password) per minute. Lock-outs work per account; this works per address.</summary>
     public int SignInAttemptsPerMinute { get; set; } = 10;
 
+    /// <summary>
+    /// E-mails with a code per hour. Each one uses up the mail provider's free allowance and lands in a mailbox,
+    /// so one address must not be able to send them to many people. Each recipient has its own limit as well.
+    /// </summary>
+    public int CodesPerHour { get; set; } = 10;
+
     /// <summary>New accounts per hour.</summary>
     public int RegistrationsPerHour { get; set; } = 10;
 
@@ -65,6 +71,7 @@ public static class RequestLimits
 
                 var (name, permits, window) = bucket.Value switch
                 {
+                    Bucket.Codes => ("codes", limits.CodesPerHour, TimeSpan.FromHours(1)),
                     Bucket.SignIn => ("signin", limits.SignInAttemptsPerMinute, TimeSpan.FromMinutes(1)),
                     Bucket.Registration => ("register", limits.RegistrationsPerHour, TimeSpan.FromHours(1)),
                     Bucket.Upload => ("upload", limits.UploadsPerHour, TimeSpan.FromHours(1)),
@@ -85,6 +92,7 @@ public static class RequestLimits
 
     private enum Bucket
     {
+        Codes,
         SignIn,
         Registration,
         Upload,
@@ -99,6 +107,12 @@ public static class RequestLimits
         }
 
         var path = request.Path;
+        var handler = request.Query["handler"].ToString();
+
+        if (IsCodeRequest(path, handler))
+        {
+            return Bucket.Codes;
+        }
 
         if (SignInPaths.Any(p => path.Equals(p, StringComparison.OrdinalIgnoreCase)))
         {
@@ -112,13 +126,18 @@ public static class RequestLimits
 
         if (path.StartsWithSegments("/Tickets", StringComparison.OrdinalIgnoreCase))
         {
-            return string.Equals(request.Query["handler"], "Attachment", StringComparison.OrdinalIgnoreCase)
+            return string.Equals(handler, "Attachment", StringComparison.OrdinalIgnoreCase)
                 ? Bucket.Upload
                 : Bucket.TicketChange;
         }
 
         return null;
     }
+
+    /// <summary>Requests that make the application send an e-mail with a code.</summary>
+    private static bool IsCodeRequest(PathString path, string handler)
+        => (path.Equals("/Account/Login", StringComparison.OrdinalIgnoreCase) && handler.Length == 0)
+            || (path.Equals("/Account/Code", StringComparison.OrdinalIgnoreCase) && string.Equals(handler, "Resend", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The client address; an IPv6 address stands for a whole /64 network, which one subscriber controls.</summary>
     private static string ClientKey(HttpContext context)

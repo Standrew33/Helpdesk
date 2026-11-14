@@ -31,6 +31,7 @@ public sealed class HelpdeskWebFactory(string connectionString, bool demoEnabled
 
             // Tests send many requests from one address; the limits are lifted unless a test sets its own.
             ["RequestLimits:SignInAttemptsPerMinute"] = "1000",
+            ["RequestLimits:CodesPerHour"] = "1000",
             ["RequestLimits:RegistrationsPerHour"] = "1000",
             ["RequestLimits:TicketChangesPer10Minutes"] = "1000",
             ["RequestLimits:UploadsPerHour"] = "1000",

@@ -75,6 +75,23 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task One_address_cannot_send_codes_to_many_mailboxes()
+    {
+        using var factory = WithLimit("CodesPerHour", 2);
+        var client = NewClient(factory);
+
+        await client.RequestCodeAsync("first@example.test");
+        await client.RequestCodeAsync("second@example.test");
+        var third = await client.RequestCodeAsync("third@example.test");
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, third.StatusCode);
+        Assert.Empty(Factory.Mail.To("third@example.test"));
+
+        // Other sign-in forms have their own allowance.
+        await client.SignInAsDemoAsync("Customer");
+    }
+
+    [Fact]
     public async Task Uploads_are_limited_per_address()
     {
         using var factory = WithLimit("UploadsPerHour", 1);
