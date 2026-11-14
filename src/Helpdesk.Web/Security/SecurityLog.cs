@@ -38,4 +38,7 @@ public static partial class SecurityLog
 
     [LoggerMessage(EventId = 1013, Level = LogLevel.Warning, Message = "Too many requests to {Path} from {Client}")]
     public static partial void RequestLimited(ILogger logger, PathString path, string client);
+
+    [LoggerMessage(EventId = 1014, Level = LogLevel.Warning, Message = "A file for ticket {TicketId} was refused: its content does not match its type")]
+    public static partial void UploadRefused(ILogger logger, int ticketId);
 }

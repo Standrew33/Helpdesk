@@ -174,6 +174,7 @@ public class TicketService(
         {
             var name = Guid.NewGuid().ToString("N");
             var attachment = ticket.AddAttachment(actor, fileName, length, name, now);
+            await EnsureContentMatchesNameAsync(id, fileName, content, ct);
             await attachments.SaveAsync(name, content, attachment.ContentType, ct);
             storedName = name;
         });
@@ -281,6 +282,28 @@ public class TicketService(
         }
 
         return allowed;
+    }
+
+    /// <summary>A file is accepted by its name, but what the name claims must be true: an .exe renamed to .png is refused.</summary>
+    private async Task EnsureContentMatchesNameAsync(int ticketId, string? fileName, Stream content, CancellationToken ct)
+    {
+        var name = AttachmentPolicy.CleanFileName(fileName);
+
+        // Names with a type that is not accepted get the domain's own message.
+        if (AttachmentPolicy.ContentTypeFor(name) is null)
+        {
+            return;
+        }
+
+        var header = new byte[AttachmentPolicy.HeaderLength];
+        var read = await content.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false, ct);
+        content.Position = 0;
+
+        if (!AttachmentPolicy.ContentMatchesName(name, header.AsSpan(0, read)))
+        {
+            SecurityLog.UploadRefused(logger, ticketId);
+            throw new DomainException("The content of the file does not match its type.");
+        }
     }
 
     private static bool TryParseRowVersion(string? value, out byte[] version)
