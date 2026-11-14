@@ -1,6 +1,7 @@
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Attachments;
 using Helpdesk.Web.Features.Email;
+using Helpdesk.Web.Features.SignIn;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Features.Users;
 using Helpdesk.Web.Security;
@@ -26,6 +27,8 @@ builder.Services.AddEmail(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddSingleton<SignInTimingGuard>();
+builder.Services.AddScoped<OneTimeCodeService>();
+builder.Services.Configure<OneTimeCodeOptions>(builder.Configuration.GetSection(OneTimeCodeOptions.SectionName));
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
 builder.Services.Configure<SiteOptions>(builder.Configuration.GetSection(SiteOptions.SectionName));
 

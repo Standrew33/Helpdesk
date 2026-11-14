@@ -13,6 +13,8 @@ public class HelpdeskDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Ticket> Tickets => Set<Ticket>();
 
+    public DbSet<SignInChallenge> SignInChallenges => Set<SignInChallenge>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
