@@ -41,6 +41,7 @@ builder.Services.AddOptions<SiteOptions>()
         "Site:PublicUrl must be set to the address of the site, for example https://helpdesk.example.com.")
     .ValidateOnStart();
 
+builder.Services.AddCaptcha(builder.Configuration);
 builder.Services.AddRequestLimits(builder.Configuration);
 
 // The application runs behind the Azure front end, which is the only proxy in front of it. Its address is what
@@ -173,6 +174,11 @@ for (var attempt = 1; ; attempt++)
         StartupLog.DatabaseNotReady(app.Logger, ex, attempt, startupAttempts);
         await Task.Delay(TimeSpan.FromSeconds(10));
     }
+}
+
+if (app.Environment.IsProduction() && !app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<CaptchaOptions>>().Value.Enabled)
+{
+    StartupLog.CaptchaOff(app.Logger);
 }
 
 app.UseForwardedHeaders();

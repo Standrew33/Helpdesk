@@ -13,6 +13,16 @@ public static class SecurityHeaders
         "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; "
         + "connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 
+    /// <summary>
+    /// The same policy plus what Google reCAPTCHA needs, for the few pages with a protected form:
+    /// its script from google.com and gstatic.com, and its hidden frame.
+    /// </summary>
+    public const string CaptchaContentSecurityPolicy =
+        "default-src 'self'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; "
+        + "style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://www.google.com/recaptcha/; "
+        + "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; "
+        + "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+
     /// <summary>For files served back to the user: the browser may save them but never run or render them.</summary>
     public const string DownloadContentSecurityPolicy = "default-src 'none'; sandbox";
 

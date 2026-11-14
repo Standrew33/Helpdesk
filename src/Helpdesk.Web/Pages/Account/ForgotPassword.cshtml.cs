@@ -13,7 +13,8 @@ namespace Helpdesk.Web.Pages.Account;
 /// or not the address has an account.
 /// </summary>
 [AllowAnonymous]
-public class ForgotPasswordModel(CodeMailer mailer, ILogger<ForgotPasswordModel> logger) : PageModel
+[CaptchaPage]
+public class ForgotPasswordModel(CodeMailer mailer, CaptchaGuard captcha, ILogger<ForgotPasswordModel> logger) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -32,6 +33,12 @@ public class ForgotPasswordModel(CodeMailer mailer, ILogger<ForgotPasswordModel>
 
         if (!ModelState.IsValid)
         {
+            return Page();
+        }
+
+        if (!await captcha.PassesAsync(Request, "reset", ct))
+        {
+            ModelState.AddModelError(string.Empty, CaptchaGuard.FailureMessage);
             return Page();
         }
 

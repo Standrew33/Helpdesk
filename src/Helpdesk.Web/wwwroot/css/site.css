@@ -990,3 +990,14 @@ a.user-chip.active {
     transition: none;
   }
 }
+
+/* reCAPTCHA: the floating badge is replaced by the notice under the form, as Google allows. */
+.grecaptcha-badge {
+  visibility: hidden;
+}
+
+.captcha-notice {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  color: var(--hd-muted);
+}

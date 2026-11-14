@@ -27,6 +27,7 @@
         <span asp-validation-for="Input.Email" class="field-validation-error"></span>
     </div>
     <button type="submit" class="btn btn-primary w-100">Continue with e-mail</button>
+    <partial name="_Captcha" model="@("login")" />
 </form>
 
 <p class="text-secondary mt-4 mb-0">

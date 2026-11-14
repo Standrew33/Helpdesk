@@ -10,7 +10,9 @@ namespace Helpdesk.Web.Pages.Account;
 
 /// <summary>Sign-in with a password, for accounts that have one. The e-mail code works for every account.</summary>
 [AllowAnonymous]
+[CaptchaPage]
 public class PasswordModel(
+    CaptchaGuard captcha,
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
     SignInTimingGuard timing,
@@ -26,12 +28,18 @@ public class PasswordModel(
 
     public void OnGet(string? returnUrl = null) => ReturnUrl = returnUrl;
 
-    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null, CancellationToken ct = default)
     {
         ReturnUrl = returnUrl;
 
         if (!ModelState.IsValid)
         {
+            return Page();
+        }
+
+        if (!await captcha.PassesAsync(Request, "password", ct))
+        {
+            ModelState.AddModelError(string.Empty, CaptchaGuard.FailureMessage);
             return Page();
         }
 

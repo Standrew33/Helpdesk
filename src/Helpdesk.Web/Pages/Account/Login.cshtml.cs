@@ -15,8 +15,10 @@ namespace Helpdesk.Web.Pages.Account;
 /// not it has an account, so the answer never tells which addresses are registered.
 /// </summary>
 [AllowAnonymous]
+[CaptchaPage]
 public class LoginModel(
     CodeMailer mailer,
+    CaptchaGuard captcha,
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
     IOptions<DemoOptions> demoOptions,
@@ -47,6 +49,12 @@ public class LoginModel(
 
         if (!ModelState.IsValid)
         {
+            return Page();
+        }
+
+        if (!await captcha.PassesAsync(Request, "login", ct))
+        {
+            ModelState.AddModelError(string.Empty, CaptchaGuard.FailureMessage);
             return Page();
         }
 
