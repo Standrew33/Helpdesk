@@ -56,7 +56,7 @@ public sealed class EmailSendingTests : IDisposable
     [Fact]
     public void Production_without_a_server_refuses_to_start()
     {
-        var error = Assert.Throws<InvalidOperationException>(() => Resolve(Environments.Production, []));
+        var error = Assert.ThrowsAny<Exception>(() => Resolve(Environments.Production, []));
 
         Assert.Contains("Email:Host", error.Message);
     }

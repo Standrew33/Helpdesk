@@ -45,7 +45,12 @@ public static class EmailRegistration
     /// </summary>
     public static IServiceCollection AddEmail(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
-        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.AddOptions<EmailOptions>()
+            .Bind(configuration.GetSection(EmailOptions.SectionName))
+            .Validate(
+                options => !environment.IsProduction() || !string.IsNullOrWhiteSpace(options.Host),
+                "E-mail is not configured: set Email:Host, Email:User, Email:Password and Email:From. Sign-in codes cannot be delivered without it.")
+            .ValidateOnStart();
 
         services.AddSingleton<IEmailSender>(sp =>
         {
