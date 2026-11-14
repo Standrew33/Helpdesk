@@ -120,3 +120,38 @@ To ask Google to review it, add the site in Search Console as a *URL prefix* pro
 **HTML tag** verification method and copy the value of the `content` attribute. Put it into an app
 setting of the web app, `Site__GoogleSiteVerification`, and press Verify in Search Console.
 The application then writes the `google-site-verification` meta tag into every page.
+
+## 8. E-mail (required)
+
+Sign-in and password reset send a code and a link by e-mail, so the app needs an SMTP server and
+**does not start in production without one**. Any provider with an SMTP relay works; on the free
+tiers, Brevo (300 messages a day) and Resend (3,000 a month) are good fits. Both need the sending
+domain verified with a few DNS records (SPF, DKIM), otherwise messages end up in spam, so send
+from an address on a domain you control, for example `helpdesk@<your-domain>`.
+
+```powershell
+az webapp config appsettings set -g $rg -n $app --settings `
+  Email__Host=<smtp-host> Email__Port=587 Email__User=<smtp-user> Email__Password=<smtp-password> `
+  Email__From=helpdesk@<your-domain> Email__FromName=Helpdesk
+```
+
+Port 587 uses STARTTLS, port 465 TLS from the start; plain connections are never used.
+
+Links in the e-mails point to `Site:PublicUrl`, which is set in `appsettings.Production.json` to the
+`azurewebsites.net` address. With a custom domain, override it with the app setting
+`Site__PublicUrl=https://<your-domain>`. The application never takes the address from the request,
+so a forged `Host` header cannot put another site into someone's sign-in e-mail.
+
+## 9. reCAPTCHA (recommended)
+
+The sign-in, password and password reset forms are checked with Google reCAPTCHA v3. Register the
+site in the reCAPTCHA admin console (type **v3**, add the `azurewebsites.net` host and any custom
+domain), then:
+
+```powershell
+az webapp config appsettings set -g $rg -n $app --settings `
+  Captcha__SiteKey=<site-key> Captcha__SecretKey=<secret-key>
+```
+
+`Captcha__MinimumScore` (default `0.5`) is the lowest score accepted. Without both keys the check
+is off and the app logs a warning at start-up; the per-address request limits still apply.
