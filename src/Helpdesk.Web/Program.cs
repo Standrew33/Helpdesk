@@ -49,11 +49,26 @@ builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
         options.User.RequireUniqueEmail = true;
-        options.Password.RequiredLength = 10;
+
+        // Length and the refusal of guessable passwords matter more than a mix of character kinds;
+        // see PasswordPolicyValidator for the other rules.
+        options.Password.RequiredLength = 8;
+        options.Password.RequiredUniqueChars = 5;
+        options.Password.RequireDigit = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+
         options.Lockout.MaxFailedAccessAttempts = 5;
     })
     .AddEntityFrameworkStores<HelpdeskDbContext>()
+    .AddPasswordValidator<PasswordPolicyValidator>()
     .AddClaimsPrincipalFactory<AppClaimsPrincipalFactory>();
+
+// Slower password hashing makes stolen hashes costlier to crack (OWASP: 210,000 for PBKDF2 with SHA-512).
+// Older hashes are upgraded the next time their owner signs in.
+builder.Services.AddOptions<PasswordHasherOptions>().Configure<IConfiguration>((options, configuration) =>
+    options.IterationCount = configuration.GetValue("Security:PasswordHashIterations", 210_000));
 
 // Deactivating a user or changing a role must take effect on the next request, not after the default 30 minutes.
 builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
