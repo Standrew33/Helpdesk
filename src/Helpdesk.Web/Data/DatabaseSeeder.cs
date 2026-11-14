@@ -15,7 +15,7 @@ public static class DatabaseSeeder
 
     /// <summary>True for the addresses reserved for the demo users.</summary>
     public static bool IsDemoAddress(string? email)
-        => email is not null && email.EndsWith(DemoDomain, StringComparison.OrdinalIgnoreCase);
+        => email is not null && email.Trim().EndsWith(DemoDomain, StringComparison.OrdinalIgnoreCase);
 
     public static async Task SeedAsync(IServiceProvider services)
     {

@@ -123,6 +123,7 @@ public class SettingsModel(
     {
         [Required]
         [StringLength(100)]
+        [SafeText]
         [Display(Name = "Your name")]
         public string DisplayName { get; set; } = string.Empty;
     }

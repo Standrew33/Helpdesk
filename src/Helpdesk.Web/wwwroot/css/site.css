@@ -903,3 +903,12 @@ a.user-chip.active {
   font-weight: 700;
   margin-bottom: 0.9rem;
 }
+
+/* Spam trap: present for programs that fill in every field, out of sight and reach for people. */
+.hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

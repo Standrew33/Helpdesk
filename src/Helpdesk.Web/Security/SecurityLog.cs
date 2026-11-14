@@ -18,6 +18,12 @@ public static partial class SecurityLog
     [LoggerMessage(EventId = 1004, Level = LogLevel.Warning, Message = "User {UserId} is locked out after repeated failures")]
     public static partial void LockedOut(ILogger logger, string userId);
 
+    [LoggerMessage(EventId = 1005, Level = LogLevel.Information, Message = "Account {UserId} was registered")]
+    public static partial void Registered(ILogger logger, string userId);
+
+    [LoggerMessage(EventId = 1006, Level = LogLevel.Warning, Message = "A registration was dropped by the spam trap")]
+    public static partial void RegistrationTrapped(ILogger logger);
+
     [LoggerMessage(EventId = 1007, Level = LogLevel.Information, Message = "User {UserId} changed the password")]
     public static partial void PasswordChanged(ILogger logger, string userId);
 
