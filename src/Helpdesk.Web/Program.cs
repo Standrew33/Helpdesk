@@ -28,9 +28,18 @@ builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddSingleton<SignInTimingGuard>();
 builder.Services.AddScoped<OneTimeCodeService>();
+builder.Services.AddScoped<CodeMailer>();
+builder.Services.AddScoped<EmailSignIn>();
 builder.Services.Configure<OneTimeCodeOptions>(builder.Configuration.GetSection(OneTimeCodeOptions.SectionName));
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
-builder.Services.Configure<SiteOptions>(builder.Configuration.GetSection(SiteOptions.SectionName));
+
+// Links in e-mails need the real address of the site; in production it must be configured, never guessed from the request.
+builder.Services.AddOptions<SiteOptions>()
+    .Bind(builder.Configuration.GetSection(SiteOptions.SectionName))
+    .Validate(
+        options => !builder.Environment.IsProduction() || Uri.TryCreate(options.PublicUrl, UriKind.Absolute, out _),
+        "Site:PublicUrl must be set to the address of the site, for example https://helpdesk.example.com.")
+    .ValidateOnStart();
 
 builder.Services.AddRequestLimits(builder.Configuration);
 
@@ -87,6 +96,12 @@ var secureCookies = builder.Environment.IsDevelopment() ? CookieSecurePolicy.Sam
 
 // The __Host- prefix makes browsers refuse the cookie unless it is secure, bound to this exact host and to the root path.
 var cookiePrefix = builder.Environment.IsDevelopment() ? string.Empty : "__Host-";
+
+builder.Services.Configure<AppCookieOptions>(options =>
+{
+    options.Prefix = cookiePrefix;
+    options.SecurePolicy = secureCookies;
+});
 
 builder.Services.ConfigureAll<CookieAuthenticationOptions>(options =>
 {

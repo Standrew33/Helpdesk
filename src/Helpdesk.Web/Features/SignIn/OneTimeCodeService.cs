@@ -108,6 +108,39 @@ public class OneTimeCodeService(HelpdeskDbContext db, TimeProvider time, IOption
         return new IssueResult(IssueOutcome.Issued, new IssuedChallenge(id, code, token, expires), TimeSpan.Zero);
     }
 
+    /// <summary>The newest challenge for the address that still works, for when someone asks again too soon.</summary>
+    public async Task<Guid?> LatestOpenAsync(string email, ChallengePurpose purpose, CancellationToken ct = default)
+    {
+        var address = Normalise(email);
+        var now = time.GetUtcNow();
+
+        return await db.Set<SignInChallenge>()
+            .Where(c => c.Email == address && c.Purpose == purpose && c.ConsumedAt == null && c.ExpiresAt > now
+                && c.FailedAttempts < Settings.MaxAttempts)
+            .OrderByDescending(c => c.CreatedAt)
+            .Select(c => (Guid?)c.Id)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    /// <summary>The challenge a link belongs to, without using it up: the link page asks for a click first.</summary>
+    public async Task<OpenChallenge?> FindOpenByTokenAsync(string token, CancellationToken ct = default)
+    {
+        var now = time.GetUtcNow();
+        var hash = Hash(token ?? string.Empty);
+        var challenge = await db.Set<SignInChallenge>().AsNoTracking().FirstOrDefaultAsync(c => c.TokenHash == hash, ct);
+
+        return challenge is null || !IsOpen(challenge, now)
+            ? null
+            : new OpenChallenge(challenge.Id, challenge.Email, challenge.Purpose, challenge.CreatedAt);
+    }
+
+    /// <summary>A challenge in any state, so a new code can be sent for the same address after the old one ran out.</summary>
+    public async Task<OpenChallenge?> FindAsync(Guid id, CancellationToken ct = default)
+        => await db.Set<SignInChallenge>().AsNoTracking()
+            .Where(c => c.Id == id)
+            .Select(c => new OpenChallenge(c.Id, c.Email, c.Purpose, c.CreatedAt))
+            .FirstOrDefaultAsync(ct);
+
     public async Task<OpenChallenge?> FindOpenAsync(Guid id, CancellationToken ct = default)
     {
         var now = time.GetUtcNow();
