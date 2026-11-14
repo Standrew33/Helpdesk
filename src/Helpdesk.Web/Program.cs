@@ -8,6 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Do not announce the web server software.
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
+
 builder.Services.AddRazorPages(options => options.Conventions.AuthorizeFolder("/Admin", Policies.AdminOnly));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAttachmentStore(builder.Configuration);
@@ -15,6 +18,8 @@ builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
 builder.Services.Configure<SiteOptions>(builder.Configuration.GetSection(SiteOptions.SectionName));
+
+builder.Services.AddHsts(options => options.MaxAge = TimeSpan.FromDays(365));
 
 builder.Services.AddDbContext<HelpdeskDbContext>(options =>
     options.UseSqlServer(
@@ -85,6 +90,8 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+
+app.UseSecurityHeaders();
 
 // Missing pages and refused requests get the same friendly page as errors do.
 app.UseStatusCodePagesWithReExecute("/Error", "?code={0}");
