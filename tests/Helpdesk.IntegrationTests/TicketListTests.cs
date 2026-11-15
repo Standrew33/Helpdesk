@@ -159,6 +159,45 @@ public partial class TicketListTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.DoesNotContain("Someone else", html);
     }
 
+    private static List<string> SubjectsIn(string html)
+        => SubjectPattern().Matches(html).Select(m => m.Groups[1].Value).ToList();
+
+    [GeneratedRegex(@"class=""ticket-subject""[^>]*>([^<]+)<")]
+    private static partial Regex SubjectPattern();
+
+    [Fact]
+    public async Task Priority_sorts_by_urgency_and_a_second_click_turns_it_around()
+    {
+        var customer = await SignedInAsync("Customer");
+        await customer.CreateTicketAsync("Normal one", priority: "Normal");
+        await customer.CreateTicketAsync("Backlog one", priority: "Backlog");
+        await customer.CreateTicketAsync("High one", priority: "High");
+        await customer.CreateTicketAsync("Low one", priority: "Low");
+
+        var byUrgency = await customer.GetHtmlAsync("/Tickets?sort=Priority");
+        var reversed = await customer.GetHtmlAsync("/Tickets?sort=Priority&dir=asc");
+
+        Assert.Equal(["High one", "Normal one", "Low one", "Backlog one"], SubjectsIn(byUrgency));
+        Assert.Equal(["Backlog one", "Low one", "Normal one", "High one"], SubjectsIn(reversed));
+        Assert.Contains("aria-sort=\"descending\"", byUrgency);
+        Assert.Contains("sort=Priority&amp;dir=asc", byUrgency);
+    }
+
+    [Fact]
+    public async Task Sorting_keeps_the_filters()
+    {
+        var customer = await SignedInAsync("Customer");
+        await customer.CreateTicketAsync("Bravo printer");
+        await customer.CreateTicketAsync("Alpha printer");
+        await customer.CreateTicketAsync("Charlie laptop");
+
+        var html = await customer.GetHtmlAsync("/Tickets?q=printer&sort=Subject");
+
+        Assert.Equal(["Alpha printer", "Bravo printer"], SubjectsIn(html));
+        Assert.Contains("q=printer&amp;sort=Subject&amp;dir=desc", html);
+        Assert.Contains("name=\"sort\" value=\"Subject\"", html);
+    }
+
     [Fact]
     public async Task Filters_never_widen_what_a_customer_may_see()
     {

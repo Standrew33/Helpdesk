@@ -23,6 +23,24 @@ public class IndexModel(TicketService tickets) : PageModel
     [BindProperty(SupportsGet = true)]
     public List<TicketScope> Scope { get; set; } = [];
 
+    public static readonly IReadOnlyList<(TicketSort Column, string Title)> Columns =
+    [
+        (TicketSort.Id, "#"),
+        (TicketSort.Subject, "Subject"),
+        (TicketSort.Status, "Status"),
+        (TicketSort.Priority, "Priority"),
+        (TicketSort.Customer, "Customer"),
+        (TicketSort.Assignee, "Assignee"),
+        (TicketSort.Due, "Due"),
+    ];
+
+    [BindProperty(SupportsGet = true)]
+    public TicketSort? Sort { get; set; }
+
+    /// <summary>"asc" or "desc"; anything else means the column's natural direction.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string? Dir { get; set; }
+
     // "page" is taken by Razor Pages routing, so the page number travels as "p".
     [BindProperty(Name = "p", SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
@@ -37,7 +55,7 @@ public class IndexModel(TicketService tickets) : PageModel
     {
         var actor = User.ToActor();
         IsCustomer = actor.Role == UserRole.Customer;
-        Result = await tickets.ListAsync(actor, new TicketFilter(Search, Status, Priority, Scope, PageNumber), ct);
+        Result = await tickets.ListAsync(actor, new TicketFilter(Search, Status, Priority, Scope, PageNumber, Sort ?? TicketSort.Updated, IsDescending), ct);
     }
 
     public FilterChoice StatusChoice => new("status", "Status", Enum.GetValues<TicketStatus>()
@@ -55,8 +73,26 @@ public class IndexModel(TicketService tickets) : PageModel
         new(nameof(TicketScope.Overdue), "Overdue", "choice-text overdue", Scope.Contains(TicketScope.Overdue)),
     ]);
 
-    /// <summary>The address of this list with the current filters and another page number.</summary>
-    public string UrlForPage(int page)
+    /// <summary>Descending unless asked otherwise: newest, most urgent and highest number come first.</summary>
+    public bool IsDescending => Dir switch
+    {
+        "asc" => false,
+        "desc" => true,
+        _ => Sort is null or TicketSort.Updated or TicketSort.Id or TicketSort.Priority,
+    };
+
+    /// <summary>"ascending", "descending" or null, for the column header's aria-sort.</summary>
+    public string? SortStateOf(TicketSort column)
+        => Sort == column ? (IsDescending ? "descending" : "ascending") : null;
+
+    /// <summary>A click on a header sorts by it; a second click turns the order around.</summary>
+    public string UrlForSort(TicketSort column)
+        => UrlFor(1, column, Sort == column ? (IsDescending ? "asc" : "desc") : null);
+
+    /// <summary>The address of this list with the current filters and sorting and another page number.</summary>
+    public string UrlForPage(int page) => UrlFor(page, Sort, Dir);
+
+    private string UrlFor(int page, TicketSort? sort, string? dir)
     {
         var query = new QueryBuilder();
 
@@ -68,6 +104,16 @@ public class IndexModel(TicketService tickets) : PageModel
         query.Add("status", Status.Distinct().Select(s => s.ToString()).ToArray());
         query.Add("priority", Priority.Distinct().Select(p => p.ToString()).ToArray());
         query.Add("scope", Scope.Distinct().Select(s => s.ToString()).ToArray());
+
+        if (sort is not null)
+        {
+            query.Add("sort", sort.Value.ToString());
+        }
+
+        if (dir is "asc" or "desc")
+        {
+            query.Add("dir", dir);
+        }
 
         if (page > 1)
         {

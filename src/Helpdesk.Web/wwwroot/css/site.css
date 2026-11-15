@@ -825,6 +825,43 @@ a.user-chip.active {
   white-space: nowrap;
 }
 
+.sort-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: inherit;
+}
+
+.sort-link:hover {
+  color: var(--hd-text);
+  text-decoration: none;
+}
+
+/* A small triangle: faint on hover, solid on the sorted column, pointing up when ascending. */
+.sort-link::after {
+  content: "";
+  border-left: 0.28rem solid transparent;
+  border-right: 0.28rem solid transparent;
+  border-top: 0.32rem solid currentColor;
+  opacity: 0;
+}
+
+.sort-link:hover::after {
+  opacity: 0.35;
+}
+
+.ticket-table th[aria-sort] .sort-link {
+  color: var(--hd-text);
+}
+
+.ticket-table th[aria-sort] .sort-link::after {
+  opacity: 1;
+}
+
+.ticket-table th[aria-sort="ascending"] .sort-link::after {
+  transform: rotate(180deg);
+}
+
 .ticket-table td {
   padding: 0.85rem 1rem;
   border-bottom-color: var(--hd-border);

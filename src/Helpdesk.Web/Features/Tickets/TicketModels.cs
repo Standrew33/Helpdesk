@@ -20,13 +20,28 @@ public enum TicketScope
     Overdue,
 }
 
+/// <summary>Columns the ticket list can be sorted by; without one the latest activity comes first.</summary>
+public enum TicketSort
+{
+    Updated,
+    Id,
+    Subject,
+    Status,
+    Priority,
+    Customer,
+    Assignee,
+    Due,
+}
+
 /// <summary>Empty lists mean "any"; several values in one list mean "any of these".</summary>
 public sealed record TicketFilter(
     string? Search = null,
     IReadOnlyCollection<TicketStatus>? Statuses = null,
     IReadOnlyCollection<TicketPriority>? Priorities = null,
     IReadOnlyCollection<TicketScope>? Scopes = null,
-    int Page = 1);
+    int Page = 1,
+    TicketSort Sort = TicketSort.Updated,
+    bool Descending = true);
 
 public sealed record PagedList<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize)
 {

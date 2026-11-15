@@ -28,6 +28,16 @@
     {
         <partial name="_FilterChoice" model="Model.ScopeChoice" />
     }
+    <span id="ticket-sort" data-live>
+        @if (Model.Sort is not null)
+        {
+            <input type="hidden" name="sort" value="@Model.Sort" />
+        }
+        @if (Model.Dir is "asc" or "desc")
+        {
+            <input type="hidden" name="dir" value="@Model.Dir" />
+        }
+    </span>
     <noscript><button type="submit" class="btn btn-primary">Apply</button></noscript>
     <span id="ticket-reset" data-live>
         @if (Model.IsFiltered)
@@ -68,13 +78,12 @@ else
             <table class="table table-hover align-middle ticket-table">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Subject</th>
-                        <th>Status</th>
-                        <th>Priority</th>
-                        <th>Customer</th>
-                        <th>Assignee</th>
-                        <th>Due</th>
+                        @foreach (var (column, title) in Helpdesk.Web.Pages.Tickets.IndexModel.Columns)
+                        {
+                            <th aria-sort="@Model.SortStateOf(column)">
+                                <a class="sort-link" href="@Model.UrlForSort(column)" data-live-link>@title</a>
+                            </th>
+                        }
                     </tr>
                 </thead>
                 <tbody>

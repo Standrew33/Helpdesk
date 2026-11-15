@@ -72,13 +72,24 @@ public class TicketService(
         var pageCount = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
         var page = Math.Clamp(filter.Page, 1, pageCount);
 
-        var rows = await (
+        var rows = await Sorted(
             from t in tickets
             join c in db.Users on t.CustomerId equals c.Id
             join a in db.Users on t.AssigneeId equals a.Id into assignees
             from a in assignees.DefaultIfEmpty()
-            orderby t.UpdatedAt descending, t.Id descending
-            select new { t.Id, t.Subject, t.Status, t.Priority, CustomerName = c.DisplayName, AssigneeName = a.DisplayName, t.DueAt })
+            select new ListRow
+            {
+                Id = t.Id,
+                Subject = t.Subject,
+                Status = t.Status,
+                Priority = t.Priority,
+                CustomerName = c.DisplayName,
+                AssigneeName = a.DisplayName,
+                DueAt = t.DueAt,
+                UpdatedAt = t.UpdatedAt,
+            },
+            filter.Sort,
+            filter.Descending)
             .Skip((page - 1) * PageSize)
             .Take(PageSize)
             .ToListAsync(ct);
@@ -308,6 +319,35 @@ public class TicketService(
         }
     }
 
+    private static IQueryable<ListRow> Sorted(IQueryable<ListRow> rows, TicketSort sort, bool descending)
+    {
+        // Status and priority are stored as text; they are sorted by their place in the workflow and by urgency.
+        IOrderedQueryable<ListRow> sorted = sort switch
+        {
+            TicketSort.Id => By(rows, r => r.Id, descending),
+            TicketSort.Subject => By(rows, r => r.Subject, descending),
+            TicketSort.Status => By(rows, r => r.Status == TicketStatus.New ? 0
+                : r.Status == TicketStatus.InProgress ? 1
+                : r.Status == TicketStatus.WaitingForCustomer ? 2
+                : 3, descending),
+            TicketSort.Priority => By(rows, r => r.Priority == TicketPriority.Urgent ? 4
+                : r.Priority == TicketPriority.High ? 3
+                : r.Priority == TicketPriority.Normal ? 2
+                : r.Priority == TicketPriority.Low ? 1
+                : 0, descending),
+            TicketSort.Customer => By(rows, r => r.CustomerName, descending),
+            TicketSort.Assignee => By(rows, r => r.AssigneeName, descending),
+            TicketSort.Due => By(rows, r => r.DueAt, descending),
+            _ => By(rows, r => r.UpdatedAt, descending),
+        };
+
+        // Equal values keep a stable order, so pages never overlap.
+        return sorted.ThenByDescending(r => r.Id);
+    }
+
+    private static IOrderedQueryable<ListRow> By<TKey>(IQueryable<ListRow> rows, System.Linq.Expressions.Expression<Func<ListRow, TKey>> key, bool descending)
+        => descending ? rows.OrderByDescending(key) : rows.OrderBy(key);
+
     private static bool TryParseRowVersion(string? value, out byte[] version)
     {
         version = [];
@@ -327,4 +367,24 @@ public class TicketService(
             return false;
         }
     }
+}
+
+/// <summary>One row of the ticket list as read from the database, before it is shown.</summary>
+internal sealed class ListRow
+{
+    public int Id { get; init; }
+
+    public string Subject { get; init; } = string.Empty;
+
+    public TicketStatus Status { get; init; }
+
+    public TicketPriority Priority { get; init; }
+
+    public string CustomerName { get; init; } = string.Empty;
+
+    public string? AssigneeName { get; init; }
+
+    public DateTimeOffset DueAt { get; init; }
+
+    public DateTimeOffset UpdatedAt { get; init; }
 }
