@@ -75,12 +75,33 @@ public class SignUpTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
-    public async Task A_name_is_required()
+    public async Task Without_a_name_the_start_of_the_address_stands_in()
     {
         var response = await SignUpAsync(NewClient(), Email, name: string.Empty);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Null(await UserAsync(Email));
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("nina", (await UserAsync(Email))!.DisplayName);
+    }
+
+    [Fact]
+    public async Task The_welcome_step_can_be_skipped_whatever_was_typed()
+    {
+        var client = NewClient();
+        await SignInWithCodeAsync(client, Email);
+
+        var response = await client.PostFormAsync("/Account/Welcome", "/Account/Welcome", new Dictionary<string, string>
+        {
+            ["Input.DisplayName"] = "Nina Novak",
+            ["Input.Password"] = "short",
+            ["Input.ConfirmPassword"] = "different",
+            ["skip"] = "true",
+        });
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        var user = (await UserAsync(Email))!;
+        Assert.Equal("nina", user.DisplayName);
+        Assert.Null(user.PasswordHash);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/Tickets")).StatusCode);
     }
 
     [Fact]

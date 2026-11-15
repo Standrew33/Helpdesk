@@ -38,7 +38,8 @@ public class WelcomeModel(
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    /// <param name="skip">Create the account with nothing but the address; whatever was typed is ignored.</param>
+    public async Task<IActionResult> OnPostAsync(bool skip = false)
     {
         var pending = emailSignIn.ReadPendingSignUp(HttpContext);
 
@@ -49,6 +50,12 @@ public class WelcomeModel(
 
         Email = pending.Email;
 
+        if (skip)
+        {
+            ModelState.Clear();
+            Input = new InputModel();
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -58,7 +65,7 @@ public class WelcomeModel(
 
         if (user is null)
         {
-            user = new ApplicationUser { UserName = Email, Email = Email, EmailConfirmed = true, DisplayName = Input.DisplayName.Trim() };
+            user = new ApplicationUser { UserName = Email, Email = Email, EmailConfirmed = true, DisplayName = NameFor(Input.DisplayName, Email) };
 
             var created = string.IsNullOrEmpty(Input.Password)
                 ? await userManager.CreateAsync(user)
@@ -101,13 +108,16 @@ public class WelcomeModel(
             : RedirectToPage("/Tickets/Index");
     }
 
+    /// <summary>Without a name the part of the address before the @ stands in; it can be changed in the settings.</summary>
+    private static string NameFor(string? name, string email)
+        => string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name.Trim();
+
     public class InputModel
     {
-        [Required]
         [StringLength(100)]
         [SafeText]
-        [Display(Name = "Your name")]
-        public string DisplayName { get; set; } = string.Empty;
+        [Display(Name = "Your name (optional)")]
+        public string? DisplayName { get; set; }
 
         /// <summary>Optional: the e-mail code always works, a password is a second way in.</summary>
         [DataType(DataType.Password)]

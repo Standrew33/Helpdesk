@@ -953,11 +953,6 @@ a.user-chip.active {
   color: var(--bs-link-hover-color);
 }
 
-.optional-password summary {
-  cursor: pointer;
-  color: var(--bs-link-color);
-}
-
 /* Password strength meter (js/password-strength.js) */
 .strength {
   margin-top: 0.5rem;
