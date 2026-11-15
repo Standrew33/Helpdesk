@@ -1,4 +1,6 @@
+using System.Globalization;
 using Helpdesk.Core.Tickets;
+using Microsoft.AspNetCore.Html;
 
 namespace Helpdesk.Web.Features.Tickets;
 
@@ -51,7 +53,16 @@ public static class TicketDisplay
         _ => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{bytes / (1024.0 * 1024.0):0.#} MB"),
     };
 
-    public static string Date(DateTimeOffset value) => value.UtcDateTime.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) + " UTC";
+    /// <summary>
+    /// A moment as "15 Nov 2026, 14:30 UTC"; local-time.js turns it into the reader's own time zone.
+    /// </summary>
+    public static IHtmlContent Date(DateTimeOffset value)
+    {
+        var utc = value.UtcDateTime;
+        var iso = utc.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+        var text = utc.ToString("d MMM yyyy, HH:mm", CultureInfo.InvariantCulture) + " UTC";
+        return new HtmlString($"<time datetime=\"{iso}\" data-local-time>{text}</time>");
+    }
 }
 
 /// <summary>A one-choice priority picker: the form field name, the options offered and the one chosen.</summary>

@@ -96,6 +96,11 @@ a:hover {
   flex: 1;
 }
 
+/* The ticket list uses the width of the screen; reading pages keep a comfortable line length. */
+.page.page-wide {
+  max-width: 100rem;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;

@@ -44,6 +44,10 @@
                     }
                 });
 
+                if (window.helpdeskLocalTime) {
+                    window.helpdeskLocalTime(document.getElementById('ticket-results'));
+                }
+
                 history.replaceState(null, '', url);
             })
             .catch(function (error) {

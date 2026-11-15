@@ -90,7 +90,7 @@
             </aside>
 
             <div class="content">
-                <main class="page" role="main">
+                <main class="page @ViewData["PageClass"]" role="main">
                     @body
                 </main>
             </div>
@@ -119,6 +119,7 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/password-toggle.js" asp-append-version="true"></script>
     <script src="~/js/choice.js" asp-append-version="true"></script>
+    <script src="~/js/local-time.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
