@@ -97,7 +97,7 @@ else
                             <td class="ticket-id">@item.Id</td>
                             <td><a class="ticket-subject" asp-page="Details" asp-route-id="@item.Id">@item.Subject</a></td>
                             <td><span class="@TicketDisplay.StatusClass(item.Status)">@TicketDisplay.StatusText(item.Status)</span></td>
-                            <td><span class="@TicketDisplay.PriorityClass(item.Priority)">@item.Priority</span></td>
+                            <td><partial name="_Priority" model="item.Priority" /></td>
                             <td>@item.CustomerName</td>
                             <td>@(item.AssigneeName ?? "–")</td>
                             <td class="text-nowrap @(item.IsOverdue ? "overdue" : "")">@TicketDisplay.Date(item.DueAt)</td>

@@ -33,11 +33,12 @@ public static class TicketDisplay
 
     public static string PriorityClass(TicketPriority priority) => priority switch
     {
-        TicketPriority.Urgent => "tag tag-urgent",
-        TicketPriority.High => "tag tag-high",
-        TicketPriority.Normal => "tag tag-normal",
-        TicketPriority.Low => "tag tag-low",
-        _ => "tag",
+        TicketPriority.Urgent => "prio prio-urgent",
+        TicketPriority.High => "prio prio-high",
+        TicketPriority.Normal => "prio prio-normal",
+        TicketPriority.Low => "prio prio-low",
+        TicketPriority.Backlog => "prio prio-backlog",
+        _ => "prio",
     };
 
     public static string FileSize(long bytes) => bytes switch

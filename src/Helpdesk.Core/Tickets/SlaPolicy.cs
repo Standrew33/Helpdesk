@@ -9,6 +9,7 @@ public static class SlaPolicy
         TicketPriority.High => TimeSpan.FromHours(8),
         TicketPriority.Normal => TimeSpan.FromHours(24),
         TicketPriority.Low => TimeSpan.FromHours(72),
+        TicketPriority.Backlog => TimeSpan.FromDays(30),
         _ => throw new ArgumentOutOfRangeException(nameof(priority), priority, "Unknown priority."),
     };
 

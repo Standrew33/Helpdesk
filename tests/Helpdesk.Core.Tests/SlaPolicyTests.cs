@@ -9,6 +9,7 @@ public class SlaPolicyTests
     [InlineData(TicketPriority.High, 8)]
     [InlineData(TicketPriority.Normal, 24)]
     [InlineData(TicketPriority.Low, 72)]
+    [InlineData(TicketPriority.Backlog, 720)]
     public void ResolutionTime_depends_on_priority(TicketPriority priority, int hours)
     {
         Assert.Equal(TimeSpan.FromHours(hours), SlaPolicy.ResolutionTime(priority));

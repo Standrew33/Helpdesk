@@ -185,7 +185,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var stale = await op.PostTicketActionAsync(id, "Priority", Fields(("priority", "Low")), staleVersion);
 
         Assert.Contains("changed by someone else", await FollowedHtmlAsync(op, stale));
-        Assert.DoesNotContain("tag tag-low\">Low", await op.GetHtmlAsync($"/Tickets/Details/{id}"));
+        Assert.DoesNotContain("prio prio-low", await op.GetHtmlAsync($"/Tickets/Details/{id}"));
     }
 
     [Fact]

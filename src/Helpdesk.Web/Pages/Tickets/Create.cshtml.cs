@@ -17,6 +17,7 @@ public class CreateModel(TicketService tickets) : PageModel
     // Customers cannot open urgent tickets; staff can raise the priority later.
     public static readonly IReadOnlyList<SelectListItem> PriorityOptions =
     [
+        new("Backlog", nameof(TicketPriority.Backlog)),
         new("Low", nameof(TicketPriority.Low)),
         new("Normal", nameof(TicketPriority.Normal)),
         new("High", nameof(TicketPriority.High)),

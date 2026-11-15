@@ -462,7 +462,8 @@ a.user-chip.active {
 /* Status and priority indicators */
 
 .pill,
-.tag {
+.tag,
+.prio {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -495,10 +496,33 @@ a.user-chip.active {
 .pill-closed { background: #e5e9e8; color: #4b5a57; }
 .pill-active { background: #d9f2e6; color: #166534; }
 
-.tag-urgent { background: #fee2e2; color: #b91c1c; }
-.tag-high { background: #ffedd5; color: #c2410c; }
-.tag-normal { background: #e5e9e8; color: #3f4f4c; }
-.tag-low { background: transparent; color: #5d6e6b; box-shadow: inset 0 0 0 1px var(--hd-border); }
+.tag-internal { background: #ffedd5; color: #c2410c; }
+
+/* Priority: a bookmark in the colour of the text, no background. */
+.prio {
+  padding: 0;
+  gap: 0.35rem;
+  color: var(--prio, var(--hd-muted));
+}
+
+.prio svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: none;
+  fill: currentColor;
+}
+
+.prio-urgent { --prio: #dc2626; }
+.prio-high { --prio: #ea580c; }
+.prio-normal { --prio: #16a34a; }
+.prio-low { --prio: #2563eb; }
+.prio-backlog { --prio: #6b7a77; }
+
+.prio-backlog svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
 
 /* ---------- Sign in ---------- */
 

@@ -21,7 +21,7 @@
     </div>
     <div class="d-flex flex-wrap gap-2">
         <span class="@TicketDisplay.StatusClass(ticket.Status)">@TicketDisplay.StatusText(ticket.Status)</span>
-        <span class="@TicketDisplay.PriorityClass(ticket.Priority)">@ticket.Priority</span>
+        <partial name="_Priority" model="ticket.Priority" />
     </div>
 </div>
 
@@ -91,7 +91,7 @@
                         <span>@TicketDisplay.Date(comment.CreatedAt)</span>
                         @if (comment.IsInternal)
                         {
-                            <span class="tag tag-high">Internal note</span>
+                            <span class="tag tag-internal">Internal note</span>
                         }
                     </div>
                     <div class="comment-text">@comment.Body</div>
