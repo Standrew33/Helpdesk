@@ -35,25 +35,27 @@ public class TicketService(
             tickets = tickets.Where(t => db.Users.Any(u => u.Id == t.CustomerId && u.Email!.EndsWith(DatabaseSeeder.DemoDomain)));
         }
 
-        if (filter.Status is not null)
+        if (filter.Statuses is { Count: > 0 } statuses)
         {
-            tickets = tickets.Where(t => t.Status == filter.Status);
+            tickets = tickets.Where(t => statuses.Contains(t.Status));
         }
 
-        if (filter.Priority is not null)
+        if (filter.Priorities is { Count: > 0 } priorities)
         {
-            tickets = tickets.Where(t => t.Priority == filter.Priority);
+            tickets = tickets.Where(t => priorities.Contains(t.Priority));
         }
 
         // The queue views are for staff; a customer's list is already limited to their own tickets.
-        if (filter.Scope is not null && actor.Role.IsStaff())
+        if (filter.Scopes is { Count: > 0 } scopes && actor.Role.IsStaff())
         {
-            tickets = filter.Scope switch
-            {
-                TicketScope.Mine => tickets.Where(t => t.AssigneeId == actor.Id),
-                TicketScope.Unassigned => tickets.Where(t => t.AssigneeId == null),
-                _ => tickets.Where(t => t.Status != TicketStatus.Closed && t.DueAt < now),
-            };
+            var mine = scopes.Contains(TicketScope.Mine);
+            var unassigned = scopes.Contains(TicketScope.Unassigned);
+            var overdue = scopes.Contains(TicketScope.Overdue);
+
+            tickets = tickets.Where(t =>
+                (mine && t.AssigneeId == actor.Id)
+                || (unassigned && t.AssigneeId == null)
+                || (overdue && t.Status != TicketStatus.Closed && t.DueAt < now));
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Search))

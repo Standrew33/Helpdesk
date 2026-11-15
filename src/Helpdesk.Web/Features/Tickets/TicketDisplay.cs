@@ -41,6 +41,9 @@ public static class TicketDisplay
         _ => "prio",
     };
 
+    /// <summary>Lists and pickers show the most pressing priority first.</summary>
+    public static readonly IReadOnlyList<TicketPriority> PrioritiesFromHighest = Enum.GetValues<TicketPriority>().Reverse().ToArray();
+
     public static string FileSize(long bytes) => bytes switch
     {
         < 1024 => $"{bytes} B",
@@ -53,3 +56,8 @@ public static class TicketDisplay
 
 /// <summary>A one-choice priority picker: the form field name, the options offered and the one chosen.</summary>
 public sealed record PriorityChoice(string Name, string Id, IReadOnlyList<TicketPriority> Options, TicketPriority Selected);
+
+public sealed record FilterOption(string Value, string Text, string CssClass, bool Checked);
+
+/// <summary>A filter list with check boxes: the query name, the text shown while nothing is chosen, and the options.</summary>
+public sealed record FilterChoice(string Name, string Placeholder, IReadOnlyList<FilterOption> Options);

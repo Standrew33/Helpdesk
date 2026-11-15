@@ -25,7 +25,7 @@ public class DetailsModel(TicketService tickets) : PageModel
 
     public IReadOnlyList<AssigneeOption> Assignees { get; private set; } = [];
 
-    public PriorityChoice PriorityChoice => new("priority", "Priority", Enum.GetValues<TicketPriority>(), Details.Ticket.Priority);
+    public PriorityChoice PriorityChoice => new("priority", "Priority", TicketDisplay.PrioritiesFromHighest, Details.Ticket.Priority);
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {

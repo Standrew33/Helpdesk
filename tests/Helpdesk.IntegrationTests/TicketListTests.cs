@@ -127,6 +127,39 @@ public partial class TicketListTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task Several_values_of_one_filter_mean_any_of_them()
+    {
+        var customer = await SignedInAsync("Customer");
+        await customer.CreateTicketAsync("High one", priority: "High");
+        await customer.CreateTicketAsync("Low one", priority: "Low");
+        await customer.CreateTicketAsync("Backlog one", priority: "Backlog");
+
+        var html = await customer.GetHtmlAsync("/Tickets?priority=High&priority=Backlog");
+
+        Assert.Contains("High one", html);
+        Assert.Contains("Backlog one", html);
+        Assert.DoesNotContain("Low one", html);
+    }
+
+    [Fact]
+    public async Task Staff_queue_views_can_be_combined()
+    {
+        var customer = await SignedInAsync("Customer");
+        var taken = await customer.CreateTicketAsync("Taken ticket");
+        await customer.CreateTicketAsync("Free ticket");
+        var other = await customer.CreateTicketAsync("Someone else's ticket");
+        var op = await SignedInAsync("Operator");
+        await op.PostTicketActionAsync(taken, "Assign", new Dictionary<string, string> { ["assigneeId"] = await DemoUserIdAsync("Operator") });
+        await op.PostTicketActionAsync(other, "Assign", new Dictionary<string, string> { ["assigneeId"] = await DemoUserIdAsync("Admin") });
+
+        var html = await op.GetHtmlAsync("/Tickets?scope=Mine&scope=Unassigned");
+
+        Assert.Contains("Taken ticket", html);
+        Assert.Contains("Free ticket", html);
+        Assert.DoesNotContain("Someone else", html);
+    }
+
+    [Fact]
     public async Task Filters_never_widen_what_a_customer_may_see()
     {
         var other = await SignedInAsync("Customer");
@@ -176,9 +209,9 @@ public partial class TicketListTests(SqlServerFixture sql) : WebTestBase(sql)
         var customer = await SignedInAsync("Customer");
         await CreateManyAsync(customer, 17);
 
-        var html = await customer.GetHtmlAsync("/Tickets?q=Bulk");
+        var html = await customer.GetHtmlAsync("/Tickets?q=Bulk&status=New&status=Closed");
 
-        Assert.Contains("q=Bulk", html);
+        Assert.Contains("q=Bulk&amp;status=New&amp;status=Closed", html);
         Assert.Contains("p=2", html);
     }
 

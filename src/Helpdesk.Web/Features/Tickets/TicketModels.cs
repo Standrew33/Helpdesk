@@ -20,11 +20,12 @@ public enum TicketScope
     Overdue,
 }
 
+/// <summary>Empty lists mean "any"; several values in one list mean "any of these".</summary>
 public sealed record TicketFilter(
     string? Search = null,
-    TicketStatus? Status = null,
-    TicketPriority? Priority = null,
-    TicketScope? Scope = null,
+    IReadOnlyCollection<TicketStatus>? Statuses = null,
+    IReadOnlyCollection<TicketPriority>? Priorities = null,
+    IReadOnlyCollection<TicketScope>? Scopes = null,
     int Page = 1);
 
 public sealed record PagedList<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize)

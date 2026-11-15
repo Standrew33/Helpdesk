@@ -10,7 +10,7 @@
         <h1 class="page-title">Tickets</h1>
         <p class="page-subtitle">
             @(Model.IsCustomer ? "Your requests" : "All requests")
-            &middot; @result.Total @(result.Total == 1 ? "ticket" : "tickets") @(Model.IsFiltered ? "match" : "in total")
+            <span id="ticket-summary" data-live>&middot; @result.Total @(result.Total == 1 ? "ticket" : "tickets") @(Model.IsFiltered ? "match" : "in total")</span>
         </p>
     </div>
     @if (Model.IsCustomer)
@@ -19,38 +19,25 @@
     }
 </div>
 
-<form method="get" class="toolbar" role="search">
+<form method="get" class="toolbar" role="search" data-live-filters>
     <input type="search" name="q" value="@Model.Search" maxlength="100" class="form-control toolbar-search"
-           placeholder="Search subject, description or #number" aria-label="Search tickets" />
-    <select name="status" class="form-select toolbar-select" aria-label="Status">
-        <option value="">Any status</option>
-        @foreach (var status in Enum.GetValues<TicketStatus>())
-        {
-            <option value="@status" selected="@(Model.Status == status)">@TicketDisplay.StatusText(status)</option>
-        }
-    </select>
-    <select name="priority" class="form-select toolbar-select" aria-label="Priority">
-        <option value="">Any priority</option>
-        @foreach (var priority in Enum.GetValues<TicketPriority>())
-        {
-            <option value="@priority" selected="@(Model.Priority == priority)">@priority</option>
-        }
-    </select>
+           placeholder="Search subject, description or #number" aria-label="Search tickets" autocomplete="off" />
+    <partial name="_FilterChoice" model="Model.StatusChoice" />
+    <partial name="_FilterChoice" model="Model.PriorityChoice" />
     @if (!Model.IsCustomer)
     {
-        <select name="scope" class="form-select toolbar-select" aria-label="Queue">
-            <option value="">Whole queue</option>
-            <option value="Mine" selected="@(Model.Scope == TicketScope.Mine)">Assigned to me</option>
-            <option value="Unassigned" selected="@(Model.Scope == TicketScope.Unassigned)">Unassigned</option>
-            <option value="Overdue" selected="@(Model.Scope == TicketScope.Overdue)">Overdue</option>
-        </select>
+        <partial name="_FilterChoice" model="Model.ScopeChoice" />
     }
-    <button type="submit" class="btn btn-primary">Apply</button>
-    @if (Model.IsFiltered)
-    {
-        <a class="btn btn-link" asp-page="Index">Reset</a>
-    }
+    <noscript><button type="submit" class="btn btn-primary">Apply</button></noscript>
+    <span id="ticket-reset" data-live>
+        @if (Model.IsFiltered)
+        {
+            <a class="btn btn-link" asp-page="Index">Reset</a>
+        }
+    </span>
 </form>
+
+<div id="ticket-results" data-live>
 
 @if (result.Items.Count == 0)
 {
@@ -113,7 +100,7 @@ else
         <nav class="pager" aria-label="Pages">
             @if (result.HasPrevious)
             {
-                <a class="btn btn-outline-secondary btn-sm" asp-page="Index" asp-all-route-data="Model.RouteForPage(result.Page - 1)" rel="prev">&larr; Previous</a>
+                <a class="btn btn-outline-secondary btn-sm" href="@Model.UrlForPage(result.Page - 1)" rel="prev" data-live-link>&larr; Previous</a>
             }
             else
             {
@@ -122,7 +109,7 @@ else
             <span class="pager-info">Page @result.Page of @result.PageCount</span>
             @if (result.HasNext)
             {
-                <a class="btn btn-outline-secondary btn-sm" asp-page="Index" asp-all-route-data="Model.RouteForPage(result.Page + 1)" rel="next">Next &rarr;</a>
+                <a class="btn btn-outline-secondary btn-sm" href="@Model.UrlForPage(result.Page + 1)" rel="next" data-live-link>Next &rarr;</a>
             }
             else
             {
@@ -130,4 +117,9 @@ else
             }
         </nav>
     }
+}
+</div>
+
+@section Scripts {
+    <script src="~/js/ticket-filters.js" asp-append-version="true"></script>
 }

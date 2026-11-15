@@ -1,0 +1,16 @@
+@model FilterChoice
+<div class="dropdown choice toolbar-choice" data-choice data-choice-multiple data-placeholder="@Model.Placeholder">
+    <button type="button" class="form-select choice-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+            aria-expanded="false" aria-label="@Model.Placeholder" aria-describedby="@(Model.Name)Chosen">
+        <span id="@(Model.Name)Chosen" data-choice-label>@Model.Placeholder</span>
+    </button>
+    <div class="dropdown-menu choice-menu">
+        @foreach (var option in Model.Options)
+        {
+            <label class="choice-option">
+                <input type="checkbox" name="@Model.Name" value="@option.Value" checked="@option.Checked" class="form-check-input" />
+                <span data-choice-view><span class="@option.CssClass">@option.Text</span></span>
+            </label>
+        }
+    </div>
+</div>

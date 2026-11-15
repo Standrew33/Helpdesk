@@ -15,7 +15,7 @@ public class CreateModel(TicketService tickets) : PageModel
 {
     // Customers cannot open urgent tickets; staff can raise the priority later.
     public static readonly IReadOnlyList<TicketPriority> PriorityOptions =
-        [TicketPriority.Backlog, TicketPriority.Low, TicketPriority.Normal, TicketPriority.High];
+        [TicketPriority.High, TicketPriority.Normal, TicketPriority.Low, TicketPriority.Backlog];
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
