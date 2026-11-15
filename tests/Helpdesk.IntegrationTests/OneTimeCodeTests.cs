@@ -80,11 +80,11 @@ public class OneTimeCodeTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
-    public async Task A_code_expires_after_ten_minutes()
+    public async Task A_code_expires_after_five_minutes()
     {
         var issued = await IssueAsync();
 
-        _clock.Now = _clock.Now.AddMinutes(10).AddSeconds(1);
+        _clock.Now = _clock.Now.AddMinutes(5).AddSeconds(1);
 
         Assert.Equal(VerifyOutcome.NoLongerValid, (await VerifyAsync(issued.Id, issued.Code)).Outcome);
     }
@@ -98,7 +98,7 @@ public class OneTimeCodeTests(SqlServerFixture sql) : WebTestBase(sql)
 
         _clock.Now = _clock.Now.AddMinutes(2);
         var second = await IssueAsync();
-        _clock.Now = _clock.Now.AddMinutes(11);
+        _clock.Now = _clock.Now.AddMinutes(6);
         Assert.Equal(VerifyOutcome.NoLongerValid, (await VerifyTokenAsync(second.Token)).Outcome);
         Assert.Equal(VerifyOutcome.NoLongerValid, (await VerifyTokenAsync("made-up-token")).Outcome);
     }
@@ -138,18 +138,18 @@ public class OneTimeCodeTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
-    public async Task One_address_gets_at_most_five_codes_an_hour()
+    public async Task One_address_gets_at_most_three_codes_in_ten_minutes()
     {
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < 3; i++)
         {
             await IssueAsync();
             _clock.Now = _clock.Now.AddMinutes(2);
         }
 
-        var sixth = await WithServiceAsync((codes, _) => codes.IssueAsync(Email, ChallengePurpose.SignIn));
-        Assert.Equal(IssueOutcome.TooMany, sixth.Outcome);
+        var fourth = await WithServiceAsync((codes, _) => codes.IssueAsync(Email, ChallengePurpose.SignIn));
+        Assert.Equal(IssueOutcome.TooMany, fourth.Outcome);
 
-        _clock.Now = _clock.Now.AddMinutes(51);
+        _clock.Now = _clock.Now.AddMinutes(4);
         Assert.Equal(IssueOutcome.Issued, (await WithServiceAsync((codes, _) => codes.IssueAsync(Email, ChallengePurpose.SignIn))).Outcome);
     }
 

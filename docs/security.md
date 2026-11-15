@@ -15,12 +15,12 @@ created only then.
 | --- | --- |
 | Address ownership | Every account belongs to an address that received a code, so nobody can register someone else's address. |
 | No account discovery | Asking for a code, asking for a password reset and a failed password sign-in answer the same way for known and unknown addresses. Unknown and locked accounts spend the time of a real password check, so response time gives nothing away either. |
-| Codes and links | Six digits or 256 random bits, valid once and for ten minutes; a newer code replaces older ones; five wrong codes end the code. Only SHA-256 hashes are stored, the code hash bound to its challenge. Use and wrong tries are counted in the database itself, so parallel requests cannot get past the limits. |
+| Codes and links | Six digits or 256 random bits, valid once and for five minutes; a newer code replaces older ones; five wrong codes end the code. Only SHA-256 hashes are stored, the code hash bound to its challenge. Use and wrong tries are counted in the database itself, so parallel requests cannot get past the limits. |
 | Link scanners | Opening the link only shows a confirmation button. Mail scanners and link previews that open links on their own neither sign anyone in nor use the link up. |
 | Links point home | Links are built from the configured `Site:PublicUrl`, never from the request's `Host` header, so a forged header cannot plant another site's address in someone's e-mail (password reset poisoning). |
 | Passwords | Optional: a second way in, set on the welcome step or later in the settings. At least 8 characters, no "one capital, one symbol" rules (NIST SP 800-63B), but refused: only digits, runs such as `abcdefgh`, fewer than five different characters, well-known words with digits or look-alike letters around them (`P@ssw0rd-2024`) and passwords that contain the user's name or e-mail address. A meter shows the strength while typing and applies the same rules. |
 | Password storage | ASP.NET Core Identity, PBKDF2 with HMAC-SHA512 and a random salt, 210,000 iterations (OWASP). Older hashes are upgraded at the next sign-in. |
-| Lock-out | Five wrong passwords lock the account for 15 minutes; wrong current passwords on the account page count too. The e-mail code still works, and a password reset lifts the lock. |
+| Lock-out | Five wrong passwords lock the account for 10 minutes; wrong current passwords on the account page count too. The e-mail code still works, and a password reset lifts the lock. |
 | Password reset | A reset code or link leads to a new-password step; the code alone signs nobody in. Saving signs the account out everywhere else. Reset and sign-in codes cannot be swapped. |
 | Bots | Google reCAPTCHA v3 checks the address, password and reset forms (score threshold, matching action, refused when Google cannot be reached). The forms also have a hidden field that only programs fill in. |
 | Changes apply at once | The sign-in cookie is checked against the database on every request. Deactivating a user, changing their role, password or resetting the password ends their other sessions immediately. |
@@ -88,13 +88,13 @@ status 429 and `Retry-After`.
 
 | Action | Default |
 | --- | --- |
-| E-mails with a code (sign-in, new code, password reset) | 10 per hour |
+| E-mails with a code (sign-in, new code, password reset) | 5 per 10 minutes |
 | Sign-in forms (code, link, password, new password, account page) | 10 per minute |
-| New accounts | 10 per hour |
+| New accounts | 5 per 10 minutes |
 | Ticket changes | 60 per 10 minutes |
-| File uploads | 20 per hour |
+| File uploads | 10 per 10 minutes |
 
-Each e-mail address also gets at most one code a minute and five an hour (`OneTimeCodes` section).
+Each e-mail address also gets at most one code a minute and three per 10 minutes (`OneTimeCodes` section). No limit makes anyone wait longer than 10 minutes.
 
 ## Logging
 
@@ -117,7 +117,7 @@ written.
   but a file may still harm the computer of whoever opens it.
 - **The demo can be vandalised.** The demo accounts can add comments and change demo tickets for
   the next visitor. The demo accounts are to be replaced by an interactive preview.
-- Someone who knows an address can lock its password sign-in for 15 minutes by failing five
+- Someone who knows an address can lock its password sign-in for 10 minutes by failing five
   times; the owner can still sign in with an e-mail code.
 - reCAPTCHA sends data about the visit to Google; that is the price of the check.
 

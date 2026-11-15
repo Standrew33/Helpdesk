@@ -12,7 +12,7 @@ public class OneTimeCodeOptions
 {
     public const string SectionName = "OneTimeCodes";
 
-    public TimeSpan Lifetime { get; set; } = TimeSpan.FromMinutes(10);
+    public TimeSpan Lifetime { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>Wrong codes allowed for one challenge; after that only a new code helps.</summary>
     public int MaxAttempts { get; set; } = 5;
@@ -20,8 +20,8 @@ public class OneTimeCodeOptions
     /// <summary>The shortest time between two codes for the same address.</summary>
     public TimeSpan ResendAfter { get; set; } = TimeSpan.FromSeconds(60);
 
-    /// <summary>Codes for one address per hour, so nobody can flood a mailbox or keep guessing with fresh codes.</summary>
-    public int MaxPerAddressPerHour { get; set; } = 5;
+    /// <summary>Codes for one address per ten minutes, so nobody can flood a mailbox or keep guessing with fresh codes.</summary>
+    public int MaxPerAddressPer10Minutes { get; set; } = 3;
 }
 
 /// <summary>The code and link to put in the e-mail. They exist only in this object and in the message.</summary>
@@ -56,6 +56,9 @@ public sealed record OpenChallenge(Guid Id, string Email, ChallengePurpose Purpo
 /// </summary>
 public class OneTimeCodeService(HelpdeskDbContext db, TimeProvider time, IOptions<OneTimeCodeOptions> options)
 {
+    /// <summary>The window of the per-address limit.</summary>
+    public static readonly TimeSpan LimitWindow = TimeSpan.FromMinutes(10);
+
     private OneTimeCodeOptions Settings => options.Value;
 
     public static string Normalise(string email) => email.Trim().ToUpperInvariant();
@@ -68,19 +71,20 @@ public class OneTimeCodeService(HelpdeskDbContext db, TimeProvider time, IOption
         // Old challenges are of no use to anyone; clear them out while we are here.
         await db.Set<SignInChallenge>().Where(c => c.CreatedAt < now.AddDays(-1)).ExecuteDeleteAsync(ct);
 
-        var lastHour = await db.Set<SignInChallenge>()
-            .Where(c => c.Email == address && c.Purpose == purpose && c.CreatedAt > now.AddHours(-1))
+        var since = now - LimitWindow;
+        var recent = await db.Set<SignInChallenge>()
+            .Where(c => c.Email == address && c.Purpose == purpose && c.CreatedAt > since)
             .Select(c => c.CreatedAt)
             .ToListAsync(ct);
 
-        if (lastHour.Count > 0 && lastHour.Max() + Settings.ResendAfter is var nextAllowed && nextAllowed > now)
+        if (recent.Count > 0 && recent.Max() + Settings.ResendAfter is var nextAllowed && nextAllowed > now)
         {
             return new IssueResult(IssueOutcome.TooSoon, null, nextAllowed - now);
         }
 
-        if (lastHour.Count >= Settings.MaxPerAddressPerHour)
+        if (recent.Count >= Settings.MaxPerAddressPer10Minutes)
         {
-            return new IssueResult(IssueOutcome.TooMany, null, lastHour.Min().AddHours(1) - now);
+            return new IssueResult(IssueOutcome.TooMany, null, recent.Min() + LimitWindow - now);
         }
 
         // Only the newest code works.

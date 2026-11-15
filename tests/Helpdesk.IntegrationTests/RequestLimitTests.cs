@@ -31,7 +31,7 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
     [Fact]
     public async Task A_refused_form_is_shown_again_with_the_reason_and_what_was_typed()
     {
-        using var factory = WithLimit("CodesPerHour", 1);
+        using var factory = WithLimit("CodesPer10Minutes", 1);
         var client = NewClient(factory);
         await client.RequestCodeAsync("first@example.test");
 
@@ -110,7 +110,7 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
     [Fact]
     public async Task Registrations_from_one_address_are_limited()
     {
-        using var factory = WithLimit("RegistrationsPerHour", 2);
+        using var factory = WithLimit("RegistrationsPer10Minutes", 2);
 
         // Each account is created from a fresh browser, but from the same address.
         for (var i = 0; i < 2; i++)
@@ -127,7 +127,7 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
     [Fact]
     public async Task One_address_cannot_send_codes_to_many_mailboxes()
     {
-        using var factory = WithLimit("CodesPerHour", 2);
+        using var factory = WithLimit("CodesPer10Minutes", 2);
         var client = NewClient(factory);
 
         await client.RequestCodeAsync("first@example.test");
@@ -144,7 +144,7 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
     [Fact]
     public async Task Uploads_are_limited_per_address()
     {
-        using var factory = WithLimit("UploadsPerHour", 1);
+        using var factory = WithLimit("UploadsPer10Minutes", 1);
         var customer = NewClient(factory);
         await customer.SignInAsDemoAsync("Customer");
         var id = await customer.CreateTicketAsync("Many files");

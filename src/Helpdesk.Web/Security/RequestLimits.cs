@@ -16,19 +16,19 @@ public class RequestLimitOptions
     public int SignInAttemptsPerMinute { get; set; } = 10;
 
     /// <summary>
-    /// E-mails with a code per hour. Each one uses up the mail provider's free allowance and lands in a mailbox,
+    /// E-mails with a code per ten minutes. Each one uses up the mail provider's free allowance and lands in a mailbox,
     /// so one address must not be able to send them to many people. Each recipient has its own limit as well.
     /// </summary>
-    public int CodesPerHour { get; set; } = 10;
+    public int CodesPer10Minutes { get; set; } = 5;
 
-    /// <summary>New accounts per hour.</summary>
-    public int RegistrationsPerHour { get; set; } = 10;
+    /// <summary>New accounts per ten minutes.</summary>
+    public int RegistrationsPer10Minutes { get; set; } = 5;
 
     /// <summary>Tickets, comments and status changes per ten minutes.</summary>
     public int TicketChangesPer10Minutes { get; set; } = 60;
 
-    /// <summary>File uploads per hour. Storage is the scarce resource of the free tier.</summary>
-    public int UploadsPerHour { get; set; } = 20;
+    /// <summary>File uploads per ten minutes. Storage is the scarce resource of the free tier.</summary>
+    public int UploadsPer10Minutes { get; set; } = 10;
 }
 
 /// <summary>The counters behind the limits: one fixed window per kind of action and client address.</summary>
@@ -38,6 +38,9 @@ public sealed class RequestLimiter : IDisposable
     [
         "/Account/Login", "/Account/Password", "/Account/Code", "/Account/Link", "/Account/NewPassword", "/Account/Settings",
     ];
+
+    /// <summary>No limit keeps anyone waiting longer than this.</summary>
+    private static readonly TimeSpan TenMinutes = TimeSpan.FromMinutes(10);
 
     private readonly PartitionedRateLimiter<HttpContext> _limiter;
 
@@ -58,11 +61,11 @@ public sealed class RequestLimiter : IDisposable
 
             var (name, permits, window) = bucket.Value switch
             {
-                Bucket.Codes => ("codes", limits.CodesPerHour, TimeSpan.FromHours(1)),
+                Bucket.Codes => ("codes", limits.CodesPer10Minutes, TenMinutes),
                 Bucket.SignIn => ("signin", limits.SignInAttemptsPerMinute, TimeSpan.FromMinutes(1)),
-                Bucket.Registration => ("register", limits.RegistrationsPerHour, TimeSpan.FromHours(1)),
-                Bucket.Upload => ("upload", limits.UploadsPerHour, TimeSpan.FromHours(1)),
-                _ => ("tickets", limits.TicketChangesPer10Minutes, TimeSpan.FromMinutes(10)),
+                Bucket.Registration => ("register", limits.RegistrationsPer10Minutes, TenMinutes),
+                Bucket.Upload => ("upload", limits.UploadsPer10Minutes, TenMinutes),
+                _ => ("tickets", limits.TicketChangesPer10Minutes, TenMinutes),
             };
 
             return RateLimitPartition.GetFixedWindowLimiter($"{name}:{ClientKey(context)}", _ => new FixedWindowRateLimiterOptions

@@ -76,7 +76,7 @@ builder.Services
         options.Password.RequireNonAlphanumeric = false;
 
         options.Lockout.MaxFailedAccessAttempts = 5;
-        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
         options.Lockout.AllowedForNewUsers = true;
     })
     .AddEntityFrameworkStores<HelpdeskDbContext>()
