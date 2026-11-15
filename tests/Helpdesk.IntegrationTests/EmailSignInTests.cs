@@ -39,7 +39,7 @@ public class EmailSignInTests(SqlServerFixture sql) : WebTestBase(sql)
 
         var page = await client.GetHtmlAsync(response.Headers.Location.OriginalString);
         Assert.Contains("Check your e-mail", page);
-        Assert.DoesNotContain(Email, page);
+        Assert.Contains(Email, page);
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class EmailSignInTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
-    public async Task A_wrong_code_tells_how_many_tries_are_left_and_the_fifth_ends_the_code()
+    public async Task A_wrong_code_is_refused_and_the_fifth_ends_the_code()
     {
         await CreateUserAsync("Customer", Email);
         var client = NewClient();
@@ -100,7 +100,9 @@ public class EmailSignInTests(SqlServerFixture sql) : WebTestBase(sql)
 
         var first = await client.EnterCodeAsync(codePage, wrong);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
-        Assert.Contains("4 attempts left", await first.Content.ReadAsStringAsync());
+        var firstPage = await first.Content.ReadAsStringAsync();
+        Assert.Contains("The code is not correct.", firstPage);
+        Assert.DoesNotContain("attempt", firstPage, StringComparison.OrdinalIgnoreCase);
 
         for (var i = 0; i < 4; i++)
         {
@@ -176,7 +178,7 @@ public class EmailSignInTests(SqlServerFixture sql) : WebTestBase(sql)
         var newPage = resent.Headers.Location!;
 
         Assert.Equal(2, Factory.Mail.To(Email).Count);
-        Assert.Contains("We sent a new code", await client.GetHtmlAsync(newPage.OriginalString));
+        Assert.Contains("New code sent.", await client.GetHtmlAsync(newPage.OriginalString));
         var old = await client.PostFormAsync("/Account/Login", codePage.OriginalString, new Dictionary<string, string> { ["Code"] = oldCode });
         Assert.Contains("This code no longer works", await old.Content.ReadAsStringAsync());
     }
@@ -191,7 +193,7 @@ public class EmailSignInTests(SqlServerFixture sql) : WebTestBase(sql)
 
         Assert.Single(Factory.Mail.To(Email));
         Assert.Equal(first, second.Headers.Location);
-        Assert.Contains("a moment ago", await client.GetHtmlAsync(second.Headers.Location!.OriginalString));
+        Assert.Contains("Code already sent", await client.GetHtmlAsync(second.Headers.Location!.OriginalString));
     }
 
     [Fact]
@@ -204,7 +206,7 @@ public class EmailSignInTests(SqlServerFixture sql) : WebTestBase(sql)
         {
             var failed = await client.RequestCodeAsync(Email);
             Assert.Equal(HttpStatusCode.OK, failed.StatusCode);
-            Assert.Contains("could not be sent", await failed.Content.ReadAsStringAsync());
+            Assert.Contains(Helpdesk.Web.Features.SignIn.CodeMailer.FailedMessage, await failed.Content.ReadAsStringAsync());
         }
 
         Factory.Mail.Refusing = false;

@@ -39,7 +39,7 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
         var html = await blocked.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode);
-        Assert.Contains("Too many attempts from your network. Try again in", html);
+        Assert.Contains("Too many attempts. Try again in", html);
         Assert.Contains("value=\"second@example.test\"", html);
         Assert.Contains("name=\"Input.Email\"", html);
         Assert.DoesNotContain("Something went wrong", html);
@@ -54,7 +54,7 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
     [InlineData(150, "3 minutes")]
     [InlineData(3600, "60 minutes")]
     public void The_wait_is_told_in_plain_words(int seconds, string wait)
-        => Assert.Equal($"Too many attempts from your network. Try again in {wait}.", Helpdesk.Web.Security.RequestLimitFilter.Message(seconds));
+        => Assert.Equal($"Too many attempts. Try again in {wait}.", Helpdesk.Web.Security.RequestLimitFilter.Message(seconds));
 
     [Fact]
     public async Task A_refused_ticket_change_changes_nothing()
@@ -74,7 +74,7 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
         var html = await blocked.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode);
-        Assert.Contains("Too many attempts from your network", html);
+        Assert.Contains("Too many attempts. Try again in", html);
         Assert.Contains("value=\"Second ticket title\"", html);
         Assert.DoesNotContain("Second ticket title", await customer.GetHtmlAsync("/Tickets"));
     }

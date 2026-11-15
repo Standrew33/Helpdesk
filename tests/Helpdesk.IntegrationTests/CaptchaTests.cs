@@ -110,7 +110,7 @@ public class CaptchaTests(SqlServerFixture sql) : WebTestBase(sql)
         });
 
         Assert.Equal(HttpStatusCode.OK, missing.StatusCode);
-        Assert.Contains("sent by a person", await failing.Content.ReadAsStringAsync());
+        Assert.Contains("Verification failed", await failing.Content.ReadAsStringAsync());
         Assert.Empty(Factory.Mail.Messages);
     }
 

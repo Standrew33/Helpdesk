@@ -66,7 +66,7 @@ public class SettingsModel(
 
         // The name is part of the sign-in cookie, so sign in again to show the new one right away.
         await signInManager.RefreshSignInAsync(user);
-        Notice = "Your name was updated.";
+        Notice = "Name updated.";
         return RedirectToPage();
     }
 
@@ -107,7 +107,7 @@ public class SettingsModel(
 
         SecurityLog.PasswordChanged(logger, user.Id);
         await signInManager.RefreshSignInAsync(user);
-        Notice = "Your password was changed.";
+        Notice = "Password changed.";
         return RedirectToPage();
     }
 
@@ -139,7 +139,7 @@ public class SettingsModel(
 
         SecurityLog.PasswordChanged(logger, user.Id);
         await signInManager.RefreshSignInAsync(user);
-        Notice = "Your password was set. You can sign in with it or with a code from e-mail.";
+        Notice = "Password set.";
         return RedirectToPage();
     }
 

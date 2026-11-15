@@ -7,20 +7,17 @@
 
 @if (Model.NoLongerValid)
 {
-    <h1 class="h3 fw-bold mb-1">This link no longer works</h1>
+    <h1 class="h3 fw-bold mb-3">This link no longer works</h1>
     <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
-    <p class="text-secondary mb-4">
-        A link works once and only for a few minutes. It also stops working when a newer e-mail is sent.
-    </p>
     <a asp-page="Login" class="btn btn-primary w-100">Get a new link</a>
 }
 else
 {
-    <h1 class="h3 fw-bold mb-1">Continue as @Model.MaskedEmail</h1>
+    <h1 class="h3 fw-bold mb-1">Continue as @Model.Email</h1>
     <p class="text-secondary mb-4">
         @(Model.Purpose == Helpdesk.Web.Data.ChallengePurpose.PasswordReset
-            ? "Confirm that you want to choose a new password on this device."
-            : "Confirm that you want to sign in on this device.")
+            ? "Confirm the password reset on this device."
+            : "Confirm sign-in on this device.")
     </p>
 
     <form method="post">

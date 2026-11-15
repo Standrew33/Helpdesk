@@ -74,19 +74,19 @@ public class LoginModel(
                 return RedirectToPage("Code", new { c = sent.ChallengeId, returnUrl });
 
             case SendOutcome.AlreadySent when sent.ChallengeId is { } open:
-                Notice = "We sent you a code a moment ago. Use that one, or ask for a new one in a minute.";
+                Notice = "Code already sent. Check your e-mail.";
                 return RedirectToPage("Code", new { c = open, returnUrl });
 
             case SendOutcome.AlreadySent:
-                ModelState.AddModelError(string.Empty, $"A code was sent a moment ago. Try again in {Seconds(sent.RetryAfter)} seconds.");
+                ModelState.AddModelError(string.Empty, CodeMailer.AlreadySentMessage(sent.RetryAfter));
                 return Page();
 
             case SendOutcome.TooMany:
-                ModelState.AddModelError(string.Empty, $"Too many codes were asked for this address. Try again in {Minutes(sent.RetryAfter)} minutes.");
+                ModelState.AddModelError(string.Empty, CodeMailer.TooManyMessage(sent.RetryAfter));
                 return Page();
 
             default:
-                ModelState.AddModelError(string.Empty, "The e-mail could not be sent right now. Please try again in a minute.");
+                ModelState.AddModelError(string.Empty, CodeMailer.FailedMessage);
                 return Page();
         }
     }
@@ -110,9 +110,6 @@ public class LoginModel(
         return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : RedirectToPage("/Tickets/Index");
     }
 
-    private static int Seconds(TimeSpan time) => Math.Max(1, (int)Math.Ceiling(time.TotalSeconds));
-
-    private static int Minutes(TimeSpan time) => Math.Max(1, (int)Math.Ceiling(time.TotalMinutes));
 
     public class InputModel
     {

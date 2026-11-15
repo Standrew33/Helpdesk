@@ -18,7 +18,7 @@ public class CodeModel(OneTimeCodeService codes, CodeMailer mailer, EmailSignIn 
 
     public Guid ChallengeId { get; private set; }
 
-    public string MaskedEmail { get; private set; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
 
     public ChallengePurpose Purpose { get; private set; }
 
@@ -50,7 +50,7 @@ public class CodeModel(OneTimeCodeService codes, CodeMailer mailer, EmailSignIn 
         switch (result.Outcome)
         {
             case VerifyOutcome.WrongCode:
-                ModelState.AddModelError(nameof(Code), $"The code is not correct. {Attempts(result.AttemptsLeft)} left.");
+                ModelState.AddModelError(nameof(Code), "The code is not correct.");
                 return Page();
 
             case VerifyOutcome.NoLongerValid:
@@ -92,19 +92,19 @@ public class CodeModel(OneTimeCodeService codes, CodeMailer mailer, EmailSignIn 
         switch (sent.Outcome)
         {
             case SendOutcome.Sent:
-                Notice = "We sent a new code. The previous one no longer works.";
+                Notice = "New code sent.";
                 return RedirectToPage(new { c = sent.ChallengeId, returnUrl });
 
             case SendOutcome.AlreadySent:
-                Notice = $"A code was sent a moment ago. You can ask for another in {Math.Max(1, (int)Math.Ceiling(sent.RetryAfter.TotalSeconds))} seconds.";
+                Notice = CodeMailer.AlreadySentMessage(sent.RetryAfter);
                 return RedirectToPage(new { c = sent.ChallengeId ?? c, returnUrl });
 
             case SendOutcome.TooMany:
-                Notice = $"Too many codes were asked for this address. Try again in {Math.Max(1, (int)Math.Ceiling(sent.RetryAfter.TotalMinutes))} minutes.";
+                Notice = CodeMailer.TooManyMessage(sent.RetryAfter);
                 return RedirectToPage(new { c, returnUrl });
 
             default:
-                Notice = "The e-mail could not be sent right now. Please try again in a minute.";
+                Notice = CodeMailer.FailedMessage;
                 return RedirectToPage(new { c, returnUrl });
         }
     }
@@ -121,9 +121,8 @@ public class CodeModel(OneTimeCodeService codes, CodeMailer mailer, EmailSignIn 
         }
 
         Purpose = challenge.Purpose;
-        MaskedEmail = SignInEmails.Mask(challenge.Email.ToLowerInvariant());
+        Email = challenge.Email.ToLowerInvariant();
         return true;
     }
 
-    private static string Attempts(int left) => left == 1 ? "1 attempt" : $"{left} attempts";
 }

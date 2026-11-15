@@ -222,7 +222,7 @@ public sealed class RequestLimitFilter(RequestLimiter limiter, ILogger<RequestLi
             ? (seconds == 1 ? "1 second" : $"{seconds} seconds")
             : (seconds < 120 ? "1 minute" : $"{(int)Math.Ceiling(seconds / 60.0)} minutes");
 
-        return $"Too many attempts from your network. Try again in {wait}.";
+        return $"Too many attempts. Try again in {wait}.";
     }
 }
 

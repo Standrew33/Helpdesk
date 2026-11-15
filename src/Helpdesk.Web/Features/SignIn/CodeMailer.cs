@@ -25,6 +25,12 @@ public partial class CodeMailer(
     IOptions<OneTimeCodeOptions> options,
     ILogger<CodeMailer> logger)
 {
+    public const string FailedMessage = "Could not send the e-mail. Try again later.";
+
+    public static string AlreadySentMessage(TimeSpan retryAfter) => $"Code already sent. Try again in {Math.Max(1, (int)Math.Ceiling(retryAfter.TotalSeconds))} seconds.";
+
+    public static string TooManyMessage(TimeSpan retryAfter) => $"Too many codes. Try again in {Math.Max(1, (int)Math.Ceiling(retryAfter.TotalMinutes))} minutes.";
+
     public async Task<SendResult> SendAsync(string address, ChallengePurpose purpose, HttpRequest request, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(request);

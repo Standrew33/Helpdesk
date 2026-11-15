@@ -16,7 +16,7 @@ public static class SignInEmails
             : ($"{challenge.Code} is your Helpdesk sign-in code", "Use this code to sign in to Helpdesk:", "Sign in to Helpdesk");
 
         var minutes = (int)lifetime.TotalMinutes;
-        var ignore = "If you did not ask for this, you can ignore this e-mail; nobody can sign in without the code.";
+        var ignore = "If you did not request it, ignore this e-mail.";
 
         var text = $"""
             {intro}
@@ -25,7 +25,7 @@ public static class SignInEmails
 
             Or open this link: {linkUrl}
 
-            The code and the link work once and expire in {minutes} minutes.
+            The code is valid for {minutes} minutes.
             {ignore}
             """;
 
@@ -42,7 +42,7 @@ public static class SignInEmails
                   <tr><td style="padding-bottom:20px;">
                     <a href="{html.Encode(linkUrl)}" style="display:inline-block;background:#0f766e;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">{html.Encode(button)}</a>
                   </td></tr>
-                  <tr><td style="font-size:13px;color:#5b6b6a;">The code and the button work once and expire in {minutes} minutes. {html.Encode(ignore)}</td></tr>
+                  <tr><td style="font-size:13px;color:#5b6b6a;">The code is valid for {minutes} minutes. {html.Encode(ignore)}</td></tr>
                 </table>
               </td></tr></table>
             </body>
@@ -50,20 +50,5 @@ public static class SignInEmails
             """;
 
         return new EmailMessage(to, subject, text, body);
-    }
-
-    /// <summary>"n•••@example.com": enough to recognise one's own address, not enough to read it off the screen.</summary>
-    public static string Mask(string email)
-    {
-        var at = email.IndexOf('@', StringComparison.Ordinal);
-
-        if (at <= 0)
-        {
-            return email;
-        }
-
-        var name = email[..at];
-        var visible = name.Length > 2 ? name[..1] : string.Empty;
-        return visible + new string('•', Math.Max(3, name.Length - visible.Length)) + email[at..];
     }
 }

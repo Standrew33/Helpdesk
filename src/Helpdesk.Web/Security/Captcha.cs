@@ -97,7 +97,7 @@ public partial class CaptchaGuard(ICaptchaVerifier verifier, IOptions<CaptchaOpt
 {
     public const string FieldName = "captchaToken";
 
-    public const string FailureMessage = "We could not confirm that this form was sent by a person. Please try again.";
+    public const string FailureMessage = "Verification failed. Please try again.";
 
     public async Task<bool> PassesAsync(HttpRequest request, string action, CancellationToken ct = default)
     {

@@ -16,7 +16,7 @@ public class LinkModel(OneTimeCodeService codes, EmailSignIn emailSignIn) : Page
     [BindProperty(SupportsGet = true)]
     public string? Token { get; set; }
 
-    public string MaskedEmail { get; private set; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
 
     public ChallengePurpose Purpose { get; private set; }
 
@@ -32,7 +32,7 @@ public class LinkModel(OneTimeCodeService codes, EmailSignIn emailSignIn) : Page
             return Page();
         }
 
-        MaskedEmail = SignInEmails.Mask(challenge.Email.ToLowerInvariant());
+        Email = challenge.Email.ToLowerInvariant();
         Purpose = challenge.Purpose;
         return Page();
     }

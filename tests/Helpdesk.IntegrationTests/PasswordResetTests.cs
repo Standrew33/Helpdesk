@@ -55,7 +55,7 @@ public class PasswordResetTests(SqlServerFixture sql) : WebTestBase(sql)
         var link = new Uri(CapturingEmailSender.LinkIn(Factory.Mail.LastTo(Email)));
         var client = NewClient();
 
-        Assert.Contains("choose a new password", await client.GetHtmlAsync(link.PathAndQuery));
+        Assert.Contains("Confirm the password reset", await client.GetHtmlAsync(link.PathAndQuery));
 
         var response = await client.PostFormAsync(link.PathAndQuery, link.PathAndQuery, new Dictionary<string, string>
         {

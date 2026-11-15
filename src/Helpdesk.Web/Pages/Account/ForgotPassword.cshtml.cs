@@ -59,15 +59,15 @@ public class ForgotPasswordModel(CodeMailer mailer, CaptchaGuard captcha, ILogge
                 return RedirectToPage("Code", new { c = sent.ChallengeId });
 
             case SendOutcome.AlreadySent:
-                ModelState.AddModelError(string.Empty, "A code was sent a moment ago. Try again in a minute.");
+                ModelState.AddModelError(string.Empty, CodeMailer.AlreadySentMessage(sent.RetryAfter));
                 return Page();
 
             case SendOutcome.TooMany:
-                ModelState.AddModelError(string.Empty, "Too many codes were asked for this address. Try again later.");
+                ModelState.AddModelError(string.Empty, CodeMailer.TooManyMessage(sent.RetryAfter));
                 return Page();
 
             default:
-                ModelState.AddModelError(string.Empty, "The e-mail could not be sent right now. Please try again in a minute.");
+                ModelState.AddModelError(string.Empty, CodeMailer.FailedMessage);
                 return Page();
         }
     }
