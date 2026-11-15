@@ -125,9 +125,11 @@ The application then writes the `google-site-verification` meta tag into every p
 
 Sign-in and password reset send a code and a link by e-mail, so the app needs an SMTP server and
 **does not start in production without one**. Any provider with an SMTP relay works; on the free
-tiers, Brevo (300 messages a day) and Resend (3,000 a month) are good fits. Both need the sending
-domain verified with a few DNS records (SPF, DKIM), otherwise messages end up in spam, so send
-from an address on a domain you control, for example `helpdesk@<your-domain>`.
+tiers, Brevo (300 messages a day) and Resend (3,000 a month) are good fits. Send from an address
+on a domain you control, for example `helpdesk@<your-domain>`, and verify that domain with the
+provider's DNS records (SPF, DKIM). Resend refuses mail from an unverified domain outright, and its
+test sender `onboarding@resend.dev` delivers only to the account owner's own address; elsewhere an
+unverified domain ends up in spam.
 
 ```powershell
 az webapp config appsettings set -g $rg -n $app --settings `
