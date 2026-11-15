@@ -1,0 +1,15 @@
+@model PriorityChoice
+<div class="dropdown choice" data-choice>
+    <button type="button" id="@Model.Id" class="form-select choice-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="@(Model.Id)Label @Model.Id">
+        <span data-choice-label>@Model.Selected</span>
+    </button>
+    <div class="dropdown-menu choice-menu">
+        @foreach (var priority in Model.Options)
+        {
+            <label class="choice-option">
+                <input type="radio" name="@Model.Name" value="@priority" checked="@(priority == Model.Selected)" class="form-check-input" />
+                <span data-choice-view><partial name="_Priority" model="priority" /></span>
+            </label>
+        }
+    </div>
+</div>

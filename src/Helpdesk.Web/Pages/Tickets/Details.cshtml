@@ -143,13 +143,21 @@
         {
             <form method="post" asp-page-handler="Status" class="card card-body mb-3">
                 <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
-                <label for="status" class="form-label">Change status</label>
-                <select id="status" name="status" class="form-select mb-2">
-                    @foreach (var status in Model.AllowedStatuses)
-                    {
-                        <option value="@status">@TicketDisplay.StatusText(status)</option>
-                    }
-                </select>
+                <label id="StatusLabel" for="Status" class="form-label">Change status</label>
+                <div class="dropdown choice mb-2" data-choice>
+                    <button type="button" id="Status" class="form-select choice-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="StatusLabel Status">
+                        <span data-choice-label></span>
+                    </button>
+                    <div class="dropdown-menu choice-menu">
+                        @foreach (var status in Model.AllowedStatuses)
+                        {
+                            <label class="choice-option">
+                                <input type="radio" name="status" value="@status" checked="@(status == Model.AllowedStatuses[0])" class="form-check-input" />
+                                <span data-choice-view><span class="@TicketDisplay.StatusClass(status)">@TicketDisplay.StatusText(status)</span></span>
+                            </label>
+                        }
+                    </div>
+                </div>
                 <button type="submit" class="btn btn-outline-primary">Apply</button>
             </form>
         }
@@ -171,13 +179,8 @@
 
             <form method="post" asp-page-handler="Priority" class="card card-body mb-3">
                 <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
-                <label for="priority" class="form-label">Priority</label>
-                <select id="priority" name="priority" class="form-select mb-2">
-                    @foreach (var priority in Enum.GetValues<TicketPriority>())
-                    {
-                        <option value="@priority" selected="@(priority == ticket.Priority)">@priority</option>
-                    }
-                </select>
+                <label id="PriorityLabel" for="Priority" class="form-label">Priority</label>
+                <div class="mb-2"><partial name="_PriorityChoice" model="Model.PriorityChoice" /></div>
                 <button type="submit" class="btn btn-outline-primary">Apply</button>
             </form>
         }

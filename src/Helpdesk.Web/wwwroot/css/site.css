@@ -683,6 +683,77 @@ a.user-chip.active {
   margin: 3rem auto 0;
 }
 
+/* ---------- Coloured dropdowns ---------- */
+
+.choice-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: calc(1.5em + 0.75rem + 2px);
+  text-align: left;
+}
+
+.choice-toggle [data-choice-label] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.choice-placeholder {
+  color: var(--hd-muted);
+}
+
+.choice-more {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--hd-muted);
+}
+
+.choice-menu {
+  --bs-dropdown-min-width: 100%;
+  padding: 0.35rem;
+  border-color: var(--hd-border);
+  box-shadow: 0 8px 24px rgba(14, 28, 27, 0.12);
+}
+
+.choice-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.choice-option:hover {
+  background: var(--hd-bg);
+}
+
+.choice-option .form-check-input {
+  margin: 0;
+  flex: none;
+}
+
+/* One choice: the radio itself is not needed, the highlighted row says which one is chosen. */
+.choice:not([data-choice-multiple]) .choice-option .form-check-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choice:not([data-choice-multiple]) .choice-option:has(:checked) {
+  background: var(--hd-accent-soft);
+}
+
+.choice-option:has(:focus-visible) {
+  outline: 2px solid var(--hd-accent);
+  outline-offset: -2px;
+}
+
 /* ---------- Ticket list ---------- */
 
 .toolbar {

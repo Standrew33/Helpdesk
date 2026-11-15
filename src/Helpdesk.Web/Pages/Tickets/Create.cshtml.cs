@@ -7,7 +7,6 @@ using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Helpdesk.Web.Pages.Tickets;
 
@@ -15,16 +14,13 @@ namespace Helpdesk.Web.Pages.Tickets;
 public class CreateModel(TicketService tickets) : PageModel
 {
     // Customers cannot open urgent tickets; staff can raise the priority later.
-    public static readonly IReadOnlyList<SelectListItem> PriorityOptions =
-    [
-        new("Backlog", nameof(TicketPriority.Backlog)),
-        new("Low", nameof(TicketPriority.Low)),
-        new("Normal", nameof(TicketPriority.Normal)),
-        new("High", nameof(TicketPriority.High)),
-    ];
+    public static readonly IReadOnlyList<TicketPriority> PriorityOptions =
+        [TicketPriority.Backlog, TicketPriority.Low, TicketPriority.Normal, TicketPriority.High];
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
+
+    public PriorityChoice PriorityChoice => new("Input.Priority", "Priority", PriorityOptions, Input.Priority);
 
     public void OnGet()
     {

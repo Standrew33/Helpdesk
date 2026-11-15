@@ -50,3 +50,6 @@ public static class TicketDisplay
 
     public static string Date(DateTimeOffset value) => value.UtcDateTime.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) + " UTC";
 }
+
+/// <summary>A one-choice priority picker: the form field name, the options offered and the one chosen.</summary>
+public sealed record PriorityChoice(string Name, string Id, IReadOnlyList<TicketPriority> Options, TicketPriority Selected);
