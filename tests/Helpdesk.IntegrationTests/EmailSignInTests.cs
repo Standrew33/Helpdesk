@@ -195,6 +195,26 @@ public class EmailSignInTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task A_code_that_could_not_be_sent_costs_nothing_and_can_be_asked_for_again_at_once()
+    {
+        var client = NewClient();
+        Factory.Mail.Refusing = true;
+
+        for (var i = 0; i < 6; i++)
+        {
+            var failed = await client.RequestCodeAsync(Email);
+            Assert.Equal(HttpStatusCode.OK, failed.StatusCode);
+            Assert.Contains("could not be sent", await failed.Content.ReadAsStringAsync());
+        }
+
+        Factory.Mail.Refusing = false;
+        var sent = await client.RequestCodeAsync(Email);
+
+        Assert.StartsWith("/Account/Code?c=", sent.Headers.Location!.OriginalString, StringComparison.Ordinal);
+        Assert.Single(Factory.Mail.To(Email));
+    }
+
+    [Fact]
     public async Task Links_use_the_configured_address_and_never_the_requests_host()
     {
         using var factory = WithSettings(("Site:PublicUrl", "https://helpdesk.example.test"));

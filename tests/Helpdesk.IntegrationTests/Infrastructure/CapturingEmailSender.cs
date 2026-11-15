@@ -11,8 +11,16 @@ public sealed partial class CapturingEmailSender : IEmailSender
 
     public IReadOnlyList<EmailMessage> Messages => [.. _messages];
 
+    /// <summary>While set, every message fails like a mail server that refuses it.</summary>
+    public bool Refusing { get; set; }
+
     public Task SendAsync(EmailMessage message, CancellationToken ct = default)
     {
+        if (Refusing)
+        {
+            throw new InvalidOperationException("The mail server refused the message.");
+        }
+
         _messages.Enqueue(message);
         return Task.CompletedTask;
     }

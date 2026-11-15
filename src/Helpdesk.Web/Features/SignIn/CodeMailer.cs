@@ -49,6 +49,7 @@ public partial class CodeMailer(
         {
             // The address itself is not logged; the provider's own log has it if it is needed.
             SendFailed(logger, ex, purpose);
+            await codes.WithdrawAsync(challenge.Id, CancellationToken.None);
             return new SendResult(SendOutcome.Failed, null, TimeSpan.Zero);
         }
 

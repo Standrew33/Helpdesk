@@ -108,6 +108,13 @@ public class OneTimeCodeService(HelpdeskDbContext db, TimeProvider time, IOption
         return new IssueResult(IssueOutcome.Issued, new IssuedChallenge(id, code, token, expires), TimeSpan.Zero);
     }
 
+    /// <summary>
+    /// Takes back a challenge whose e-mail never went out: it does not count against the address's limits, and
+    /// nobody is sent to enter a code that never arrived. Older codes stay replaced; they were already superseded.
+    /// </summary>
+    public async Task WithdrawAsync(Guid id, CancellationToken ct = default)
+        => await db.Set<SignInChallenge>().Where(c => c.Id == id).ExecuteDeleteAsync(ct);
+
     /// <summary>The newest challenge for the address that still works, for when someone asks again too soon.</summary>
     public async Task<Guid?> LatestOpenAsync(string email, ChallengePurpose purpose, CancellationToken ct = default)
     {
