@@ -996,3 +996,50 @@ a.user-chip.active {
     transition: none;
   }
 }
+
+/* Eye button in password fields (js/password-toggle.js) */
+.password-field {
+  position: relative;
+}
+
+.password-field .form-control {
+  padding-right: 2.75rem;
+}
+
+/* Edge has a reveal button of its own; one is enough. */
+.password-field input::-ms-reveal {
+  display: none;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--hd-muted);
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: var(--bs-body-color);
+}
+
+.password-toggle svg {
+  fill: none;
+}
+
+.password-toggle[aria-pressed="false"] .password-toggle-slash {
+  display: none;
+}

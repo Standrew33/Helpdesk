@@ -129,7 +129,8 @@
 
     meter.appendChild(bar);
     meter.appendChild(text);
-    input.insertAdjacentElement('afterend', meter);
+    // After the field's wrapper, when the eye button put one around it.
+    (input.closest('.password-field') || input).insertAdjacentElement('afterend', meter);
     input.setAttribute('aria-describedby', ((input.getAttribute('aria-describedby') || '') + ' ' + text.id).trim());
 
     function update() {
