@@ -10,8 +10,9 @@ namespace Helpdesk.Web.Pages.Account;
 [AllowAnonymous]
 public class CodeModel(OneTimeCodeService codes, CodeMailer mailer, EmailSignIn emailSignIn) : PageModel
 {
+    /// <summary>One digit per box; a code pasted or typed into a single field arrives whole, which works as well.</summary>
     [BindProperty]
-    public string? Code { get; set; }
+    public string[] Code { get; set; } = [];
 
     [TempData]
     public string? Notice { get; set; }
@@ -45,7 +46,7 @@ public class CodeModel(OneTimeCodeService codes, CodeMailer mailer, EmailSignIn 
             return Page();
         }
 
-        var result = await codes.VerifyCodeAsync(c, Code ?? string.Empty, ct);
+        var result = await codes.VerifyCodeAsync(c, string.Concat(Code), ct);
 
         switch (result.Outcome)
         {

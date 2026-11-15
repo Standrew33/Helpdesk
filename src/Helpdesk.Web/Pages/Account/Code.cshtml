@@ -26,9 +26,14 @@ else
     <form method="post" asp-route-c="@Model.ChallengeId" asp-route-returnUrl="@Model.ReturnUrl">
         <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
         <div class="mb-4">
-            <label for="Code" class="form-label">Code</label>
-            <input id="Code" name="Code" class="form-control code-input" inputmode="numeric" autocomplete="one-time-code"
-                   maxlength="9" required autofocus />
+            <label for="Code_1" class="form-label" id="CodeLabel">Code</label>
+            <div class="code-boxes" role="group" aria-labelledby="CodeLabel" data-code-boxes>
+                @for (var i = 1; i <= 6; i++)
+                {
+                    <input id="@($"Code_{i}")" name="Code" class="form-control code-box" inputmode="numeric" pattern="[0-9]*"
+                           autocomplete="@(i == 1 ? "one-time-code" : "off")" aria-label="Digit @i of 6" required autofocus="@(i == 1)" />
+                }
+            </div>
             <span asp-validation-for="Code" class="field-validation-error"></span>
         </div>
         <button type="submit" class="btn btn-primary w-100">Continue</button>
@@ -41,4 +46,8 @@ else
         <a asp-page="Login" asp-route-returnUrl="@Model.ReturnUrl">Use a different e-mail</a>
     </div>
     <p class="text-secondary small mt-3 mb-0">No e-mail? Check your spam folder.</p>
+}
+
+@section Scripts {
+    <script src="~/js/code-boxes.js" asp-append-version="true"></script>
 }
