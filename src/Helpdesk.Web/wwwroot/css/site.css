@@ -170,21 +170,6 @@ a:hover {
   font-size: 0.9rem;
 }
 
-.side-status::before {
-  content: "";
-  width: 0.55rem;
-  height: 0.55rem;
-  margin: 0 0.275rem;
-  border-radius: 50%;
-  background: var(--dot, #7b918d);
-  flex: none;
-}
-
-.dot-new { --dot: #60a5fa; }
-.dot-progress { --dot: #a78bfa; }
-.dot-waiting { --dot: #fbbf24; }
-.dot-closed { --dot: #94a3b8; }
-
 .side-user {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 1rem;
@@ -288,7 +273,7 @@ a.user-chip.active {
     flex-wrap: wrap;
   }
 
-  /* The main links stay reachable as a scrolling strip; status shortcuts live in the list filters. */
+  /* The main links stay reachable as a scrolling strip. */
   .side-nav {
     order: 3;
     flex: 0 0 100%;
@@ -299,8 +284,7 @@ a.user-chip.active {
     scrollbar-width: none;
   }
 
-  .side-nav .side-section,
-  .side-nav .side-status {
+  .side-nav .side-section {
     display: none;
   }
 

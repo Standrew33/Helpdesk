@@ -6,7 +6,6 @@
         : User.IsInRole(RoleNames.Operator) ? RoleNames.Operator
         : User.IsInRole(RoleNames.Customer) ? RoleNames.Customer
         : "";
-    var statusFilter = Context.Request.Query["status"].ToString();
     var scopeFilter = Context.Request.Query["scope"].ToString();
     var onList = page == "/Tickets/Index";
     var isStaff = role is RoleNames.Operator or RoleNames.Admin;
@@ -37,7 +36,7 @@
                 </a>
 
                 <nav class="side-nav" aria-label="Main">
-                    <a asp-page="/Tickets/Index" class="side-link @(onList && statusFilter == "" && scopeFilter == "" ? "active" : "")">
+                    <a asp-page="/Tickets/Index" class="side-link @(onList && scopeFilter == "" ? "active" : "")">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
                         All tickets
                     </a>
@@ -53,15 +52,6 @@
                         <a asp-page="/Tickets/Create" class="side-link @(page == "/Tickets/Create" ? "active" : "")">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
                             New ticket
-                        </a>
-                    }
-
-                    <div class="side-section">Status</div>
-                    @foreach (var status in Enum.GetValues<TicketStatus>())
-                    {
-                        <a asp-page="/Tickets/Index" asp-route-status="@status"
-                           class="side-link side-status @TicketDisplay.DotClass(status) @(onList && statusFilter == status.ToString() ? "active" : "")">
-                            @TicketDisplay.StatusText(status)
                         </a>
                     }
 

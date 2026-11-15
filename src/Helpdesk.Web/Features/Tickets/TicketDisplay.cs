@@ -24,15 +24,6 @@ public static class TicketDisplay
         _ => "pill",
     };
 
-    public static string DotClass(TicketStatus status) => status switch
-    {
-        TicketStatus.New => "dot-new",
-        TicketStatus.InProgress => "dot-progress",
-        TicketStatus.WaitingForCustomer => "dot-waiting",
-        TicketStatus.Closed => "dot-closed",
-        _ => "",
-    };
-
     public static string PriorityClass(TicketPriority priority) => priority switch
     {
         TicketPriority.Urgent => "prio prio-urgent",
