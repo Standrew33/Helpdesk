@@ -14,11 +14,12 @@ public static class SecurityHeaders
         + "connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 
     /// <summary>
-    /// The same policy plus what Google reCAPTCHA needs, for the few pages with a protected form:
-    /// its script from google.com and gstatic.com, and its hidden frame.
+    /// The policy for the few pages with a protected form, as Google recommends for reCAPTCHA: only scripts that
+    /// carry this response's nonce run, and the scripts they add themselves ('strict-dynamic'). reCAPTCHA builds
+    /// some of its scripts on the fly, inline ones among them, which a list of hosts cannot allow.
     /// </summary>
-    public const string CaptchaContentSecurityPolicy =
-        "default-src 'self'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; "
+    public static string CaptchaContentSecurityPolicy(string nonce)
+        => $"default-src 'self'; script-src 'nonce-{nonce}' 'strict-dynamic'; "
         + "style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://www.google.com/recaptcha/; "
         + "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; "
         + "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";

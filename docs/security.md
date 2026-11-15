@@ -69,7 +69,7 @@ created only then.
 
 | Header | Purpose |
 | --- | --- |
-| `Content-Security-Policy` | Scripts, styles, images and fonts from the site only; no inline code, no plug-ins, no framing, forms post to the site only. The three reCAPTCHA pages also allow Google's script and frame. |
+| `Content-Security-Policy` | Scripts, styles, images and fonts from the site only; no inline code, no plug-ins, no framing, forms post to the site only. The three reCAPTCHA pages use Google's recommended policy instead: only scripts with the response's random nonce run, plus the scripts they add (`'strict-dynamic'`), and Google's frame is allowed. |
 | `X-Content-Type-Options`, `X-Frame-Options` | No content sniffing, no clickjacking. |
 | `Referrer-Policy`, `Permissions-Policy` | Less information leaves the site; camera, microphone, location and similar features are off. |
 | `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy` | Isolate the site from other origins. |

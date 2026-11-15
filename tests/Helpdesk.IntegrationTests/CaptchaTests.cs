@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using Helpdesk.IntegrationTests.Infrastructure;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -41,20 +42,36 @@ public class CaptchaTests(SqlServerFixture sql) : WebTestBase(sql)
     [InlineData("/Account/Login", "login")]
     [InlineData("/Account/Password", "password")]
     [InlineData("/Account/ForgotPassword", "reset")]
-    public async Task Protected_forms_load_the_check_and_allow_only_googles_hosts(string page, string action)
+    public async Task Protected_forms_load_the_check_with_a_nonce_policy(string page, string action)
     {
         using var factory = WithCaptcha();
 
         var response = await NewClient(factory).GetAsync(page);
         var html = await response.Content.ReadAsStringAsync();
         var csp = response.Headers.GetValues("Content-Security-Policy").Single();
+        var nonce = Regex.Match(csp, "'nonce-([A-Za-z0-9_-]+)'").Groups[1].Value;
+        var scripts = Regex.Matches(html, "<script[^>]*>").Select(m => m.Value).ToList();
 
         Assert.Contains($"data-captcha-action=\"{action}\"", html);
         Assert.Contains("https://www.google.com/recaptcha/api.js?render=site-key", html);
-        Assert.Contains("Protected by reCAPTCHA", html);
-        Assert.Contains("https://www.gstatic.com/recaptcha/", csp);
+        Assert.Contains("'strict-dynamic'", csp);
         Assert.Contains("frame-src https://www.google.com/recaptcha/", csp);
         Assert.DoesNotContain("unsafe-inline", csp);
+        Assert.Equal(22, nonce.Length);
+        Assert.NotEmpty(scripts);
+        Assert.All(scripts, tag => Assert.Contains($"nonce=\"{nonce}\"", tag));
+    }
+
+    [Fact]
+    public async Task Every_response_gets_a_new_nonce()
+    {
+        using var factory = WithCaptcha();
+        var client = NewClient(factory);
+
+        var first = (await client.GetAsync("/Account/Login")).Headers.GetValues("Content-Security-Policy").Single();
+        var second = (await client.GetAsync("/Account/Login")).Headers.GetValues("Content-Security-Policy").Single();
+
+        Assert.NotEqual(first, second);
     }
 
     [Fact]
@@ -73,8 +90,10 @@ public class CaptchaTests(SqlServerFixture sql) : WebTestBase(sql)
     public async Task Without_keys_the_check_is_off_and_nothing_is_loaded()
     {
         var response = await NewClient().GetAsync("/Account/Login");
+        var html = await response.Content.ReadAsStringAsync();
 
-        Assert.DoesNotContain("recaptcha", await response.Content.ReadAsStringAsync());
+        Assert.DoesNotContain("recaptcha", html);
+        Assert.DoesNotContain("nonce=", html);
         Assert.DoesNotContain("google", response.Headers.GetValues("Content-Security-Policy").Single());
     }
 

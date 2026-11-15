@@ -127,8 +127,8 @@ public partial class CaptchaGuard(ICaptchaVerifier verifier, IOptions<CaptchaOpt
 }
 
 /// <summary>
-/// Pages with a protected form may load Google's script and frame. Only these pages relax the content security
-/// policy, and only when the check is switched on.
+/// Pages with a protected form may load Google's script and frame. Only these pages switch to the nonce-based
+/// policy, and only when the check is switched on; every script tag of the page then carries the nonce.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class CaptchaPageAttribute : Attribute, IAsyncResultFilter
@@ -140,7 +140,8 @@ public sealed class CaptchaPageAttribute : Attribute, IAsyncResultFilter
 
         if (context.HttpContext.RequestServices.GetRequiredService<IOptions<CaptchaOptions>>().Value.Enabled)
         {
-            context.HttpContext.Response.Headers.ContentSecurityPolicy = SecurityHeaders.CaptchaContentSecurityPolicy;
+            context.HttpContext.Response.Headers.ContentSecurityPolicy =
+                SecurityHeaders.CaptchaContentSecurityPolicy(ScriptNonce.Issue(context.HttpContext));
         }
 
         await next();
