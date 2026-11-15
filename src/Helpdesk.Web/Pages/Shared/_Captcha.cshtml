@@ -4,11 +4,6 @@
 @if (Captcha.Value.Enabled)
 {
     <input type="hidden" name="@CaptchaGuard.FieldName" data-captcha-action="@Model" data-captcha-site-key="@Captcha.Value.SiteKey" />
-    <p class="captcha-notice">
-        Protected by reCAPTCHA; the Google
-        <a href="https://policies.google.com/privacy" rel="noopener noreferrer" target="_blank">Privacy Policy</a> and
-        <a href="https://policies.google.com/terms" rel="noopener noreferrer" target="_blank">Terms of Service</a> apply.
-    </p>
     <script src="https://www.google.com/recaptcha/api.js?render=@Uri.EscapeDataString(Captcha.Value.SiteKey!)" async defer></script>
     <script src="~/js/captcha.js" asp-append-version="true"></script>
 }
