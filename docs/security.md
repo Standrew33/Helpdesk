@@ -82,8 +82,9 @@ Azure front end is trusted as the one proxy, so the real client address and sche
 ## Limits on repeated actions
 
 Per client address (an IPv6 address counts as its /64 network); reading pages is never limited.
-They are in the `RequestLimits` configuration section. Over the limit: status 429 with
-`Retry-After`.
+They are in the `RequestLimits` configuration section. Over the limit, the post never reaches its
+handler: the form is shown again with what was typed and the waiting time as a form error, with
+status 429 and `Retry-After`.
 
 | Action | Default |
 | --- | --- |

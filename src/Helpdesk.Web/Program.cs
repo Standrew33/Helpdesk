@@ -198,8 +198,6 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
-app.UseRateLimiter();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
