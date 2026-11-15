@@ -168,8 +168,8 @@ public class TicketService(
     public Task<ServiceResult> ChangeStatusAsync(int id, Actor actor, string? rowVersion, TicketStatus status)
         => UpdateAsync(id, actor, rowVersion, (ticket, now) => ticket.ChangeStatus(actor, status, now));
 
-    public Task<ServiceResult> ChangePriorityAsync(int id, Actor actor, string? rowVersion, TicketPriority priority)
-        => UpdateAsync(id, actor, rowVersion, (ticket, now) => ticket.ChangePriority(actor, priority, now));
+    public Task<ServiceResult> EditAsync(int id, Actor actor, string? rowVersion, string subject, string description, TicketPriority priority)
+        => UpdateAsync(id, actor, rowVersion, (ticket, now) => ticket.Edit(actor, subject, description, priority, now));
 
     public Task<ServiceResult> AddCommentAsync(int id, Actor actor, string? rowVersion, string body, bool isInternal)
         => UpdateAsync(id, actor, rowVersion, (ticket, now) => ticket.AddComment(actor, body, isInternal, now));

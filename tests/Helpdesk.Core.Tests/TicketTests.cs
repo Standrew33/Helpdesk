@@ -19,7 +19,7 @@ public class TicketTests
 
         if (priority == TicketPriority.Urgent)
         {
-            ticket.ChangePriority(Operator, TicketPriority.Urgent, Now);
+            ticket.Edit(Operator, ticket.Subject, ticket.Description, TicketPriority.Urgent, Now);
         }
 
         return ticket;
@@ -183,33 +183,91 @@ public class TicketTests
     }
 
     [Fact]
-    public void ChangePriority_recalculates_the_deadline_from_creation_time()
+    public void A_new_priority_recalculates_the_deadline_from_creation_time()
     {
         var ticket = NewTicket(TicketPriority.Low);
 
-        ticket.ChangePriority(Operator, TicketPriority.Urgent, Now.AddHours(1));
+        ticket.Edit(Operator, ticket.Subject, ticket.Description, TicketPriority.Urgent, Now.AddHours(1));
 
         Assert.Equal(Now.AddHours(4), ticket.DueAt);
         Assert.Equal("Priority", ticket.History[^1].Field);
     }
 
     [Fact]
-    public void ChangePriority_is_for_staff_only()
+    public void Only_staff_can_make_a_ticket_urgent()
     {
         var ticket = NewTicket();
 
-        Assert.Throws<DomainException>(() => ticket.ChangePriority(Customer, TicketPriority.Urgent, Now));
+        Assert.Throws<DomainException>(() => ticket.Edit(Customer, ticket.Subject, ticket.Description, TicketPriority.Urgent, Now));
     }
 
     [Fact]
-    public void Closed_ticket_cannot_be_assigned_commented_or_reprioritized()
+    public void The_customer_edits_the_subject_description_and_priority_and_each_change_is_recorded()
+    {
+        var ticket = NewTicket();
+
+        ticket.Edit(Customer, "  Printer jams  ", "Paper gets stuck.", TicketPriority.Backlog, Now.AddHours(2));
+
+        Assert.Equal("Printer jams", ticket.Subject);
+        Assert.Equal("Paper gets stuck.", ticket.Description);
+        Assert.Equal(TicketPriority.Backlog, ticket.Priority);
+        Assert.Equal(Now.AddDays(30), ticket.DueAt);
+        Assert.Equal(Now.AddHours(2), ticket.UpdatedAt);
+        Assert.Equal(["Subject", "Description", "Priority"], ticket.History.Skip(1).Select(h => h.Field));
+        Assert.Equal(("Printer is down", "Printer jams"), (ticket.History[1].OldValue, ticket.History[1].NewValue));
+        Assert.Null(ticket.History[2].NewValue);
+    }
+
+    [Fact]
+    public void Saving_without_changes_records_nothing()
+    {
+        var ticket = NewTicket();
+
+        ticket.Edit(Customer, ticket.Subject, ticket.Description, ticket.Priority, Now.AddHours(1));
+
+        Assert.Single(ticket.History);
+        Assert.Equal(Now, ticket.UpdatedAt);
+    }
+
+    [Fact]
+    public void A_customer_keeps_an_urgent_ticket_urgent_while_editing_it()
+    {
+        var ticket = NewTicket(TicketPriority.Urgent);
+
+        ticket.Edit(Customer, "New subject", ticket.Description, TicketPriority.Urgent, Now);
+
+        Assert.Equal("New subject", ticket.Subject);
+    }
+
+    [Fact]
+    public void Only_the_customer_who_opened_it_and_staff_may_edit()
+    {
+        var ticket = NewTicket();
+
+        Assert.Throws<DomainException>(() => ticket.Edit(OtherCustomer, "Mine now", ticket.Description, ticket.Priority, Now));
+        ticket.Edit(Admin, "Edited by staff", ticket.Description, ticket.Priority, Now);
+        Assert.Equal("Edited by staff", ticket.Subject);
+    }
+
+    [Theory]
+    [InlineData("", "text")]
+    [InlineData("subject", " ")]
+    public void An_edit_needs_a_subject_and_a_description(string subject, string description)
+    {
+        var ticket = NewTicket();
+
+        Assert.Throws<DomainException>(() => ticket.Edit(Customer, subject, description, ticket.Priority, Now));
+    }
+
+    [Fact]
+    public void Closed_ticket_cannot_be_assigned_commented_or_edited()
     {
         var ticket = NewTicket();
         ticket.ChangeStatus(Customer, TicketStatus.Closed, Now);
 
         Assert.Throws<DomainException>(() => ticket.Assign(Operator, Operator.Id, Now));
         Assert.Throws<DomainException>(() => ticket.AddComment(Customer, "hi", false, Now));
-        Assert.Throws<DomainException>(() => ticket.ChangePriority(Operator, TicketPriority.High, Now));
+        Assert.Throws<DomainException>(() => ticket.Edit(Operator, "New subject", ticket.Description, TicketPriority.High, Now));
     }
 
     [Fact]

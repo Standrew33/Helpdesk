@@ -13,14 +13,10 @@ namespace Helpdesk.Web.Pages.Tickets;
 [Authorize(Roles = RoleNames.Customer)]
 public class CreateModel(TicketService tickets) : PageModel
 {
-    // Customers cannot open urgent tickets; staff can raise the priority later.
-    public static readonly IReadOnlyList<TicketPriority> PriorityOptions =
-        [TicketPriority.High, TicketPriority.Normal, TicketPriority.Low, TicketPriority.Backlog];
-
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public PriorityChoice PriorityChoice => new("Input.Priority", "Priority", PriorityOptions, Input.Priority);
+    public PriorityChoice PriorityChoice => new("Input.Priority", "Priority", TicketDisplay.PrioritiesFor(isStaff: false), Input.Priority);
 
     public void OnGet()
     {

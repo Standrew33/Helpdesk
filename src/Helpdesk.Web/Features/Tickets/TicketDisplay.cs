@@ -46,6 +46,10 @@ public static class TicketDisplay
     /// <summary>Lists and pickers show the most pressing priority first.</summary>
     public static readonly IReadOnlyList<TicketPriority> PrioritiesFromHighest = Enum.GetValues<TicketPriority>().Reverse().ToArray();
 
+    /// <summary>The priorities a user may choose: customers cannot make a ticket urgent, but keep it urgent if it is.</summary>
+    public static IReadOnlyList<TicketPriority> PrioritiesFor(bool isStaff, TicketPriority? current = null)
+        => PrioritiesFromHighest.Where(p => isStaff || p != TicketPriority.Urgent || p == current).ToList();
+
     public static string FileSize(long bytes) => bytes switch
     {
         < 1024 => $"{bytes} B",

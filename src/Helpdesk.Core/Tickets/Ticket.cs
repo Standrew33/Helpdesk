@@ -127,21 +127,52 @@ public sealed class Ticket
         UpdatedAt = now;
     }
 
-    public void ChangePriority(Actor actor, TicketPriority priority, DateTimeOffset now)
+    /// <summary>
+    /// Changes what the ticket says and how pressing it is. The customer who opened it and staff may edit an open
+    /// ticket; only staff may make it urgent. Each changed field is recorded; nothing changed means nothing recorded.
+    /// </summary>
+    public void Edit(Actor actor, string subject, string description, TicketPriority priority, DateTimeOffset now)
     {
         EnsureCanView(actor);
-        RequireStaff(actor, "change priority");
         EnsureNotClosed();
 
-        if (priority == Priority)
+        var newSubject = RequireText(subject, "Subject", MaxSubjectLength);
+        var newDescription = RequireText(description, "Description", MaxDescriptionLength);
+
+        if (priority == TicketPriority.Urgent && Priority != TicketPriority.Urgent && !actor.Role.IsStaff())
         {
-            throw new DomainException($"Priority is already {Priority}.");
+            throw new DomainException("Only staff can set urgent priority.");
         }
 
-        Record(actor, "Priority", Priority.ToString(), priority.ToString(), now);
-        Priority = priority;
-        DueAt = SlaPolicy.CalculateDueAt(priority, CreatedAt);
-        UpdatedAt = now;
+        var changed = false;
+
+        if (newSubject != Subject)
+        {
+            Record(actor, "Subject", Subject, newSubject, now);
+            Subject = newSubject;
+            changed = true;
+        }
+
+        // The text itself is not copied into the history; the entry says that it was edited, and by whom.
+        if (newDescription != Description)
+        {
+            Record(actor, "Description", null, null, now);
+            Description = newDescription;
+            changed = true;
+        }
+
+        if (priority != Priority)
+        {
+            Record(actor, "Priority", Priority.ToString(), priority.ToString(), now);
+            Priority = priority;
+            DueAt = SlaPolicy.CalculateDueAt(priority, CreatedAt);
+            changed = true;
+        }
+
+        if (changed)
+        {
+            UpdatedAt = now;
+        }
     }
 
     public Comment AddComment(Actor actor, string body, bool isInternal, DateTimeOffset now)

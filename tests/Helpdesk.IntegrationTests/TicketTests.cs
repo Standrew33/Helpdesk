@@ -130,7 +130,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
-    public async Task Customer_cannot_assign_or_reprioritize()
+    public async Task Customer_cannot_assign_or_make_a_ticket_urgent()
     {
         var customer = await SignedInAsync("Customer");
         var id = await customer.CreateTicketAsync("Mine");
@@ -138,8 +138,10 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var assign = await customer.PostTicketActionAsync(id, "Assign", Fields(("assigneeId", await DemoUserIdAsync("Operator"))));
         Assert.Contains("Only staff", await FollowedHtmlAsync(customer, assign));
 
-        var priority = await customer.PostTicketActionAsync(id, "Priority", Fields(("priority", "Urgent")));
-        Assert.Contains("Only staff", await FollowedHtmlAsync(customer, priority));
+        var urgent = await customer.EditTicketAsync(id, priority: "Urgent");
+        Assert.Equal(HttpStatusCode.OK, urgent.StatusCode);
+        Assert.Contains("Only staff can set urgent priority", await urgent.Content.ReadAsStringAsync());
+        Assert.DoesNotContain("value=\"Urgent\"", await customer.GetHtmlAsync($"/Tickets/Edit/{id}"));
     }
 
     [Fact]
@@ -182,12 +184,10 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var staleVersion = AppClient.ExtractRowVersion(await op.GetHtmlAsync($"/Tickets/Details/{id}"));
 
         await op.PostTicketActionAsync(id, "Comment", Fields(("body", "first change")));
-        var stale = await op.PostTicketActionAsync(id, "Priority", Fields(("priority", "Low")), staleVersion);
+        var stale = await op.EditTicketAsync(id, priority: "Low", rowVersion: staleVersion);
 
-        Assert.Contains("changed by someone else", await FollowedHtmlAsync(op, stale));
-        var page = await op.GetHtmlAsync($"/Tickets/Details/{id}");
-        Assert.Contains("value=\"Normal\" checked=\"checked\"", page);
-        Assert.DoesNotContain("value=\"Low\" checked=\"checked\"", page);
+        Assert.Contains("changed by someone else", await stale.Content.ReadAsStringAsync());
+        Assert.Contains("prio prio-normal", await op.GetHtmlAsync($"/Tickets/Details/{id}"));
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var id = await customer.CreateTicketAsync("Audited", priority: "High");
         var op = await SignedInAsync("Operator");
         await op.PostTicketActionAsync(id, "Status", Fields(("status", "InProgress")));
-        await op.PostTicketActionAsync(id, "Priority", Fields(("priority", "Urgent")));
+        await op.EditTicketAsync(id, priority: "Urgent");
 
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>();
@@ -208,5 +208,68 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Equal(ticket.CreatedAt.AddHours(4), ticket.DueAt);
         Assert.Equal(["Created", "Status", "Priority"], ticket.History.OrderBy(h => h.Id).Select(h => h.Field));
         Assert.All(ticket.History, h => Assert.False(string.IsNullOrEmpty(h.ActorId)));
+    }
+
+    [Fact]
+    public async Task The_customer_edits_the_subject_description_and_priority()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("Printer is down", "It prints blank pages.");
+
+        var saved = await customer.EditTicketAsync(id, subject: "Printer jams", description: "Paper gets stuck.", priority: "Backlog");
+
+        Assert.Equal(HttpStatusCode.Redirect, saved.StatusCode);
+        Assert.Equal($"/Tickets/Details/{id}", saved.Headers.Location!.OriginalString);
+        var page = await customer.GetHtmlAsync($"/Tickets/Details/{id}");
+        Assert.Contains("Printer jams", page);
+        Assert.Contains("Paper gets stuck.", page);
+        Assert.Contains("prio prio-backlog", page);
+        Assert.Contains("Description edited", await (await SignedInAsync("Operator")).GetHtmlAsync($"/Tickets/Details/{id}"));
+    }
+
+    [Fact]
+    public async Task Staff_can_make_a_ticket_urgent_from_the_edit_page()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("Server room is flooding");
+        var op = await SignedInAsync("Operator");
+
+        var saved = await op.EditTicketAsync(id, priority: "Urgent");
+
+        Assert.Equal(HttpStatusCode.Redirect, saved.StatusCode);
+        Assert.Contains("prio prio-urgent", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
+    }
+
+    [Fact]
+    public async Task Another_customer_cannot_open_or_save_the_edit_page()
+    {
+        var owner = await SignedInAsync("Customer");
+        var id = await owner.CreateTicketAsync("Not yours");
+        await CreateUserAsync("Customer", "zoe@example.test");
+        var zoe = NewClient();
+        await zoe.SignInAsync("zoe@example.test", TestPassword);
+
+        var page = await zoe.GetAsync($"/Tickets/Edit/{id}");
+        var post = await zoe.PostFormAsync("/Tickets/Create", $"/Tickets/Edit/{id}", Fields(
+            ("rowVersion", "AAAAAAAAB9E="), ("Input.Subject", "Taken over"), ("Input.Description", "x"), ("Input.Priority", "Low")));
+
+        Assert.Equal(HttpStatusCode.NotFound, page.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, post.StatusCode);
+        Assert.Contains("Not yours", await owner.GetHtmlAsync($"/Tickets/Details/{id}"));
+    }
+
+    [Fact]
+    public async Task A_closed_ticket_cannot_be_edited()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("Done");
+        await customer.PostTicketActionAsync(id, "Status", Fields(("status", "Closed")));
+
+        var details = await customer.GetHtmlAsync($"/Tickets/Details/{id}");
+        var edit = await customer.GetAsync($"/Tickets/Edit/{id}");
+
+        Assert.DoesNotContain($"/Tickets/Edit/{id}", details);
+        Assert.Equal(HttpStatusCode.Redirect, edit.StatusCode);
+        Assert.Contains("closed", await FollowedHtmlAsync(customer, edit));
     }
 }

@@ -25,8 +25,6 @@ public class DetailsModel(TicketService tickets) : PageModel
 
     public IReadOnlyList<AssigneeOption> Assignees { get; private set; } = [];
 
-    public PriorityChoice PriorityChoice => new("priority", "Priority", TicketDisplay.PrioritiesFromHighest, Details.Ticket.Priority);
-
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
         var actor = User.ToActor();
@@ -88,9 +86,6 @@ public class DetailsModel(TicketService tickets) : PageModel
 
     public Task<IActionResult> OnPostAssignAsync(string? rowVersion, string? assigneeId)
         => RunAsync(actor => tickets.AssignAsync(Id, actor, rowVersion, assigneeId));
-
-    public Task<IActionResult> OnPostPriorityAsync(string? rowVersion, TicketPriority priority)
-        => RunAsync(actor => tickets.ChangePriorityAsync(Id, actor, rowVersion, priority));
 
     private async Task<IActionResult> RunAsync(Func<Actor, Task<ServiceResult>> operation)
     {
