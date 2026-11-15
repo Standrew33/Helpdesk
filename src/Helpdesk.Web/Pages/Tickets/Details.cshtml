@@ -73,7 +73,6 @@
                     </form>
                     <p class="text-secondary small mb-0 mt-2">
                         Up to @AttachmentPolicy.MaxFilesPerTicket files, @(AttachmentPolicy.MaxFileBytes / (1024 * 1024)) MB each.
-                        Allowed: @string.Join(", ", AttachmentPolicy.AllowedExtensions.Order()).
                     </p>
                 }
             </div>
