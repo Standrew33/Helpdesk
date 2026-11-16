@@ -178,7 +178,7 @@
                         <form method="post" asp-page-handler="Comment">
                             <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
                             <label for="body" class="form-label">Add a comment</label>
-                            <textarea id="body" name="body" class="form-control mb-3" rows="3" maxlength="@Ticket.MaxCommentLength" required></textarea>
+                            <textarea id="body" name="body" class="form-control comment-input mb-3" rows="3" maxlength="@Ticket.MaxCommentLength" required></textarea>
                             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                                 @if (Model.IsStaff)
                                 {
