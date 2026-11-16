@@ -130,8 +130,13 @@
                 {
                     <form method="post" asp-page-handler="Attachment" enctype="multipart/form-data" class="file-form">
                         <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
-                        <input type="file" name="file" class="form-control form-control-sm" required
+                        <input type="file" id="file" name="file" class="visually-hidden" required data-file-input
                                accept="@string.Join(',', AttachmentPolicy.AllowedExtensions.Order())" />
+                        <label for="file" class="icon-btn icon-btn-outline" title="Choose a file">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+                            <span class="visually-hidden">Choose a file</span>
+                        </label>
+                        <span class="file-name" data-file-name>No file chosen</span>
                         <button type="submit" class="btn btn-outline-primary btn-sm">Attach</button>
                     </form>
                     <p class="text-secondary small mb-0 mt-2">

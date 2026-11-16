@@ -209,6 +209,20 @@
 
     showPencils(document);
 
+    // The file button is an icon; the name of the chosen file is shown next to it.
+    document.addEventListener('change', function (event) {
+        if (!event.target.matches('[data-file-input]')) {
+            return;
+        }
+
+        var name = event.target.form.querySelector('[data-file-name]');
+        var file = event.target.files[0];
+
+        if (name) {
+            name.textContent = file ? file.name : 'No file chosen';
+        }
+    });
+
     // Lists and choices that save on their own: no button to press.
     document.addEventListener('change', function (event) {
         var form = event.target.closest('form[data-instant]');
