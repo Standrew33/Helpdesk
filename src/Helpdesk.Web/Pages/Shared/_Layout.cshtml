@@ -6,9 +6,7 @@
         : User.IsInRole(RoleNames.Operator) ? RoleNames.Operator
         : User.IsInRole(RoleNames.Customer) ? RoleNames.Customer
         : "";
-    var scopeFilter = Context.Request.Query["scope"].ToString();
-    var onList = page == "/Tickets/Index";
-    var isStaff = role is RoleNames.Operator or RoleNames.Admin;
+    var onTickets = page is "/Tickets/Index" or "/Tickets/Details";
     var body = RenderBody();
 }
 <!DOCTYPE html>
@@ -36,17 +34,10 @@
                 </a>
 
                 <nav class="side-nav" aria-label="Main">
-                    <a asp-page="/Tickets/Index" class="side-link @(onList && scopeFilter == "" ? "active" : "")">
+                    <a asp-page="/Tickets/Index" class="side-link @(onTickets ? "active" : "")">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
-                        All tickets
+                        Tickets
                     </a>
-                    @if (isStaff)
-                    {
-                        foreach (var (scope, label) in new[] { ("Mine", "Assigned to me"), ("Unassigned", "Unassigned"), ("Overdue", "Overdue") })
-                        {
-                            <a asp-page="/Tickets/Index" asp-route-scope="@scope" class="side-link side-sub @(onList && scopeFilter == scope ? "active" : "")">@label</a>
-                        }
-                    }
                     @if (role == RoleNames.Customer)
                     {
                         <a asp-page="/Tickets/Create" class="side-link @(page == "/Tickets/Create" ? "active" : "")">
