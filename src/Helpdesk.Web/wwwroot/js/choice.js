@@ -27,18 +27,28 @@
         }
     }
 
-    document.querySelectorAll('[data-choice]').forEach(function (choice) {
+    // Listening on the document keeps working for dropdowns a page puts in later.
+    document.addEventListener('change', function (event) {
+        var choice = event.target.closest('[data-choice]');
+
+        if (!choice) {
+            return;
+        }
+
         render(choice);
 
-        choice.addEventListener('change', function () {
-            render(choice);
-
-            // One choice: done once it is made.
-            if (!choice.hasAttribute('data-choice-multiple')) {
-                var toggle = choice.querySelector('[data-bs-toggle="dropdown"]');
-                bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
-                toggle.focus();
-            }
-        });
+        // One choice: done once it is made.
+        if (!choice.hasAttribute('data-choice-multiple')) {
+            var toggle = choice.querySelector('[data-bs-toggle="dropdown"]');
+            bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
+            toggle.focus();
+        }
     });
+
+    function renderAll(root) {
+        (root || document).querySelectorAll('[data-choice]').forEach(render);
+    }
+
+    window.helpdeskChoice = renderAll;
+    renderAll(document);
 }());

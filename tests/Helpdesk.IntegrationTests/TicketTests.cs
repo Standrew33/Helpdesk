@@ -130,6 +130,39 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task Status_priority_and_assignee_are_changed_on_the_ticket_page_without_an_apply_button()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("Pick me");
+        var op = await SignedInAsync("Operator");
+
+        var before = await op.GetHtmlAsync($"/Tickets/Details/{id}");
+        Assert.DoesNotContain(">Apply<", before);
+        Assert.Contains("name=\"status\" value=\"New\" checked=\"checked\"", before);
+        Assert.Contains("name=\"priority\" value=\"Normal\" checked=\"checked\"", before);
+
+        await op.PostTicketActionAsync(id, "Priority", Fields(("priority", "High")));
+        await op.PostTicketActionAsync(id, "Status", Fields(("status", "InProgress")));
+
+        var after = await op.GetHtmlAsync($"/Tickets/Details/{id}");
+        Assert.Contains("name=\"priority\" value=\"High\" checked=\"checked\"", after);
+        Assert.Contains("name=\"status\" value=\"InProgress\" checked=\"checked\"", after);
+        Assert.Contains("Priority: Normal &rarr; High", after);
+    }
+
+    [Fact]
+    public async Task A_priority_that_does_not_exist_is_refused()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("Odd value");
+
+        var response = await customer.PostTicketActionAsync(id, "Priority", Fields(("priority", "Whenever")));
+
+        Assert.Contains("Choose a priority", await FollowedHtmlAsync(customer, response));
+        Assert.Contains("name=\"priority\" value=\"Normal\" checked=\"checked\"", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
+    }
+
+    [Fact]
     public async Task Customer_cannot_assign_or_make_a_ticket_urgent()
     {
         var customer = await SignedInAsync("Customer");
@@ -138,10 +171,9 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var assign = await customer.PostTicketActionAsync(id, "Assign", Fields(("assigneeId", await DemoUserIdAsync("Operator"))));
         Assert.Contains("Only staff", await FollowedHtmlAsync(customer, assign));
 
-        var urgent = await customer.EditTicketAsync(id, priority: "Urgent");
-        Assert.Equal(HttpStatusCode.OK, urgent.StatusCode);
-        Assert.Contains("Only staff can set urgent priority", await urgent.Content.ReadAsStringAsync());
-        Assert.DoesNotContain("value=\"Urgent\"", await customer.GetHtmlAsync($"/Tickets/Edit/{id}"));
+        var urgent = await customer.PostTicketActionAsync(id, "Priority", Fields(("priority", "Urgent")));
+        Assert.Contains("Only staff can set urgent priority", await FollowedHtmlAsync(customer, urgent));
+        Assert.DoesNotContain("value=\"Urgent\"", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
     }
 
     [Fact]
@@ -184,10 +216,10 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var staleVersion = AppClient.ExtractRowVersion(await op.GetHtmlAsync($"/Tickets/Details/{id}"));
 
         await op.PostTicketActionAsync(id, "Comment", Fields(("body", "first change")));
-        var stale = await op.EditTicketAsync(id, priority: "Low", rowVersion: staleVersion);
+        var stale = await op.PostTicketActionAsync(id, "Priority", Fields(("priority", "Low")), staleVersion);
 
-        Assert.Contains("changed by someone else", await stale.Content.ReadAsStringAsync());
-        Assert.Contains("prio prio-normal", await op.GetHtmlAsync($"/Tickets/Details/{id}"));
+        Assert.Contains("changed by someone else", await FollowedHtmlAsync(op, stale));
+        Assert.Contains("name=\"priority\" value=\"Normal\" checked=\"checked\"", await op.GetHtmlAsync($"/Tickets/Details/{id}"));
     }
 
     [Fact]
@@ -197,7 +229,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var id = await customer.CreateTicketAsync("Audited", priority: "High");
         var op = await SignedInAsync("Operator");
         await op.PostTicketActionAsync(id, "Status", Fields(("status", "InProgress")));
-        await op.EditTicketAsync(id, priority: "Urgent");
+        await op.PostTicketActionAsync(id, "Priority", Fields(("priority", "Urgent")));
 
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>();

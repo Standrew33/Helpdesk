@@ -7,22 +7,59 @@
 
 <a class="back-link" asp-page="Index">&larr; All tickets</a>
 
-@if (!string.IsNullOrEmpty(Model.Error))
-{
-    <div class="alert alert-danger" role="alert">@Model.Error</div>
-}
+<div id="ticket-alert" data-live>
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-danger" role="alert">@Model.Error</div>
+    }
+</div>
 
-<div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
-
-<div class="page-header">
+<div id="ticket-header" class="page-header" data-live>
     <div>
         <p class="page-subtitle mt-0 mb-1">Ticket #@ticket.Id</p>
         <h1 class="page-title">@ticket.Subject</h1>
     </div>
-    <div class="d-flex flex-wrap align-items-center gap-3">
-        <span class="@TicketDisplay.StatusClass(ticket.Status)">@TicketDisplay.StatusText(ticket.Status)</span>
-        <partial name="_Priority" model="ticket.Priority" />
-        @if (ticket.Status != TicketStatus.Closed)
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        @if (Model.StatusOptions.Count > 1)
+        {
+            <form method="post" asp-page-handler="Status" data-instant>
+                <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
+                <span id="StatusLabel" class="visually-hidden">Status</span>
+                <div class="dropdown choice choice-inline" data-choice>
+                    <button type="button" id="Status" class="choice-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="StatusLabel Status">
+                        <span data-choice-label><span class="@TicketDisplay.StatusClass(ticket.Status)">@TicketDisplay.StatusText(ticket.Status)</span></span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end choice-menu">
+                        @foreach (var status in Model.StatusOptions)
+                        {
+                            <label class="choice-option">
+                                <input type="radio" name="status" value="@status" checked="@(status == ticket.Status)" class="form-check-input" />
+                                <span data-choice-view><span class="@TicketDisplay.StatusClass(status)">@TicketDisplay.StatusText(status)</span></span>
+                            </label>
+                        }
+                    </div>
+                </div>
+            </form>
+        }
+        else
+        {
+            <span class="@TicketDisplay.StatusClass(ticket.Status)">@TicketDisplay.StatusText(ticket.Status)</span>
+        }
+
+        @if (Model.IsOpen)
+        {
+            <form method="post" asp-page-handler="Priority" class="choice-inline" data-instant>
+                <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
+                <span id="PriorityLabel" class="visually-hidden">Priority</span>
+                <partial name="_PriorityChoice" model="Model.PriorityChoice" />
+            </form>
+        }
+        else
+        {
+            <partial name="_Priority" model="ticket.Priority" />
+        }
+
+        @if (Model.IsOpen)
         {
             <a class="btn btn-outline-secondary btn-sm" asp-page="Edit" asp-route-id="@ticket.Id">Edit</a>
         }
@@ -31,7 +68,7 @@
 
 <div class="row g-4">
     <div class="col-lg-8">
-        <div class="card mb-4">
+        <div id="ticket-description" class="card mb-4" data-live>
             <div class="card-body p-4">
                 <p class="text-secondary small mb-3">
                     Opened by <strong class="text-body">@Model.Details.NameOf(ticket.CustomerId)</strong>
@@ -41,7 +78,7 @@
             </div>
         </div>
 
-        <div class="card mb-4">
+        <div id="ticket-attachments" class="card mb-4" data-live>
             <div class="card-body">
                 <h2 class="card-title-sm">Attachments</h2>
                 @if (ticket.Attachments.Count == 0)
@@ -102,84 +139,69 @@
             </div>
         }
 
-        @if (ticket.Status != TicketStatus.Closed)
-        {
-            <div class="card mt-3">
-                <div class="card-body">
-                    <form method="post" asp-page-handler="Comment">
-                        <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
-                        <label for="body" class="form-label">Add a comment</label>
-                        <textarea id="body" name="body" class="form-control mb-3" rows="3" maxlength="@Ticket.MaxCommentLength" required></textarea>
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                            @if (Model.IsStaff)
-                            {
-                                <div class="form-check mb-0">
-                                    <input id="isInternal" name="isInternal" type="checkbox" value="true" class="form-check-input" />
-                                    <label for="isInternal" class="form-check-label">Internal note (hidden from the customer)</label>
-                                </div>
-                            }
-                            else
-                            {
-                                <span></span>
-                            }
-                            <button type="submit" class="btn btn-primary">Send</button>
-                        </div>
-                    </form>
+        <div id="ticket-reply" data-live>
+            @if (ticket.Status != TicketStatus.Closed)
+            {
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <form method="post" asp-page-handler="Comment">
+                            <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
+                            <label for="body" class="form-label">Add a comment</label>
+                            <textarea id="body" name="body" class="form-control mb-3" rows="3" maxlength="@Ticket.MaxCommentLength" required></textarea>
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                @if (Model.IsStaff)
+                                {
+                                    <div class="form-check mb-0">
+                                        <input id="isInternal" name="isInternal" type="checkbox" value="true" class="form-check-input" />
+                                        <label for="isInternal" class="form-check-label">Internal note (hidden from the customer)</label>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span></span>
+                                }
+                                <button type="submit" class="btn btn-primary">Send</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </div>
-        }
+            }
+        </div>
     </div>
 
-    <div class="col-lg-4">
+    <div id="ticket-aside" class="col-lg-4" data-live>
         <div class="card mb-3">
             <div class="card-body">
                 <h2 class="card-title-sm">Details</h2>
                 <dl class="meta-list">
-                    <div><dt>Assignee</dt><dd>@Model.Details.NameOf(ticket.AssigneeId)</dd></div>
+                    <div>
+                        <dt><label for="assigneeId" class="m-0">Assignee</label></dt>
+                        <dd>
+                            @if (Model.IsStaff && Model.IsOpen)
+                            {
+                                <form method="post" asp-page-handler="Assign" data-instant>
+                                    <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
+                                    <select id="assigneeId" name="assigneeId" class="form-select form-select-sm meta-select">
+                                        <option value="">Unassigned</option>
+                                        @foreach (var option in Model.Assignees)
+                                        {
+                                            <option value="@option.Id" selected="@(option.Id == ticket.AssigneeId)">@option.Name</option>
+                                        }
+                                    </select>
+                                    <noscript><button type="submit" class="btn btn-outline-primary btn-sm mt-2">Assign</button></noscript>
+                                </form>
+                            }
+                            else
+                            {
+                                @Model.Details.NameOf(ticket.AssigneeId)
+                            }
+                        </dd>
+                    </div>
                     <div><dt>Due</dt><dd class="@(ticket.IsSlaBreached(DateTimeOffset.UtcNow) ? "overdue" : "")">@TicketDisplay.Date(ticket.DueAt)</dd></div>
                     <div><dt>Last update</dt><dd>@TicketDisplay.Date(ticket.UpdatedAt)</dd></div>
                 </dl>
             </div>
         </div>
-
-        @if (Model.AllowedStatuses.Count > 0)
-        {
-            <form method="post" asp-page-handler="Status" class="card card-body mb-3">
-                <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
-                <label id="StatusLabel" for="Status" class="form-label">Change status</label>
-                <div class="dropdown choice mb-2" data-choice>
-                    <button type="button" id="Status" class="form-select choice-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="StatusLabel Status">
-                        <span data-choice-label></span>
-                    </button>
-                    <div class="dropdown-menu choice-menu">
-                        @foreach (var status in Model.AllowedStatuses)
-                        {
-                            <label class="choice-option">
-                                <input type="radio" name="status" value="@status" checked="@(status == Model.AllowedStatuses[0])" class="form-check-input" />
-                                <span data-choice-view><span class="@TicketDisplay.StatusClass(status)">@TicketDisplay.StatusText(status)</span></span>
-                            </label>
-                        }
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-outline-primary">Apply</button>
-            </form>
-        }
-
-        @if (Model.IsStaff && ticket.Status != TicketStatus.Closed)
-        {
-            <form method="post" asp-page-handler="Assign" class="card card-body mb-3">
-                <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
-                <label for="assigneeId" class="form-label">Assign to</label>
-                <select id="assigneeId" name="assigneeId" class="form-select mb-2">
-                    <option value="">Unassigned</option>
-                    @foreach (var option in Model.Assignees)
-                    {
-                        <option value="@option.Id" selected="@(option.Id == ticket.AssigneeId)">@option.Name</option>
-                    }
-                </select>
-                <button type="submit" class="btn btn-outline-primary">Apply</button>
-            </form>
-        }
 
         @if (Model.IsStaff)
         {
@@ -219,3 +241,7 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/ticket-page.js" asp-append-version="true"></script>
+}

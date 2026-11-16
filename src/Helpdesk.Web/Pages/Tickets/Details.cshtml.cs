@@ -21,7 +21,13 @@ public class DetailsModel(TicketService tickets) : PageModel
 
     public bool IsStaff { get; private set; }
 
-    public IReadOnlyList<TicketStatus> AllowedStatuses { get; private set; } = [];
+    /// <summary>The current status and the ones it may move to; a single entry means the status cannot be changed.</summary>
+    public IReadOnlyList<TicketStatus> StatusOptions { get; private set; } = [];
+
+    public bool IsOpen => Details.Ticket.Status != TicketStatus.Closed;
+
+    public PriorityChoice PriorityChoice => new(
+        "priority", "Priority", TicketDisplay.PrioritiesFor(IsStaff, Details.Ticket.Priority), Details.Ticket.Priority);
 
     public IReadOnlyList<AssigneeOption> Assignees { get; private set; } = [];
 
@@ -37,8 +43,8 @@ public class DetailsModel(TicketService tickets) : PageModel
 
         Details = details;
         IsStaff = actor.Role.IsStaff();
-        AllowedStatuses = Enum.GetValues<TicketStatus>()
-            .Where(s => s != details.Ticket.Status && TicketWorkflow.IsAllowed(details.Ticket.Status, s, actor.Role))
+        StatusOptions = Enum.GetValues<TicketStatus>()
+            .Where(s => s == details.Ticket.Status || TicketWorkflow.IsAllowed(details.Ticket.Status, s, actor.Role))
             .ToList();
 
         if (IsStaff)
@@ -83,6 +89,17 @@ public class DetailsModel(TicketService tickets) : PageModel
 
     public Task<IActionResult> OnPostStatusAsync(string? rowVersion, TicketStatus status)
         => RunAsync(actor => tickets.ChangeStatusAsync(Id, actor, rowVersion, status));
+
+    public async Task<IActionResult> OnPostPriorityAsync(string? rowVersion, TicketPriority? priority)
+    {
+        if (priority is null)
+        {
+            Error = "Choose a priority.";
+            return RedirectToPage(new { id = Id });
+        }
+
+        return await RunAsync(actor => tickets.EditAsync(Id, actor, rowVersion, priority: priority));
+    }
 
     public Task<IActionResult> OnPostAssignAsync(string? rowVersion, string? assigneeId)
         => RunAsync(actor => tickets.AssignAsync(Id, actor, rowVersion, assigneeId));

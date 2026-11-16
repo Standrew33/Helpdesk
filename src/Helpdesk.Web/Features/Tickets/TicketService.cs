@@ -168,8 +168,11 @@ public class TicketService(
     public Task<ServiceResult> ChangeStatusAsync(int id, Actor actor, string? rowVersion, TicketStatus status)
         => UpdateAsync(id, actor, rowVersion, (ticket, now) => ticket.ChangeStatus(actor, status, now));
 
-    public Task<ServiceResult> EditAsync(int id, Actor actor, string? rowVersion, string subject, string description, TicketPriority priority)
-        => UpdateAsync(id, actor, rowVersion, (ticket, now) => ticket.Edit(actor, subject, description, priority, now));
+    /// <summary>Changes the fields that are given and keeps the others as they are.</summary>
+    public Task<ServiceResult> EditAsync(
+        int id, Actor actor, string? rowVersion, string? subject = null, string? description = null, TicketPriority? priority = null)
+        => UpdateAsync(id, actor, rowVersion, (ticket, now) => ticket.Edit(
+            actor, subject ?? ticket.Subject, description ?? ticket.Description, priority ?? ticket.Priority, now));
 
     public Task<ServiceResult> AddCommentAsync(int id, Actor actor, string? rowVersion, string body, bool isInternal)
         => UpdateAsync(id, actor, rowVersion, (ticket, now) => ticket.AddComment(actor, body, isInternal, now));
