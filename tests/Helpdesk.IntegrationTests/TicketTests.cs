@@ -101,6 +101,23 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task The_history_sits_between_the_attachments_and_the_comments()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("Ordered page");
+        var op = await SignedInAsync("Operator");
+
+        var html = await op.GetHtmlAsync($"/Tickets/Details/{id}");
+
+        var attachments = html.IndexOf(">Attachments<", StringComparison.Ordinal);
+        var history = html.IndexOf(">History<", StringComparison.Ordinal);
+        var comments = html.IndexOf(">Comments<", StringComparison.Ordinal);
+        Assert.True(attachments < history && history < comments, "Expected attachments, then history, then comments.");
+        Assert.Contains("class=\"timeline\" data-show-last=\"5\"", html);
+        Assert.Contains("class=\"comment-list\" data-show-last=\"5\"", html);
+    }
+
+    [Fact]
     public async Task Operator_moves_a_ticket_through_the_workflow()
     {
         var customer = await SignedInAsync("Customer");

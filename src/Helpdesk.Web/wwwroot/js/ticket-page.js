@@ -40,6 +40,7 @@
             }
 
             var node = document.importNode(fresh, true);
+            keepView(part, node);
             part.replaceWith(node);
 
             if (window.helpdeskChoice) {
@@ -51,6 +52,7 @@
             }
 
             showPencils(node);
+            limitAll(node);
 
             document.dispatchEvent(new CustomEvent('helpdesk:updated', { detail: node }));
         });
@@ -207,7 +209,92 @@
         }
     });
 
+    // ----- Long lists show their last entries; older ones come in steps on request. -----
+
+    function itemsOf(list) {
+        return Array.prototype.slice.call(list.children);
+    }
+
+    function limit(list, shown) {
+        var step = parseInt(list.getAttribute('data-show-last'), 10) || 5;
+        var items = itemsOf(list);
+        shown = Math.max(shown || step, step);
+
+        var hidden = Math.max(items.length - shown, 0);
+        items.forEach(function (item, index) {
+            item.hidden = index < hidden;
+        });
+        list.setAttribute('data-shown', String(shown));
+
+        var button = list.previousElementSibling && list.previousElementSibling.matches('[data-show-more]')
+            ? list.previousElementSibling
+            : null;
+
+        if (hidden === 0) {
+            if (button) {
+                button.remove();
+            }
+
+            return;
+        }
+
+        if (!button) {
+            button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn btn-link btn-sm show-more';
+            button.setAttribute('data-show-more', '');
+            list.parentNode.insertBefore(button, list);
+        }
+
+        button.textContent = 'Show ' + Math.min(step, hidden) + ' earlier';
+        button.title = hidden + ' earlier ' + (hidden === 1 ? 'entry' : 'entries') + ' hidden';
+    }
+
+    function limitAll(root) {
+        root.querySelectorAll('[data-show-last]').forEach(function (list) {
+            limit(list, parseInt(list.getAttribute('data-shown'), 10));
+        });
+    }
+
+    // A part drawn again stays folded or unfolded, and shows as many entries, as the reader left it.
+    function keepView(old, fresh) {
+        if (old.tagName === 'DETAILS' && fresh.tagName === 'DETAILS') {
+            fresh.open = old.open;
+        }
+
+        old.querySelectorAll('[data-show-last][data-shown]').forEach(function (list, index) {
+            var twin = fresh.querySelectorAll('[data-show-last]')[index];
+
+            if (twin) {
+                twin.setAttribute('data-shown', list.getAttribute('data-shown'));
+            }
+        });
+    }
+
+    document.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-show-more]');
+
+        if (!button) {
+            return;
+        }
+
+        var list = button.nextElementSibling;
+        var step = parseInt(list.getAttribute('data-show-last'), 10) || 5;
+        var firstShown = itemsOf(list).filter(function (item) { return !item.hidden; })[0];
+
+        limit(list, parseInt(list.getAttribute('data-shown'), 10) + step);
+
+        // The keyboard lands on the entry that was first before, now below the ones just shown.
+        if (!list.previousElementSibling || !list.previousElementSibling.matches('[data-show-more]')) {
+            if (firstShown) {
+                firstShown.setAttribute('tabindex', '-1');
+                firstShown.focus();
+            }
+        }
+    });
+
     showPencils(document);
+    limitAll(document);
 
     // The file button is an icon; the name of the chosen file is shown next to it.
     document.addEventListener('change', function (event) {

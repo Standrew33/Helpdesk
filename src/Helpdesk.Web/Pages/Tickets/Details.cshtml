@@ -146,29 +146,79 @@
             </div>
         </div>
 
-        <h2 class="section-title">Comments</h2>
-        @if (Model.Details.Comments.Count == 0)
+        @* History and comments show their last five entries; older ones come in fives on request. *@
+        @if (Model.IsStaff)
         {
-            <p class="text-secondary">No comments yet.</p>
-        }
-        @foreach (var comment in Model.Details.Comments)
-        {
-            var author = Model.Details.NameOf(comment.AuthorId);
-            <div class="comment @(comment.IsInternal ? "comment-internal" : "")">
-                <span class="avatar" aria-hidden="true">@(author.Length > 0 ? author[..1] : "?")</span>
-                <div class="comment-body">
-                    <div class="comment-head">
-                        <strong>@author</strong>
-                        <span>@TicketDisplay.Date(comment.CreatedAt)</span>
-                        @if (comment.IsInternal)
-                        {
-                            <span class="tag tag-internal">Internal note</span>
-                        }
+            <details id="ticket-history" class="activity" open data-live>
+                <summary>
+                    <h2 class="section-title">History</h2>
+                    <span class="activity-count">@ticket.History.Count</span>
+                </summary>
+                <div class="card">
+                    <div class="card-body">
+                        <ul class="timeline" data-show-last="5">
+                            @foreach (var entry in ticket.History.OrderBy(h => h.ChangedAt).ThenBy(h => h.Id))
+                            {
+                                <li>
+                                    @if (entry.Field == "Created")
+                                    {
+                                        <text>Ticket created</text>
+                                    }
+                                    else if (entry.Field == "Attachment")
+                                    {
+                                        <text>Attached @entry.NewValue</text>
+                                    }
+                                    else if (entry.Field == "Description")
+                                    {
+                                        <text>Description edited</text>
+                                    }
+                                    else if (entry.Field == "Assignee")
+                                    {
+                                        <text>Assignee: @Model.Details.NameOf(entry.OldValue) &rarr; @Model.Details.NameOf(entry.NewValue)</text>
+                                    }
+                                    else
+                                    {
+                                        <text>@entry.Field: @entry.OldValue &rarr; @entry.NewValue</text>
+                                    }
+                                    <small>@Model.Details.NameOf(entry.ActorId) &middot; @TicketDisplay.Date(entry.ChangedAt)</small>
+                                </li>
+                            }
+                        </ul>
                     </div>
-                    <div class="comment-text">@comment.Body</div>
                 </div>
-            </div>
+            </details>
         }
+
+        <details id="ticket-comments" class="activity" open>
+            <summary>
+                <h2 class="section-title">Comments</h2>
+                <span class="activity-count">@Model.Details.Comments.Count</span>
+            </summary>
+            @if (Model.Details.Comments.Count == 0)
+            {
+                <p class="text-secondary">No comments yet.</p>
+            }
+            <div class="comment-list" data-show-last="5">
+                @foreach (var comment in Model.Details.Comments)
+                {
+                    var author = Model.Details.NameOf(comment.AuthorId);
+                    <div class="comment @(comment.IsInternal ? "comment-internal" : "")">
+                        <span class="avatar" aria-hidden="true">@(author.Length > 0 ? author[..1] : "?")</span>
+                        <div class="comment-body">
+                            <div class="comment-head">
+                                <strong>@author</strong>
+                                <span>@TicketDisplay.Date(comment.CreatedAt)</span>
+                                @if (comment.IsInternal)
+                                {
+                                    <span class="tag tag-internal">Internal note</span>
+                                }
+                            </div>
+                            <div class="comment-text">@comment.Body</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </details>
 
         <div id="ticket-reply" data-live>
             @if (ticket.Status != TicketStatus.Closed)
@@ -233,43 +283,6 @@
                 </dl>
             </div>
         </div>
-
-        @if (Model.IsStaff)
-        {
-            <div class="card">
-                <div class="card-body">
-                    <h2 class="card-title-sm">History</h2>
-                    <ul class="timeline">
-                        @foreach (var entry in ticket.History.OrderBy(h => h.ChangedAt).ThenBy(h => h.Id))
-                        {
-                            <li>
-                                @if (entry.Field == "Created")
-                                {
-                                    <text>Ticket created</text>
-                                }
-                                else if (entry.Field == "Attachment")
-                                {
-                                    <text>Attached @entry.NewValue</text>
-                                }
-                                else if (entry.Field == "Description")
-                                {
-                                    <text>Description edited</text>
-                                }
-                                else if (entry.Field == "Assignee")
-                                {
-                                    <text>Assignee: @Model.Details.NameOf(entry.OldValue) &rarr; @Model.Details.NameOf(entry.NewValue)</text>
-                                }
-                                else
-                                {
-                                    <text>@entry.Field: @entry.OldValue &rarr; @entry.NewValue</text>
-                                }
-                                <small>@Model.Details.NameOf(entry.ActorId) &middot; @TicketDisplay.Date(entry.ChangedAt)</small>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        }
     </div>
 </div>
 

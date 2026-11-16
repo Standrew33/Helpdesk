@@ -1088,6 +1088,69 @@ form[aria-busy="true"] select {
   word-break: break-word;
 }
 
+/* History and comments: a heading that folds the section away, with the number of entries next to it. */
+.activity {
+  margin-bottom: 1.5rem;
+}
+
+.activity > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.9rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.activity > summary::-webkit-details-marker {
+  display: none;
+}
+
+.activity > summary::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  margin: 0 0.15rem 0 0.1rem;
+  border-right: 2px solid var(--hd-muted);
+  border-bottom: 2px solid var(--hd-muted);
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+
+.activity[open] > summary::before {
+  transform: rotate(45deg) translate(-2px, -2px);
+}
+
+.activity:not([open]) > summary {
+  margin-bottom: 0;
+}
+
+.activity > summary .section-title {
+  margin: 0;
+}
+
+.activity > summary:focus-visible {
+  outline: 2px solid var(--hd-accent);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
+.activity-count {
+  padding: 0.05rem 0.5rem;
+  border-radius: 1rem;
+  background: var(--hd-border);
+  color: var(--hd-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.show-more {
+  display: block;
+  margin: -0.35rem 0 0.6rem;
+  padding: 0;
+  font-weight: 500;
+}
+
 /* The comment box can be pulled taller, but only so far: the Send button stays in reach. */
 .comment-input {
   min-height: 5rem;
