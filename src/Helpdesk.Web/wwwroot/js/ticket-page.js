@@ -50,6 +50,8 @@
                 window.helpdeskLocalTime(node);
             }
 
+            showPencils(node);
+
             document.dispatchEvent(new CustomEvent('helpdesk:updated', { detail: node }));
         });
 
@@ -100,6 +102,112 @@
     }
 
     window.helpdeskSend = send;
+
+    // ----- Text edited in place: the pencil turns it into a field, and leaving the field saves it. -----
+
+    function showPencils(root) {
+        root.querySelectorAll('[data-inline-start]').forEach(function (button) {
+            button.hidden = false;
+        });
+    }
+
+    function partsOf(form) {
+        return {
+            view: form.querySelector('[data-inline-view]'),
+            field: form.querySelector('[data-inline-field]'),
+            start: form.querySelector('[data-inline-start]'),
+        };
+    }
+
+    // A text box grows with its text, up to the height the style sheet allows.
+    function fit(field) {
+        if (field.tagName === 'TEXTAREA') {
+            field.style.height = 'auto';
+            field.style.height = (field.scrollHeight + 2) + 'px';
+        }
+    }
+
+    function open(form) {
+        var parts = partsOf(form);
+        parts.field.value = parts.field.defaultValue;
+        parts.view.hidden = true;
+        parts.start.hidden = true;
+        parts.field.hidden = false;
+        fit(parts.field);
+        parts.field.focus();
+        parts.field.setSelectionRange(parts.field.value.length, parts.field.value.length);
+    }
+
+    function close(parts) {
+        parts.field.hidden = true;
+        parts.view.hidden = false;
+        parts.start.hidden = false;
+    }
+
+    function save(form) {
+        var parts = partsOf(form);
+
+        if (parts.field.hidden) {
+            return;
+        }
+
+        var value = parts.field.value.trim();
+
+        // Nothing changed, or everything erased: the text stays as it was.
+        if (value === '' || value === parts.field.defaultValue.trim()) {
+            parts.field.value = parts.field.defaultValue;
+            close(parts);
+            return;
+        }
+
+        parts.view.textContent = value;
+        parts.field.defaultValue = parts.field.value;
+        close(parts);
+        send(form);
+    }
+
+    document.addEventListener('click', function (event) {
+        var start = event.target.closest('[data-inline-start]');
+
+        if (start) {
+            open(start.closest('[data-inline-edit]'));
+        }
+    });
+
+    document.addEventListener('focusout', function (event) {
+        if (event.target.matches('[data-inline-field]')) {
+            save(event.target.closest('[data-inline-edit]'));
+        }
+    });
+
+    document.addEventListener('input', function (event) {
+        if (event.target.matches('[data-inline-field]')) {
+            fit(event.target);
+        }
+    });
+
+    // Enter saves a one-line field, Ctrl+Enter a text box; Escape puts the text back as it was.
+    document.addEventListener('keydown', function (event) {
+        if (!event.target.matches('[data-inline-field]')) {
+            return;
+        }
+
+        var form = event.target.closest('[data-inline-edit]');
+        var parts = partsOf(form);
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            parts.field.value = parts.field.defaultValue;
+            close(parts);
+            parts.start.focus();
+        } else if (event.key === 'Enter' && (event.target.tagName === 'INPUT' || event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            save(form);
+            parts.start.focus();
+        }
+    });
+
+    showPencils(document);
 
     // Lists and choices that save on their own: no button to press.
     document.addEventListener('change', function (event) {

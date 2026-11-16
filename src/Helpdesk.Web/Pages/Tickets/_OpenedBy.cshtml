@@ -1,0 +1,5 @@
+@model Helpdesk.Web.Pages.Tickets.DetailsModel
+<p class="text-secondary small mb-0">
+    Opened by <strong class="text-body">@Model.Details.NameOf(Model.Details.Ticket.CustomerId)</strong>
+    on @TicketDisplay.Date(Model.Details.Ticket.CreatedAt)
+</p>

@@ -104,25 +104,6 @@ public sealed partial class AppClient : IDisposable
         return await PostFormAsync(url, $"{url}?handler={handler}", form);
     }
 
-    /// <summary>
-    /// Saves the edit form of a ticket. Fields left out keep what the form shows; <paramref name="rowVersion"/>
-    /// replaces the version the form was made from, to act like a page that was left open.
-    /// </summary>
-    public async Task<HttpResponseMessage> EditTicketAsync(
-        int ticketId, string? subject = null, string? description = null, string? priority = null, string? rowVersion = null)
-    {
-        var url = $"/Tickets/Edit/{ticketId}";
-        var html = await GetHtmlAsync(url);
-
-        return await PostFormAsync(url, url, new Dictionary<string, string>
-        {
-            ["rowVersion"] = rowVersion ?? ExtractRowVersion(html),
-            ["Input.Subject"] = subject ?? WebUtility.HtmlDecode(EditSubjectPattern().Match(html).Groups[1].Value),
-            ["Input.Description"] = description ?? WebUtility.HtmlDecode(EditDescriptionPattern().Match(html).Groups[1].Value).Trim(),
-            ["Input.Priority"] = priority ?? EditPriorityPattern().Match(html).Groups[1].Value,
-        });
-    }
-
     /// <summary>Uploads a file through the attachment form of the ticket page.</summary>
     public async Task<HttpResponseMessage> UploadAttachmentAsync(int ticketId, string fileName, byte[] content, string? rowVersion = null)
     {
@@ -151,13 +132,4 @@ public sealed partial class AppClient : IDisposable
 
     [GeneratedRegex("name=\"rowVersion\" value=\"([^\"]+)\"")]
     private static partial Regex RowVersionPattern();
-
-    [GeneratedRegex("name=\"Input.Subject\" value=\"([^\"]*)\"")]
-    private static partial Regex EditSubjectPattern();
-
-    [GeneratedRegex("name=\"Input.Description\">([^<]*)</textarea>")]
-    private static partial Regex EditDescriptionPattern();
-
-    [GeneratedRegex("name=\"Input.Priority\" value=\"([A-Za-z]+)\" checked=\"checked\"")]
-    private static partial Regex EditPriorityPattern();
 }

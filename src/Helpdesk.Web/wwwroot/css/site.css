@@ -961,6 +961,88 @@ form[aria-busy="true"] select {
   font-weight: 500;
 }
 
+/* ---------- Ticket page ---------- */
+
+.ticket-header {
+  margin-bottom: 1.25rem;
+}
+
+.ticket-header-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.inline-edit {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.inline-edit > .page-title,
+.inline-edit > .inline-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.ticket-header .page-title {
+  overflow-wrap: anywhere;
+}
+
+.inline-edit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.inline-field-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 0.1rem 0.5rem;
+}
+
+.inline-field-text {
+  min-height: 6rem;
+  max-height: 24rem;
+  resize: vertical;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--hd-muted);
+}
+
+.icon-btn:hover {
+  background: var(--hd-bg);
+  color: var(--hd-text);
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--hd-accent);
+  outline-offset: 1px;
+}
+
+.icon-btn svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
 .description {
   white-space: pre-wrap;
   margin: 0;

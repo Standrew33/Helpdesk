@@ -243,37 +243,57 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
-    public async Task The_customer_edits_the_subject_description_and_priority()
+    public async Task The_customer_edits_the_subject_and_description_on_the_ticket_page()
     {
         var customer = await SignedInAsync("Customer");
         var id = await customer.CreateTicketAsync("Printer is down", "It prints blank pages.");
 
-        var saved = await customer.EditTicketAsync(id, subject: "Printer jams", description: "Paper gets stuck.", priority: "Backlog");
-
-        Assert.Equal(HttpStatusCode.Redirect, saved.StatusCode);
-        Assert.Equal($"/Tickets/Details/{id}", saved.Headers.Location!.OriginalString);
         var page = await customer.GetHtmlAsync($"/Tickets/Details/{id}");
-        Assert.Contains("Printer jams", page);
-        Assert.Contains("Paper gets stuck.", page);
-        Assert.Contains("prio prio-backlog", page);
-        Assert.Contains("Description edited", await (await SignedInAsync("Operator")).GetHtmlAsync($"/Tickets/Details/{id}"));
+        Assert.Contains("handler=Subject", page);
+        Assert.Contains("handler=Description", page);
+
+        var subject = await customer.PostTicketActionAsync(id, "Subject", Fields(("subject", "Printer jams")));
+        var description = await customer.PostTicketActionAsync(id, "Description", Fields(("description", "Paper gets stuck.")));
+
+        Assert.Equal(HttpStatusCode.Redirect, subject.StatusCode);
+        Assert.Equal($"/Tickets/Details/{id}", subject.Headers.Location!.OriginalString);
+        var after = await customer.GetHtmlAsync($"/Tickets/Details/{id}");
+        Assert.Contains("Printer jams", after);
+        Assert.Contains("Paper gets stuck.", after);
+        Assert.DoesNotContain("It prints blank pages.", after);
+
+        var staffView = await (await SignedInAsync("Operator")).GetHtmlAsync($"/Tickets/Details/{id}");
+        Assert.Contains("Subject: Printer is down &rarr; Printer jams", staffView);
+        Assert.Contains("Description edited", staffView);
     }
 
     [Fact]
-    public async Task Staff_can_make_a_ticket_urgent_from_the_edit_page()
+    public async Task An_empty_subject_is_refused_and_the_old_one_kept()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("Keep this subject");
+
+        var response = await customer.PostTicketActionAsync(id, "Subject", Fields(("subject", "   ")));
+
+        Assert.Contains("Subject is required", await FollowedHtmlAsync(customer, response));
+        Assert.Contains("Keep this subject", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
+    }
+
+    [Fact]
+    public async Task Staff_can_make_a_ticket_urgent()
     {
         var customer = await SignedInAsync("Customer");
         var id = await customer.CreateTicketAsync("Server room is flooding");
         var op = await SignedInAsync("Operator");
 
-        var saved = await op.EditTicketAsync(id, priority: "Urgent");
+        var saved = await op.PostTicketActionAsync(id, "Priority", Fields(("priority", "Urgent")));
 
         Assert.Equal(HttpStatusCode.Redirect, saved.StatusCode);
-        Assert.Contains("prio prio-urgent", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
+        Assert.Contains("name=\"priority\" value=\"Urgent\" checked=\"checked\"", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
     }
 
     [Fact]
-    public async Task Another_customer_cannot_open_or_save_the_edit_page()
+    public async Task Another_customer_cannot_edit_the_ticket()
     {
         var owner = await SignedInAsync("Customer");
         var id = await owner.CreateTicketAsync("Not yours");
@@ -281,11 +301,9 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var zoe = NewClient();
         await zoe.SignInAsync("zoe@example.test", TestPassword);
 
-        var page = await zoe.GetAsync($"/Tickets/Edit/{id}");
-        var post = await zoe.PostFormAsync("/Tickets/Create", $"/Tickets/Edit/{id}", Fields(
-            ("rowVersion", "AAAAAAAAB9E="), ("Input.Subject", "Taken over"), ("Input.Description", "x"), ("Input.Priority", "Low")));
+        var post = await zoe.PostFormAsync("/Tickets/Create", $"/Tickets/Details/{id}?handler=Subject", Fields(
+            ("rowVersion", "AAAAAAAAB9E="), ("subject", "Taken over")));
 
-        Assert.Equal(HttpStatusCode.NotFound, page.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, post.StatusCode);
         Assert.Contains("Not yours", await owner.GetHtmlAsync($"/Tickets/Details/{id}"));
     }
@@ -297,11 +315,14 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var id = await customer.CreateTicketAsync("Done");
         await customer.PostTicketActionAsync(id, "Status", Fields(("status", "Closed")));
 
-        var details = await customer.GetHtmlAsync($"/Tickets/Details/{id}");
-        var edit = await customer.GetAsync($"/Tickets/Edit/{id}");
+        // Staff still see the ticket's version, in the form that reopens it.
+        var op = await SignedInAsync("Operator");
+        var details = await op.GetHtmlAsync($"/Tickets/Details/{id}");
+        var edit = await op.PostTicketActionAsync(id, "Subject", Fields(("subject", "Changed after all")));
 
-        Assert.DoesNotContain($"/Tickets/Edit/{id}", details);
-        Assert.Equal(HttpStatusCode.Redirect, edit.StatusCode);
-        Assert.Contains("closed", await FollowedHtmlAsync(customer, edit));
+        Assert.DoesNotContain("handler=Subject", details);
+        Assert.DoesNotContain("handler=Subject", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
+        Assert.Contains("The ticket is closed", await FollowedHtmlAsync(op, edit));
+        Assert.DoesNotContain("Changed after all", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
     }
 }

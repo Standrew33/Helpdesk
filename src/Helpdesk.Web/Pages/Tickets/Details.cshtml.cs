@@ -90,6 +90,13 @@ public class DetailsModel(TicketService tickets) : PageModel
     public Task<IActionResult> OnPostStatusAsync(string? rowVersion, TicketStatus status)
         => RunAsync(actor => tickets.ChangeStatusAsync(Id, actor, rowVersion, status));
 
+    // An empty field arrives as null; it is passed on as empty so that it is refused rather than left unchanged.
+    public Task<IActionResult> OnPostSubjectAsync(string? rowVersion, string? subject)
+        => RunAsync(actor => tickets.EditAsync(Id, actor, rowVersion, subject: subject ?? string.Empty));
+
+    public Task<IActionResult> OnPostDescriptionAsync(string? rowVersion, string? description)
+        => RunAsync(actor => tickets.EditAsync(Id, actor, rowVersion, description: description ?? string.Empty));
+
     public async Task<IActionResult> OnPostPriorityAsync(string? rowVersion, TicketPriority? priority)
     {
         if (priority is null)

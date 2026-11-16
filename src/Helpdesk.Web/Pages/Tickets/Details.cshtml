@@ -3,6 +3,7 @@
 @{
     var ticket = Model.Details.Ticket;
     ViewData["Title"] = $"Ticket #{ticket.Id}";
+    var pencil = new Microsoft.AspNetCore.Html.HtmlString("<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 20h9\" /><path d=\"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z\" /></svg>");
 }
 
 <a class="back-link" asp-page="Index">&larr; All tickets</a>
@@ -14,67 +15,92 @@
     }
 </div>
 
-<div id="ticket-header" class="page-header" data-live>
-    <div>
-        <p class="page-subtitle mt-0 mb-1">Ticket #@ticket.Id</p>
-        <h1 class="page-title">@ticket.Subject</h1>
-    </div>
-    <div class="d-flex flex-wrap align-items-center gap-2">
-        @if (Model.StatusOptions.Count > 1)
-        {
-            <form method="post" asp-page-handler="Status" data-instant>
-                <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
-                <span id="StatusLabel" class="visually-hidden">Status</span>
-                <div class="dropdown choice choice-inline" data-choice>
-                    <button type="button" id="Status" class="choice-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="StatusLabel Status">
-                        <span data-choice-label><span class="@TicketDisplay.StatusClass(ticket.Status)">@TicketDisplay.StatusText(ticket.Status)</span></span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end choice-menu">
-                        @foreach (var status in Model.StatusOptions)
-                        {
-                            <label class="choice-option">
-                                <input type="radio" name="status" value="@status" checked="@(status == ticket.Status)" class="form-check-input" />
-                                <span data-choice-view><span class="@TicketDisplay.StatusClass(status)">@TicketDisplay.StatusText(status)</span></span>
-                            </label>
-                        }
+<div id="ticket-header" class="ticket-header" data-live>
+    <div class="ticket-header-top">
+        <p class="page-subtitle m-0">Ticket #@ticket.Id</p>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            @if (Model.StatusOptions.Count > 1)
+            {
+                <form method="post" asp-page-handler="Status" data-instant>
+                    <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
+                    <span id="StatusLabel" class="visually-hidden">Status</span>
+                    <div class="dropdown choice choice-inline" data-choice>
+                        <button type="button" id="Status" class="choice-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="StatusLabel Status">
+                            <span data-choice-label><span class="@TicketDisplay.StatusClass(ticket.Status)">@TicketDisplay.StatusText(ticket.Status)</span></span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end choice-menu">
+                            @foreach (var status in Model.StatusOptions)
+                            {
+                                <label class="choice-option">
+                                    <input type="radio" name="status" value="@status" checked="@(status == ticket.Status)" class="form-check-input" />
+                                    <span data-choice-view><span class="@TicketDisplay.StatusClass(status)">@TicketDisplay.StatusText(status)</span></span>
+                                </label>
+                            }
+                        </div>
                     </div>
-                </div>
-            </form>
-        }
-        else
-        {
-            <span class="@TicketDisplay.StatusClass(ticket.Status)">@TicketDisplay.StatusText(ticket.Status)</span>
-        }
+                </form>
+            }
+            else
+            {
+                <span class="@TicketDisplay.StatusClass(ticket.Status)">@TicketDisplay.StatusText(ticket.Status)</span>
+            }
 
-        @if (Model.IsOpen)
-        {
-            <form method="post" asp-page-handler="Priority" class="choice-inline" data-instant>
-                <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
-                <span id="PriorityLabel" class="visually-hidden">Priority</span>
-                <partial name="_PriorityChoice" model="Model.PriorityChoice" />
-            </form>
-        }
-        else
-        {
-            <partial name="_Priority" model="ticket.Priority" />
-        }
-
-        @if (Model.IsOpen)
-        {
-            <a class="btn btn-outline-secondary btn-sm" asp-page="Edit" asp-route-id="@ticket.Id">Edit</a>
-        }
+            @if (Model.IsOpen)
+            {
+                <form method="post" asp-page-handler="Priority" class="choice-inline" data-instant>
+                    <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
+                    <span id="PriorityLabel" class="visually-hidden">Priority</span>
+                    <partial name="_PriorityChoice" model="Model.PriorityChoice" />
+                </form>
+            }
+            else
+            {
+                <partial name="_Priority" model="ticket.Priority" />
+            }
+        </div>
     </div>
+
+    @* The pencil turns the text into a field; leaving the field saves it. Without scripts the pencil stays hidden. *@
+    @if (Model.IsOpen)
+    {
+        <form method="post" asp-page-handler="Subject" class="inline-edit" data-inline-edit>
+            <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
+            <h1 class="page-title" data-inline-view>@ticket.Subject</h1>
+            <input id="Subject" type="text" name="subject" value="@ticket.Subject" maxlength="@Ticket.MaxSubjectLength" required
+                   class="form-control inline-field inline-field-title" aria-label="Subject" hidden data-inline-field />
+            <button type="button" id="SubjectEdit" class="icon-btn" title="Edit subject" aria-label="Edit subject" hidden data-inline-start>@pencil</button>
+        </form>
+    }
+    else
+    {
+        <h1 class="page-title">@ticket.Subject</h1>
+    }
 </div>
 
 <div class="row g-4">
     <div class="col-lg-8">
         <div id="ticket-description" class="card mb-4" data-live>
             <div class="card-body p-4">
-                <p class="text-secondary small mb-3">
-                    Opened by <strong class="text-body">@Model.Details.NameOf(ticket.CustomerId)</strong>
-                    on @TicketDisplay.Date(ticket.CreatedAt)
-                </p>
-                <p class="description">@ticket.Description</p>
+                @if (Model.IsOpen)
+                {
+                    <form method="post" asp-page-handler="Description" data-inline-edit>
+                        <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
+                        <div class="inline-edit-head">
+                            <partial name="_OpenedBy" />
+                            <button type="button" id="DescriptionEdit" class="icon-btn" title="Edit description" aria-label="Edit description" hidden data-inline-start>@pencil</button>
+                        </div>
+                        <p class="description" data-inline-view>@ticket.Description</p>
+                        <textarea id="Description" name="description" rows="4" maxlength="@Ticket.MaxDescriptionLength" required
+                                  class="form-control inline-field inline-field-text" aria-label="Description" hidden data-inline-field>@ticket.Description</textarea>
+                    </form>
+                }
+                else
+                {
+                    <div class="inline-edit-head">
+                        <partial name="_OpenedBy" />
+                    </div>
+                    <p class="description">@ticket.Description</p>
+                }
             </div>
         </div>
 
