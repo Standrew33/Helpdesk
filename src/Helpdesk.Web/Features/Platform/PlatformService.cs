@@ -1,6 +1,7 @@
 using Helpdesk.Core.Tickets;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Tickets;
+using Helpdesk.Web.Features.Users;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,7 @@ public class PlatformService(
     HelpdeskDbContext db,
     UserManager<ApplicationUser> userManager,
     Microsoft.Extensions.Options.IOptions<PlatformOptions> platform,
+    AccountDeletion deletion,
     ILogger<PlatformService> logger)
 {
     /// <summary>The newest tickets of a help desk the overview shows; older ones are reached by number.</summary>
@@ -41,7 +43,7 @@ public class PlatformService(
                 w.Id,
                 w.Name,
                 w.CreatedAt,
-                db.Users.Count(u => u.WorkspaceId == w.Id),
+                db.Users.Count(u => u.WorkspaceId == w.Id && u.DeletedAt == null),
                 tickets.Count(t => t.WorkspaceId == w.Id),
                 tickets.Where(t => t.WorkspaceId == w.Id).Max(t => (DateTimeOffset?)t.UpdatedAt),
                 w.IsBlocked))
@@ -57,7 +59,7 @@ public class PlatformService(
             return null;
         }
 
-        var users = await db.Users.AsNoTracking().Where(u => u.WorkspaceId == id).ToListAsync(ct);
+        var users = await db.Users.AsNoTracking().Where(u => u.WorkspaceId == id && u.DeletedAt == null).ToListAsync(ct);
         var ids = users.Select(u => u.Id).ToList();
         var roles = await (
             from ur in db.UserRoles
@@ -146,7 +148,7 @@ public class PlatformService(
     {
         var user = await userManager.FindByIdAsync(userId);
 
-        if (user is null)
+        if (user is not { DeletedAt: null })
         {
             return ServiceResult.NotFound();
         }
@@ -167,4 +169,29 @@ public class PlatformService(
         SecurityLog.ActiveChanged(logger, ownerId, user.Id, active);
         return ServiceResult.Success();
     }
+
+    /// <summary>Deletes anyone for good, administrators included; what they wrote stays, signed "Deleted user".</summary>
+    public async Task<ServiceResult> DeleteUserAsync(string ownerId, string userId)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+
+        if (user is not { DeletedAt: null })
+        {
+            return ServiceResult.NotFound();
+        }
+
+        if (user.Id == ownerId || platform.Value.IsOwner(user.Email))
+        {
+            return ServiceResult.Invalid("The owner of the platform cannot be deleted.");
+        }
+
+        if (!await deletion.DeleteAsync(user))
+        {
+            return ServiceResult.Invalid("The account could not be deleted.");
+        }
+
+        SecurityLog.AccountDeleted(logger, ownerId, user.Id);
+        return ServiceResult.Success();
+    }
+
 }

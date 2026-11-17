@@ -35,6 +35,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentWorkspace>();
 builder.Services.AddScoped<AccountAccess>();
 builder.Services.AddScoped<TicketService>();
+builder.Services.AddScoped<AccountDeletion>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddScoped<WorkspaceSignUp>();
 builder.Services.AddScoped<InvitationService>();

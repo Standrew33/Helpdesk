@@ -80,11 +80,14 @@ else
                             <td class="text-end">
                                 @if (!user.IsSelf && !user.IsProtected)
                                 {
-                                    <form method="post" asp-page-handler="Active" asp-route-q="@Model.Search">
-                                        <input type="hidden" name="id" value="@user.Id" />
-                                        <input type="hidden" name="active" value="@((!user.IsActive).ToString().ToLowerInvariant())" />
-                                        <button type="submit" class="btn btn-outline-secondary btn-sm">@(user.IsActive ? "Deactivate" : "Activate")</button>
-                                    </form>
+                                    <div class="row-actions">
+                                        <form method="post" asp-page-handler="Active" asp-route-q="@Model.Search">
+                                            <input type="hidden" name="id" value="@user.Id" />
+                                            <input type="hidden" name="active" value="@((!user.IsActive).ToString().ToLowerInvariant())" />
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm">@(user.IsActive ? "Deactivate" : "Activate")</button>
+                                        </form>
+                                        <partial name="_DeleteAccount" model="@(new Helpdesk.Web.Features.Users.DeleteAccountForm(user.Id, user.DisplayName, "id", new Dictionary<string, string?> { ["q"] = Model.Search }))" />
+                                    </div>
                                 }
                             </td>
                         </tr>

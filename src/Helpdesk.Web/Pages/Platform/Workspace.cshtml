@@ -56,11 +56,14 @@
                         <td class="text-end">
                             @if (!person.IsOwner)
                             {
-                                <form method="post" asp-page-handler="Active" asp-route-id="@overview.Id">
-                                    <input type="hidden" name="userId" value="@person.Id" />
-                                    <input type="hidden" name="active" value="@((!person.IsActive).ToString().ToLowerInvariant())" />
-                                    <button type="submit" class="btn btn-outline-secondary btn-sm">@(person.IsActive ? "Deactivate" : "Activate")</button>
-                                </form>
+                                <div class="row-actions">
+                                    <form method="post" asp-page-handler="Active" asp-route-id="@overview.Id">
+                                        <input type="hidden" name="userId" value="@person.Id" />
+                                        <input type="hidden" name="active" value="@((!person.IsActive).ToString().ToLowerInvariant())" />
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">@(person.IsActive ? "Deactivate" : "Activate")</button>
+                                    </form>
+                                    <partial name="_DeleteAccount" model="@(new Helpdesk.Web.Features.Users.DeleteAccountForm(person.Id, person.DisplayName, "userId", new Dictionary<string, string?> { ["id"] = overview.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) }))" />
+                                </div>
                             }
                         </td>
                     </tr>
@@ -112,3 +115,4 @@ else
         <p class="text-secondary small mt-2">Showing the @Model.MaxTicketsShown tickets changed most recently.</p>
     }
 }
+

@@ -266,6 +266,9 @@ namespace Helpdesk.Web.Data.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

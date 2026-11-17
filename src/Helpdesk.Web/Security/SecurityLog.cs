@@ -50,4 +50,7 @@ public static partial class SecurityLog
 
     [LoggerMessage(EventId = 1017, Level = LogLevel.Warning, Message = "The owner {ActorId} set workspace {WorkspaceId} blocked: {Blocked}")]
     public static partial void WorkspaceBlocked(ILogger logger, string actorId, int workspaceId, bool blocked);
+
+    [LoggerMessage(EventId = 1018, Level = LogLevel.Warning, Message = "User {ActorId} deleted the account {UserId}")]
+    public static partial void AccountDeleted(ILogger logger, string actorId, string userId);
 }

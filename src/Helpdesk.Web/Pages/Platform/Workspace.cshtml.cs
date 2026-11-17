@@ -69,5 +69,26 @@ public class WorkspaceModel(PlatformService platform) : PageModel
         return RedirectToPage(new { id = Id });
     }
 
+    public async Task<IActionResult> OnPostDeleteAsync(string userId)
+    {
+        var result = await platform.DeleteUserAsync(OwnerId, userId);
+
+        if (result.Outcome == ServiceOutcome.NotFound)
+        {
+            return NotFound();
+        }
+
+        if (result.Succeeded)
+        {
+            Notice = "Account deleted. What the person wrote stays, signed \"Deleted user\".";
+        }
+        else
+        {
+            Error = result.Message;
+        }
+
+        return RedirectToPage(new { id = Id });
+    }
+
     private string OwnerId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }

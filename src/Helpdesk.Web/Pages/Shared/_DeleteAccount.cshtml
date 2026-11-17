@@ -1,0 +1,12 @@
+@model Helpdesk.Web.Features.Users.DeleteAccountForm
+@* Deleting cannot be undone, so the button only opens a second, explicit step; it works without scripts. *@
+<details class="confirm-delete">
+    <summary class="btn btn-outline-danger btn-sm">Delete</summary>
+    <div class="confirm-delete-body">
+        <p class="small mb-2">Delete <strong>@Model.Name</strong> for good? Their tickets and comments stay, signed "Deleted user". This cannot be undone.</p>
+        <form method="post" asp-page-handler="Delete" asp-all-route-data="@Model.RouteValues.Where(r => r.Value is not null).ToDictionary(r => r.Key, r => r.Value!)">
+            <input type="hidden" name="@Model.IdField" value="@Model.UserId" />
+            <button type="submit" class="btn btn-danger btn-sm">Delete for good</button>
+        </form>
+    </div>
+</details>

@@ -1413,3 +1413,31 @@ form[aria-busy="true"] select {
   align-items: center;
   gap: 0.6rem;
 }
+
+/* Actions of a table row side by side; a delete opens a confirmation below the buttons */
+.row-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.confirm-delete > summary {
+  list-style: none;
+}
+
+.confirm-delete > summary::-webkit-details-marker {
+  display: none;
+}
+
+.confirm-delete-body {
+  max-width: 18rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--bs-danger-border-subtle);
+  border-radius: 0.5rem;
+  background: var(--bs-danger-bg-subtle);
+  text-align: left;
+  white-space: normal;
+}

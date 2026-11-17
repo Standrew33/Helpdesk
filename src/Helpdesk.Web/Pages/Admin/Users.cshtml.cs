@@ -33,6 +33,9 @@ public class UsersModel(UserAdminService admin) : PageModel
     public Task<IActionResult> OnPostActiveAsync(string id, bool active)
         => RunAsync(() => admin.SetActiveAsync(User.ToActor(), id, active), active ? "Account activated." : "Account deactivated.");
 
+    public Task<IActionResult> OnPostDeleteAsync(string id)
+        => RunAsync(() => admin.DeleteAsync(User.ToActor(), id), "Account deleted. What the person wrote stays, signed \"Deleted user\".");
+
     private async Task<IActionResult> RunAsync(Func<Task<ServiceResult>> operation, string success)
     {
         var result = await operation();

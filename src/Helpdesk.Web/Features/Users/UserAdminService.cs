@@ -23,6 +23,7 @@ public class UserAdminService(
     UserManager<ApplicationUser> userManager,
     IOptions<DemoOptions> demo,
     IOptions<PlatformOptions> platform,
+    AccountDeletion deletion,
     ILogger<UserAdminService> logger)
 {
     public const int MaxListSize = 100;
@@ -38,7 +39,7 @@ public class UserAdminService(
     /// <summary>The shared demo administrator only sees demo accounts, never the e-mail addresses of real visitors.</summary>
     public async Task<IReadOnlyList<UserRow>> ListAsync(Actor admin, string? search, CancellationToken ct = default)
     {
-        var users = db.Users.AsNoTracking().Where(u => u.WorkspaceId == admin.WorkspaceId);
+        var users = db.Users.AsNoTracking().Where(u => u.WorkspaceId == admin.WorkspaceId && u.DeletedAt == null);
 
         if (admin.IsDemo)
         {
@@ -165,11 +166,45 @@ public class UserAdminService(
         return ServiceResult.Success();
     }
 
-    /// <summary>A user of another workspace looks the same as one who does not exist.</summary>
+    /// <summary>Deletes a person of the own help desk for good; what they wrote stays, signed "Deleted user".</summary>
+    public async Task<ServiceResult> DeleteAsync(Actor admin, string userId)
+    {
+        if (admin.IsDemo)
+        {
+            return ServiceResult.Invalid(DemoAdminMessage);
+        }
+
+        var user = await FindInWorkspaceAsync(admin, userId);
+
+        if (user is null)
+        {
+            return ServiceResult.NotFound();
+        }
+
+        if (user.Id == admin.Id)
+        {
+            return ServiceResult.Invalid("You cannot delete your own account. Ask another administrator.");
+        }
+
+        if (ProtectedAs(user) is { } reason)
+        {
+            return ServiceResult.Invalid(reason == OwnerAccount ? "The owner of the platform cannot be changed here." : "The demo accounts cannot be changed.");
+        }
+
+        if (!await deletion.DeleteAsync(user))
+        {
+            return ServiceResult.Invalid("The account could not be deleted.");
+        }
+
+        SecurityLog.AccountDeleted(logger, admin.Id, user.Id);
+        return ServiceResult.Success();
+    }
+
+    /// <summary>A user of another workspace, or a deleted one, looks the same as one who does not exist.</summary>
     private async Task<ApplicationUser?> FindInWorkspaceAsync(Actor admin, string userId)
     {
         var user = await userManager.FindByIdAsync(userId);
-        return user?.WorkspaceId == admin.WorkspaceId ? user : null;
+        return user is { DeletedAt: null } && user.WorkspaceId == admin.WorkspaceId ? user : null;
     }
 
     /// <summary>The public demo must keep working for the next visitor, so its accounts are read-only.</summary>
