@@ -1,6 +1,7 @@
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Attachments;
 using Helpdesk.Web.Features.Email;
+using Helpdesk.Web.Features.Platform;
 using Helpdesk.Web.Features.SignIn;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Features.Users;
@@ -21,7 +22,12 @@ builder.WebHost.ConfigureKestrel(options =>
     options.Limits.MaxRequestBodySize = 1024 * 1024;
 });
 
-builder.Services.AddRazorPages(options => options.Conventions.AuthorizeFolder("/Admin", Policies.AdminOnly));
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AuthorizeFolder("/Admin", Policies.AdminOnly);
+    options.Conventions.AuthorizeFolder("/Platform", Policies.Platform);
+    options.Conventions.AuthorizePage("/Tickets/Details", Policies.Workspace);
+});
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAttachmentStore(builder.Configuration);
 builder.Services.AddEmail(builder.Configuration, builder.Environment);
@@ -33,12 +39,14 @@ builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddScoped<WorkspaceSignUp>();
 builder.Services.AddScoped<InvitationService>();
 builder.Services.AddScoped<JoinLinkService>();
+builder.Services.AddScoped<PlatformService>();
 builder.Services.AddSingleton<SignInTimingGuard>();
 builder.Services.AddScoped<OneTimeCodeService>();
 builder.Services.AddScoped<CodeMailer>();
 builder.Services.AddScoped<EmailSignIn>();
 builder.Services.Configure<OneTimeCodeOptions>(builder.Configuration.GetSection(OneTimeCodeOptions.SectionName));
 builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
+builder.Services.Configure<PlatformOptions>(builder.Configuration.GetSection(PlatformOptions.SectionName));
 
 // Links in e-mails need the real address of the site; in production it must be configured, never guessed from the request.
 builder.Services.AddOptions<SiteOptions>()
@@ -153,7 +161,9 @@ builder.Services.AddAuthorizationBuilder()
         .RequireAuthenticatedUser()
         .Build())
     .AddPolicy(Policies.Staff, policy => policy.RequireRole(RoleNames.Operator, RoleNames.Admin))
-    .AddPolicy(Policies.AdminOnly, policy => policy.RequireRole(RoleNames.Admin));
+    .AddPolicy(Policies.AdminOnly, policy => policy.RequireRole(RoleNames.Admin))
+    .AddPolicy(Policies.Workspace, policy => policy.RequireClaim(AppClaimTypes.Workspace))
+    .AddPolicy(Policies.Platform, policy => policy.RequireClaim(AppClaimTypes.PlatformOwner, "true"));
 
 var app = builder.Build();
 

@@ -13,12 +13,16 @@
     return;
 }
 
-<h1 class="h3 fw-bold mb-1">@(Model.JoinName is null ? "Welcome to Helpdesk" : $"Join {Model.JoinName}")</h1>
+<h1 class="h3 fw-bold mb-1">@(Model.JoinName is not null ? $"Join {Model.JoinName}" : Model.IsOwner ? "Welcome, superadmin" : "Welcome to Helpdesk")</h1>
 <p class="text-secondary mb-4">
     <strong class="text-body">@Model.Email</strong> is confirmed.
     @if (Model.JoinRole is not null)
     {
         <span>You join as @(Model.JoinRole == "Customer" ? "a" : "an") @Model.JoinRole.ToLowerInvariant().</span>
+    }
+    @if (Model.IsOwner)
+    {
+        <span>This address owns the platform: your account looks after every help desk and belongs to none of them.</span>
     }
 </p>
 
@@ -31,7 +35,7 @@
         <input asp-for="Input.DisplayName" class="form-control" autocomplete="name" autofocus />
         <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
     </div>
-    @if (Model.JoinName is null)
+    @if (Model.JoinName is null && !Model.IsOwner)
     {
         <div class="mb-3">
             <label asp-for="Input.WorkspaceName" class="form-label"></label>

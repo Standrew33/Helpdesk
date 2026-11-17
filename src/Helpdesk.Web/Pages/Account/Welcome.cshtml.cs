@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Options;
 
 namespace Helpdesk.Web.Pages.Account;
 
@@ -22,6 +23,7 @@ public class WelcomeModel(
     WorkspaceSignUp workspaceSignUp,
     InvitationService invitations,
     JoinLinkService joinLinks,
+    IOptions<PlatformOptions> platform,
     AccountAccess access,
     SignInManager<ApplicationUser> signInManager,
     EmailSignIn emailSignIn,
@@ -49,6 +51,9 @@ public class WelcomeModel(
     public string? JoinName => Invitation?.WorkspaceName ?? Join?.WorkspaceName;
 
     public string? JoinRole => Invitation?.Role ?? (Join is null ? null : RoleNames.Customer);
+
+    /// <summary>The configured owner of the platform: the account belongs to no help desk and looks after all of them.</summary>
+    public bool IsOwner => JoinName is null && platform.Value.IsOwner(Email);
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -114,6 +119,12 @@ public class WelcomeModel(
             else if (Join is not null)
             {
                 created = await workspaceSignUp.JoinAsCustomerAsync(user, Input.Password, Join.WorkspaceId);
+            }
+            else if (IsOwner)
+            {
+                created = string.IsNullOrEmpty(Input.Password)
+                    ? await userManager.CreateAsync(user)
+                    : await userManager.CreateAsync(user, Input.Password);
             }
             else
             {

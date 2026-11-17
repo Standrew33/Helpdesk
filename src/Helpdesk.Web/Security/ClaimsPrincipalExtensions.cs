@@ -43,6 +43,13 @@ public static class ClaimsPrincipalExtensions
             : null;
     }
 
+    /// <summary>True for the owner of the platform, who looks after every help desk.</summary>
+    public static bool IsPlatformOwner(this ClaimsPrincipal principal)
+    {
+        ArgumentNullException.ThrowIfNull(principal);
+        return principal.HasClaim(AppClaimTypes.PlatformOwner, "true");
+    }
+
     /// <summary>True for the shared public demo accounts, which must not reach data or users of real visitors.</summary>
     public static bool IsDemoAccount(this ClaimsPrincipal principal)
     {

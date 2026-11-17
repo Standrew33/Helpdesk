@@ -6,6 +6,10 @@
         : User.IsInRole(RoleNames.Operator) ? RoleNames.Operator
         : User.IsInRole(RoleNames.Customer) ? RoleNames.Customer
         : "";
+    var isOwner = User.IsPlatformOwner();
+    var inWorkspace = User.WorkspaceId() is not null;
+    var roleLabel = role.Length > 0 ? role : isOwner ? "Superadmin" : "";
+    var home = inWorkspace ? "/Tickets/Index" : "/Platform/Index";
     var onTickets = page is "/Tickets/Index" or "/Tickets/Details";
     var body = RenderBody();
 }
@@ -25,7 +29,7 @@
     {
         <div class="shell">
             <aside class="sidebar">
-                <a class="brand" asp-page="/Tickets/Index">
+                <a class="brand" asp-page="@home">
                     <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
                         <rect width="30" height="30" rx="8" fill="#14b8a6" />
                         <path d="M9 11h12M9 15h12M9 19h7" stroke="#06211e" stroke-width="2" stroke-linecap="round" fill="none" />
@@ -34,10 +38,13 @@
                 </a>
 
                 <nav class="side-nav" aria-label="Main">
-                    <a asp-page="/Tickets/Index" class="side-link @(onTickets ? "active" : "")">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
-                        Tickets
-                    </a>
+                    @if (inWorkspace)
+                    {
+                        <a asp-page="/Tickets/Index" class="side-link @(onTickets ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+                            Tickets
+                        </a>
+                    }
                     @if (role == RoleNames.Customer)
                     {
                         <a asp-page="/Tickets/Create" class="side-link @(page == "/Tickets/Create" ? "active" : "")">
@@ -62,6 +69,15 @@
                             Users
                         </a>
                     }
+
+                    @if (isOwner)
+                    {
+                        <div class="side-section">Platform</div>
+                        <a asp-page="/Platform/Index" class="side-link @(page.StartsWith("/Platform/", StringComparison.Ordinal) ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" /></svg>
+                            Help desks
+                        </a>
+                    }
                 </nav>
 
                 <div class="side-user">
@@ -69,7 +85,7 @@
                         <span class="avatar" aria-hidden="true">@(displayName.Length > 0 ? displayName[..1].ToUpperInvariant() : "?")</span>
                         <span class="user-meta">
                             <span class="user-name">@displayName</span>
-                            <span class="user-role">@role</span>
+                            <span class="user-role">@roleLabel</span>
                         </span>
                     </a>
                     <form method="post" asp-page="/Account/Logout">

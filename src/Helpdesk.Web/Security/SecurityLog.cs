@@ -47,4 +47,7 @@ public static partial class SecurityLog
 
     [LoggerMessage(EventId = 1016, Level = LogLevel.Information, Message = "Account {UserId} joined workspace {WorkspaceId} by invitation")]
     public static partial void JoinedByInvitation(ILogger logger, string userId, int workspaceId);
+
+    [LoggerMessage(EventId = 1017, Level = LogLevel.Warning, Message = "The owner {ActorId} set workspace {WorkspaceId} blocked: {Blocked}")]
+    public static partial void WorkspaceBlocked(ILogger logger, string actorId, int workspaceId, bool blocked);
 }

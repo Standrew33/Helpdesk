@@ -8,7 +8,11 @@ using Microsoft.Extensions.Options;
 
 namespace Helpdesk.Web.Features.Users;
 
-public sealed record UserRow(string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsSelf, bool IsProtected);
+/// <param name="ProtectedAs">Why the account cannot be changed here, if it cannot.</param>
+public sealed record UserRow(string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsSelf, string? ProtectedAs)
+{
+    public bool IsProtected => ProtectedAs is not null;
+}
 
 /// <summary>
 /// Lets an administrator see the users of their own workspace, change their role and switch accounts on or off.
@@ -18,9 +22,13 @@ public class UserAdminService(
     HelpdeskDbContext db,
     UserManager<ApplicationUser> userManager,
     IOptions<DemoOptions> demo,
+    IOptions<PlatformOptions> platform,
     ILogger<UserAdminService> logger)
 {
     public const int MaxListSize = 100;
+
+    private const string DemoAccount = "Demo account";
+    private const string OwnerAccount = "Owner of the platform";
 
     private const string DemoAdminMessage = "The demo administrator can look at accounts but cannot change them.";
 
@@ -65,7 +73,7 @@ public class UserAdminService(
                 rolesByUser.GetValueOrDefault(u.Id, "-"),
                 u.IsActive,
                 IsSelf: u.Id == admin.Id,
-                IsProtected: IsProtected(u)))
+                ProtectedAs: ProtectedAs(u)))
             .OrderBy(r => Array.IndexOf(RoleOrder, r.Role) is var i and >= 0 ? i : RoleOrder.Length)
             .ThenBy(r => r.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
@@ -95,9 +103,9 @@ public class UserAdminService(
             return ServiceResult.Invalid("You cannot change your own role. Ask another administrator.");
         }
 
-        if (IsProtected(user))
+        if (ProtectedAs(user) is { } reason)
         {
-            return ServiceResult.Invalid("The demo accounts cannot be changed.");
+            return ServiceResult.Invalid(reason == OwnerAccount ? "The owner of the platform cannot be changed here." : "The demo accounts cannot be changed.");
         }
 
         var current = await userManager.GetRolesAsync(user);
@@ -140,9 +148,9 @@ public class UserAdminService(
             return ServiceResult.Invalid("You cannot deactivate your own account.");
         }
 
-        if (IsProtected(user))
+        if (ProtectedAs(user) is { } reason)
         {
-            return ServiceResult.Invalid("The demo accounts cannot be changed.");
+            return ServiceResult.Invalid(reason == OwnerAccount ? "The owner of the platform cannot be changed here." : "The demo accounts cannot be changed.");
         }
 
         user.IsActive = active;
@@ -165,5 +173,9 @@ public class UserAdminService(
     }
 
     /// <summary>The public demo must keep working for the next visitor, so its accounts are read-only.</summary>
-    private bool IsProtected(ApplicationUser user) => demo.Value.Enabled && DatabaseSeeder.IsDemoAddress(user.Email);
+    /// <remarks>The owner of the platform is out of reach of the administrators of a help desk, too.</remarks>
+    private string? ProtectedAs(ApplicationUser user)
+        => platform.Value.IsOwner(user.Email) ? OwnerAccount
+            : demo.Value.Enabled && DatabaseSeeder.IsDemoAddress(user.Email) ? DemoAccount
+            : null;
 }

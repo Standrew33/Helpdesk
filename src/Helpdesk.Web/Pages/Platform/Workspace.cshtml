@@ -1,0 +1,114 @@
+@page "{id:int}"
+@model Helpdesk.Web.Pages.Platform.WorkspaceModel
+@using Helpdesk.Web.Features.Tickets
+@{
+    var overview = Model.Overview;
+    ViewData["Title"] = overview.Name;
+}
+
+<a asp-page="Index" class="back-link">&larr; All help desks</a>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">@overview.Name</h1>
+        <p class="page-subtitle">
+            Since @TicketDisplay.Date(overview.CreatedAt) &middot;
+            <span class="pill @(overview.IsBlocked ? "pill-closed" : "pill-active")">@(overview.IsBlocked ? "Blocked" : "Active")</span>
+        </p>
+    </div>
+    <form method="post" asp-page-handler="Block" asp-route-id="@overview.Id">
+        <input type="hidden" name="blocked" value="@((!overview.IsBlocked).ToString().ToLowerInvariant())" />
+        <button type="submit" class="btn btn-outline-secondary">@(overview.IsBlocked ? "Unblock the help desk" : "Block the help desk")</button>
+    </form>
+</div>
+
+@if (Model.Error is not null)
+{
+    <div class="alert alert-danger" role="alert">@Model.Error</div>
+}
+@if (Model.Notice is not null)
+{
+    <div class="alert alert-success" role="status">@Model.Notice</div>
+}
+
+<h2 class="h5 mb-3">People</h2>
+<div class="card overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table align-middle ticket-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var person in overview.People)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@person.DisplayName</div>
+                            <div class="text-secondary small">@person.Email</div>
+                        </td>
+                        <td>@person.Role</td>
+                        <td><span class="pill @(person.IsActive ? "pill-active" : "pill-closed")">@(person.IsActive ? "Active" : "Deactivated")</span></td>
+                        <td class="text-end">
+                            @if (!person.IsOwner)
+                            {
+                                <form method="post" asp-page-handler="Active" asp-route-id="@overview.Id">
+                                    <input type="hidden" name="userId" value="@person.Id" />
+                                    <input type="hidden" name="active" value="@((!person.IsActive).ToString().ToLowerInvariant())" />
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm">@(person.IsActive ? "Deactivate" : "Activate")</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<h2 class="h5 mb-3">Tickets</h2>
+@if (overview.Tickets.Count == 0)
+{
+    <div class="card"><div class="empty-state"><h2>No tickets yet</h2><p>Nobody has opened a ticket in this help desk.</p></div></div>
+}
+else
+{
+    <div class="card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle ticket-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Customer</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ticket in overview.Tickets)
+                    {
+                        <tr>
+                            <td class="ticket-id">@ticket.Number</td>
+                            <td><a class="ticket-subject" asp-page="Ticket" asp-route-workspaceId="@overview.Id" asp-route-number="@ticket.Number">@ticket.Subject</a></td>
+                            <td><span class="pill @TicketDisplay.StatusClass(ticket.Status)">@TicketDisplay.StatusText(ticket.Status)</span></td>
+                            <td><partial name="_Priority" model="ticket.Priority" /></td>
+                            <td>@ticket.CustomerName</td>
+                            <td class="text-nowrap">@TicketDisplay.Date(ticket.UpdatedAt)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (overview.Tickets.Count >= Model.MaxTicketsShown)
+    {
+        <p class="text-secondary small mt-2">Showing the @Model.MaxTicketsShown tickets changed most recently.</p>
+    }
+}

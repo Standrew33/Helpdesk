@@ -24,6 +24,7 @@ public sealed class HelpdeskWebFactory(string connectionString, bool demoEnabled
             ["ConnectionStrings:Default"] = connectionString,
             ["Demo:Enabled"] = demoEnabled.ToString(),
             ["Demo:SeedUsers"] = "true",
+            ["Platform:OwnerEmail"] = "owner@platform.test",
             ["BlobStorage:LocalPath"] = _attachmentsPath,
 
             // Hashing is slow on purpose in production; tests create many users.

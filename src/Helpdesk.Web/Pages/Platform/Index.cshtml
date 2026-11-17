@@ -1,0 +1,68 @@
+@page
+@model Helpdesk.Web.Pages.Platform.IndexModel
+@using Helpdesk.Web.Features.Tickets
+@{
+    ViewData["Title"] = "Help desks";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Help desks</h1>
+        <p class="page-subtitle">Every help desk on the platform. You can look into any of them and block it.</p>
+    </div>
+</div>
+
+@if (Model.Error is not null)
+{
+    <div class="alert alert-danger" role="alert">@Model.Error</div>
+}
+@if (Model.Notice is not null)
+{
+    <div class="alert alert-success" role="status">@Model.Notice</div>
+}
+
+@if (Model.Workspaces.Count == 0)
+{
+    <div class="card"><div class="empty-state"><h2>No help desks yet</h2><p>They appear here as soon as someone signs up.</p></div></div>
+}
+else
+{
+    <div class="card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle ticket-table">
+                <thead>
+                    <tr>
+                        <th>Help desk</th>
+                        <th class="text-end">People</th>
+                        <th class="text-end">Tickets</th>
+                        <th>Last activity</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var workspace in Model.Workspaces)
+                    {
+                        <tr>
+                            <td>
+                                <a class="ticket-subject" asp-page="Workspace" asp-route-id="@workspace.Id">@workspace.Name</a>
+                                <div class="text-secondary small">Since @TicketDisplay.Date(workspace.CreatedAt)</div>
+                            </td>
+                            <td class="text-end">@workspace.People</td>
+                            <td class="text-end">@workspace.Tickets</td>
+                            <td class="text-nowrap">@(workspace.LastActivity is { } last ? TicketDisplay.Date(last) : new Microsoft.AspNetCore.Html.HtmlString("&ndash;"))</td>
+                            <td><span class="pill @(workspace.IsBlocked ? "pill-closed" : "pill-active")">@(workspace.IsBlocked ? "Blocked" : "Active")</span></td>
+                            <td class="text-end">
+                                <form method="post" asp-page-handler="Block">
+                                    <input type="hidden" name="id" value="@workspace.Id" />
+                                    <input type="hidden" name="blocked" value="@((!workspace.IsBlocked).ToString().ToLowerInvariant())" />
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm">@(workspace.IsBlocked ? "Unblock" : "Block")</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

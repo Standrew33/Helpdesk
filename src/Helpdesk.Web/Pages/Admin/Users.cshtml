@@ -58,7 +58,7 @@ else
                                 @if (user.IsSelf || user.IsProtected)
                                 {
                                     <span>@user.Role</span>
-                                    <div class="text-secondary small">@(user.IsProtected ? "Demo account" : "Your own role")</div>
+                                    <div class="text-secondary small">@(user.ProtectedAs ?? "Your own role")</div>
                                 }
                                 else
                                 {

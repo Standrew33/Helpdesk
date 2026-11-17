@@ -51,11 +51,18 @@ public class IndexModel(TicketService tickets) : PageModel
 
     public bool IsFiltered => !string.IsNullOrWhiteSpace(Search) || Status.Count > 0 || Priority.Count > 0 || Scope.Count > 0;
 
-    public async Task OnGetAsync(CancellationToken ct)
+    public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
+        // Every sign-in lands here; the owner of the platform, who belongs to no help desk, goes on to the platform.
+        if (User.WorkspaceId() is null)
+        {
+            return User.IsPlatformOwner() ? RedirectToPage("/Platform/Index") : Forbid();
+        }
+
         var actor = User.ToActor();
         IsCustomer = actor.Role == UserRole.Customer;
         Result = await tickets.ListAsync(actor, new TicketFilter(Search, Status, Priority, Scope, PageNumber, Sort ?? TicketSort.Updated, IsDescending), ct);
+        return Page();
     }
 
     public FilterChoice StatusChoice => new("status", "Status", Enum.GetValues<TicketStatus>()
