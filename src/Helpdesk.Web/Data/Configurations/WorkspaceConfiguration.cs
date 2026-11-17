@@ -11,5 +11,7 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
         builder.ToTable("Workspaces");
 
         builder.Property(w => w.Name).HasMaxLength(Workspace.MaxNameLength).IsRequired();
+        builder.Property(w => w.JoinCode).HasMaxLength(Workspace.JoinCodeLength).IsUnicode(false).IsRequired();
+        builder.HasIndex(w => w.JoinCode).IsUnique();
     }
 }

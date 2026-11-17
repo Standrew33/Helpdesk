@@ -226,6 +226,15 @@ namespace Helpdesk.Web.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<bool>("IsJoinOpen")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JoinCode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<int>("LastTicketNumber")
                         .HasColumnType("int");
 
@@ -235,6 +244,9 @@ namespace Helpdesk.Web.Data.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("JoinCode")
+                        .IsUnique();
 
                     b.ToTable("Workspaces", (string)null);
                 });
