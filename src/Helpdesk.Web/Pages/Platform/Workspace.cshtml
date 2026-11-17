@@ -116,3 +116,19 @@ else
     }
 }
 
+@if (overview.Id != Helpdesk.Web.Data.SharedWorkspace.Id)
+{
+    <div class="card danger-card mt-5">
+        <div class="card-body p-4">
+            <h2 class="h5 mb-1">Delete the help desk</h2>
+            <p class="text-secondary mb-3">Deletes its people, tickets, comments, files and invitations for good. This cannot be undone.</p>
+            <form method="post" asp-page-handler="DeleteWorkspace" asp-route-id="@overview.Id" class="delete-workspace">
+                <label for="confirmName" class="form-label">Type <strong>@overview.Name</strong> to confirm</label>
+                <div class="delete-workspace-fields">
+                    <input id="confirmName" name="confirmName" class="form-control" autocomplete="off" required />
+                    <button type="submit" class="btn btn-danger">Delete the help desk</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}

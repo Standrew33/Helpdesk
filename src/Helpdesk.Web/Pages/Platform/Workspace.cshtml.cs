@@ -90,5 +90,24 @@ public class WorkspaceModel(PlatformService platform) : PageModel
         return RedirectToPage(new { id = Id });
     }
 
+    public async Task<IActionResult> OnPostDeleteWorkspaceAsync(string? confirmName, CancellationToken ct)
+    {
+        var result = await platform.DeleteWorkspaceAsync(OwnerId, Id, confirmName, ct);
+
+        if (result.Outcome == ServiceOutcome.NotFound)
+        {
+            return NotFound();
+        }
+
+        if (!result.Succeeded)
+        {
+            Error = result.Message;
+            return RedirectToPage(new { id = Id });
+        }
+
+        TempData["Notice"] = "The help desk is deleted with everything in it.";
+        return RedirectToPage("Index");
+    }
+
     private string OwnerId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 }

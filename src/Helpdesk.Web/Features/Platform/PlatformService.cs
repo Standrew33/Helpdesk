@@ -1,5 +1,6 @@
 using Helpdesk.Core.Tickets;
 using Helpdesk.Web.Data;
+using Helpdesk.Web.Features.Attachments;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Features.Users;
 using Helpdesk.Web.Security;
@@ -20,11 +21,12 @@ public sealed record WorkspaceOverview(int Id, string Name, DateTimeOffset Creat
 /// What the owner of the platform sees and does: every help desk, its people and its tickets, read as they are,
 /// and the switch that blocks a help desk or a person. The owner never writes into a ticket.
 /// </summary>
-public class PlatformService(
+public partial class PlatformService(
     HelpdeskDbContext db,
     UserManager<ApplicationUser> userManager,
     Microsoft.Extensions.Options.IOptions<PlatformOptions> platform,
     AccountDeletion deletion,
+    IAttachmentStore attachments,
     ILogger<PlatformService> logger)
 {
     /// <summary>The newest tickets of a help desk the overview shows; older ones are reached by number.</summary>
@@ -194,4 +196,71 @@ public class PlatformService(
         return ServiceResult.Success();
     }
 
+    /// <summary>
+    /// Deletes a help desk with everything in it: its tickets with their comments, files and history, its invitations
+    /// and its people. The database part happens at once or not at all; the stored files are removed afterwards.
+    /// The name must be typed exactly, so a slip of the mouse cannot do it.
+    /// </summary>
+    public async Task<ServiceResult> DeleteWorkspaceAsync(string ownerId, int id, string? confirmName, CancellationToken ct = default)
+    {
+        var workspace = await db.Workspaces.AsNoTracking().FirstOrDefaultAsync(w => w.Id == id, ct);
+
+        if (workspace is null)
+        {
+            return ServiceResult.NotFound();
+        }
+
+        if (id == SharedWorkspace.Id)
+        {
+            return ServiceResult.Invalid("The shared help desk holds the demo and cannot be deleted.");
+        }
+
+        if (!string.Equals(confirmName?.Trim(), workspace.Name, StringComparison.Ordinal))
+        {
+            return ServiceResult.Invalid("Type the name of the help desk exactly as it is shown to delete it.");
+        }
+
+        var tickets = db.Tickets.IgnoreQueryFilters().Where(t => t.WorkspaceId == id);
+        var files = await tickets.SelectMany(t => t.Attachments).Select(a => a.StoredName).ToListAsync(ct);
+        var ticketCount = await tickets.CountAsync(ct);
+        var people = await db.Users.CountAsync(u => u.WorkspaceId == id && u.DeletedAt == null, ct);
+        var ownerEmail = userManager.NormalizeEmail(platform.Value.OwnerEmail);
+
+        var strategy = db.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync(ct);
+
+            // Comments, files and history go with their tickets (the database cascades them).
+            await tickets.ExecuteDeleteAsync(ct);
+            await db.Invitations.Where(i => i.WorkspaceId == id).ExecuteDeleteAsync(ct);
+
+            // Should the owner of the platform have joined this help desk, the owner leaves it instead of going with it.
+            await db.Users
+                .Where(u => u.WorkspaceId == id && u.NormalizedEmail == ownerEmail)
+                .ExecuteUpdateAsync(set => set.SetProperty(u => u.WorkspaceId, (int?)null), ct);
+            await db.Users.Where(u => u.WorkspaceId == id).ExecuteDeleteAsync(ct);
+            await db.Workspaces.Where(w => w.Id == id).ExecuteDeleteAsync(ct);
+
+            await transaction.CommitAsync(ct);
+        });
+
+        foreach (var file in files)
+        {
+            try
+            {
+                await attachments.DeleteAsync(file, CancellationToken.None);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                FileLeftBehind(logger, ex, file);
+            }
+        }
+
+        SecurityLog.WorkspaceDeleted(logger, ownerId, id, people, ticketCount);
+        return ServiceResult.Success();
+    }
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "The stored file {StoredName} of a deleted help desk could not be removed")]
+    private static partial void FileLeftBehind(ILogger logger, Exception exception, string storedName);
 }

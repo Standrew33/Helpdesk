@@ -8,7 +8,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Helpdesk.IntegrationTests;
 
-/// <summary>A deleted person is gone for good, while what they wrote stays signed "Deleted user".</summary>
+/// <summary>
+/// A deleted person is gone for good, while what they wrote stays signed "Deleted user". A deleted help desk takes
+/// everything in it along, its stored files included.
+/// </summary>
 public class DeletionTests(SqlServerFixture sql) : WebTestBase(sql)
 {
     private const string Owner = "owner@platform.test";
@@ -53,6 +56,9 @@ public class DeletionTests(SqlServerFixture sql) : WebTestBase(sql)
 
     private static Task<HttpResponseMessage> AdminDeletesAsync(AppClient admin, string userId)
         => admin.PostFormAsync("/Admin/Users", "/Admin/Users?handler=Delete", new Dictionary<string, string> { ["id"] = userId });
+
+    private static Task<HttpResponseMessage> DeleteWorkspaceAsync(AppClient owner, int workspaceId, string confirmName)
+        => owner.PostFormAsync("/Platform", $"/Platform/Workspace/{workspaceId}?handler=DeleteWorkspace", new Dictionary<string, string> { ["confirmName"] = confirmName });
 
     [Fact]
     public async Task A_deleted_person_is_gone_but_what_they_wrote_stays()
@@ -138,4 +144,58 @@ public class DeletionTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Contains("/Account/Login", (await boss.GetAsync("/Tickets")).Headers.Location!.OriginalString);
     }
 
+    [Fact]
+    public async Task The_owner_deletes_a_help_desk_with_everything_in_it()
+    {
+        var (boss, customer, acme) = await AcmeAsync();
+        var other = NewClient();
+        await SignUpAsync(other, "eve@other.test", "Eve", workspace: "Other desk");
+        var dan = await SignedInAsUserAsync("Customer", "dan@other.test", (await UserAsync("eve@other.test"))!.WorkspaceId!.Value);
+        await dan.CreateTicketAsync("Untouched matter");
+        var owner = await OwnerAsync();
+        var storedName = await ReadAsync(sp => sp.GetRequiredService<HelpdeskDbContext>().Tickets.IgnoreQueryFilters()
+            .Where(t => t.WorkspaceId == acme).SelectMany(t => t.Attachments).Select(a => a.StoredName).SingleAsync());
+
+        var wrong = await DeleteWorkspaceAsync(owner, acme, "acme support");
+        Assert.Contains("Type the name of the help desk exactly", await (await owner.FollowAsync(wrong)).Content.ReadAsStringAsync());
+        Assert.NotNull(await UserAsync(Boss));
+
+        var done = await DeleteWorkspaceAsync(owner, acme, "Acme support");
+        Assert.Contains("The help desk is deleted", await (await owner.FollowAsync(done)).Content.ReadAsStringAsync());
+
+        Assert.DoesNotContain("Acme support", await owner.GetHtmlAsync("/Platform"));
+        Assert.Null(await UserAsync(Boss));
+        Assert.Null(await UserAsync(Carl));
+        Assert.Equal(0, await ReadAsync(sp => sp.GetRequiredService<HelpdeskDbContext>().Tickets.IgnoreQueryFilters().CountAsync(t => t.WorkspaceId == acme)));
+        Assert.Null(await ReadAsync(sp => sp.GetRequiredService<IAttachmentStore>().OpenReadAsync(storedName)));
+
+        Assert.Contains("/Account/Login", (await boss.GetAsync("/Tickets")).Headers.Location!.OriginalString);
+        Assert.Contains("/Account/Login", (await customer.GetAsync("/Tickets")).Headers.Location!.OriginalString);
+        Assert.Contains("Untouched matter", await other.GetHtmlAsync("/Tickets"));
+    }
+
+    [Fact]
+    public async Task The_shared_help_desk_cannot_be_deleted()
+    {
+        var owner = await OwnerAsync();
+
+        var response = await DeleteWorkspaceAsync(owner, SharedWorkspace.Id, SharedWorkspace.Name);
+
+        Assert.Contains("cannot be deleted", await (await owner.FollowAsync(response)).Content.ReadAsStringAsync());
+        Assert.NotNull(await UserAsync(Helpdesk.Web.Data.DatabaseSeeder.DemoEmail("Admin")));
+    }
+
+    [Fact]
+    public async Task Only_the_owner_deletes_help_desks()
+    {
+        var (boss, _, acme) = await AcmeAsync();
+
+        var response = await boss.PostFormAsync("/Tickets", $"/Platform/Workspace/{acme}?handler=DeleteWorkspace", new Dictionary<string, string>
+        {
+            ["confirmName"] = "Acme support",
+        });
+
+        Assert.Contains("/Account/AccessDenied", response.Headers.Location!.OriginalString);
+        Assert.NotNull(await UserAsync(Boss));
+    }
 }

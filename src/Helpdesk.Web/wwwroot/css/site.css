@@ -1441,3 +1441,17 @@ form[aria-busy="true"] select {
   text-align: left;
   white-space: normal;
 }
+
+.danger-card {
+  border-color: var(--bs-danger-border-subtle);
+}
+
+.delete-workspace-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.delete-workspace-fields .form-control {
+  flex: 1 1 16rem;
+}

@@ -53,4 +53,7 @@ public static partial class SecurityLog
 
     [LoggerMessage(EventId = 1018, Level = LogLevel.Warning, Message = "User {ActorId} deleted the account {UserId}")]
     public static partial void AccountDeleted(ILogger logger, string actorId, string userId);
+
+    [LoggerMessage(EventId = 1019, Level = LogLevel.Warning, Message = "The owner {ActorId} deleted workspace {WorkspaceId} with {People} people and {Tickets} tickets")]
+    public static partial void WorkspaceDeleted(ILogger logger, string actorId, int workspaceId, int people, int tickets);
 }
