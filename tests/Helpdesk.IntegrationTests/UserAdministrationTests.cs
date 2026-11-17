@@ -203,11 +203,4 @@ public class UserAdministrationTests(SqlServerFixture sql) : WebTestBase(sql)
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-
-    private async Task<string> UserIdAsync(string email)
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        return (await users.FindByEmailAsync(email))!.Id;
-    }
 }

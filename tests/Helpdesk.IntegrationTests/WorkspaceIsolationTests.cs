@@ -109,6 +109,24 @@ public class WorkspaceIsolationTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task Tickets_can_be_given_only_to_staff_of_the_own_workspace()
+    {
+        var (_, other) = await TwoCompaniesAsync();
+        var home = await SignedInAsUserAsync("Operator", "olga@company-a.test");
+        var strangerId = await CreateUserAsync("Operator", "oleg@company-b.test", workspaceId: other);
+
+        var page = await home.GetHtmlAsync("/Tickets/Details/1");
+        Assert.Contains($"value=\"{await UserIdAsync("olga@company-a.test")}\"", page);
+        Assert.DoesNotContain(strangerId, page);
+
+        var response = await home.PostTicketActionAsync(1, "Assign", new Dictionary<string, string> { ["assigneeId"] = strangerId });
+        var after = await home.GetHtmlAsync(response.Headers.Location!.OriginalString);
+
+        Assert.Contains("operators and admins of this help desk only", after);
+        Assert.DoesNotContain("oleg@company-b.test", after);
+    }
+
+    [Fact]
     public async Task The_database_reads_tickets_of_the_current_workspace_only()
     {
         var (_, other) = await TwoCompaniesAsync();

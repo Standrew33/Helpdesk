@@ -119,6 +119,13 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
         return user.Id;
     }
 
+    protected async Task<string> UserIdAsync(string email)
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        return (await users.FindByEmailAsync(email))!.Id;
+    }
+
     protected async Task<string> DemoUserIdAsync(string role)
     {
         await using var scope = Factory.Services.CreateAsyncScope();

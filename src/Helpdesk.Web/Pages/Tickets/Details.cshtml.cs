@@ -50,7 +50,7 @@ public class DetailsModel(TicketService tickets) : PageModel
 
         if (IsStaff)
         {
-            Assignees = await tickets.GetAssigneeOptionsAsync();
+            Assignees = await tickets.GetAssigneeOptionsAsync(actor, ct);
         }
 
         return Page();

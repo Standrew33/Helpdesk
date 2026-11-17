@@ -204,7 +204,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Contains("Demo operator", await FollowedHtmlAsync(op, ok));
 
         var bad = await op.PostTicketActionAsync(id, "Assign", Fields(("assigneeId", await DemoUserIdAsync("Customer"))));
-        Assert.Contains("active operators and admins only", await FollowedHtmlAsync(op, bad));
+        Assert.Contains("active operators and admins of this help desk only", await FollowedHtmlAsync(op, bad));
     }
 
     [Fact]

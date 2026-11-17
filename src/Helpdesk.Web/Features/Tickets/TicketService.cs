@@ -4,14 +4,12 @@ using Helpdesk.Core.Users;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Attachments;
 using Helpdesk.Web.Security;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Helpdesk.Web.Features.Tickets;
 
 public class TicketService(
     HelpdeskDbContext db,
-    UserManager<ApplicationUser> userManager,
     IAttachmentStore attachments,
     TimeProvider time,
     ILogger<TicketService> logger)
@@ -142,17 +140,21 @@ public class TicketService(
         return new TicketDetails(ticket, comments, names);
     }
 
-    public async Task<IReadOnlyList<AssigneeOption>> GetAssigneeOptionsAsync()
-    {
-        var operators = await userManager.GetUsersInRoleAsync(RoleNames.Operator);
-        var admins = await userManager.GetUsersInRoleAsync(RoleNames.Admin);
-
-        return operators.Concat(admins)
-            .Where(u => u.IsActive)
-            .DistinctBy(u => u.Id)
+    public async Task<IReadOnlyList<AssigneeOption>> GetAssigneeOptionsAsync(Actor actor, CancellationToken ct = default)
+        => await AssignableStaff(actor)
             .OrderBy(u => u.DisplayName)
             .Select(u => new AssigneeOption(u.Id, u.DisplayName))
-            .ToList();
+            .ToListAsync(ct);
+
+    /// <summary>The people a ticket can be given to: active operators and admins of the actor's own workspace.</summary>
+    private IQueryable<ApplicationUser> AssignableStaff(Actor actor)
+    {
+        string[] staffRoles = [RoleNames.Operator, RoleNames.Admin];
+
+        return db.Users.Where(u =>
+            u.WorkspaceId == actor.WorkspaceId
+            && u.IsActive
+            && db.UserRoles.Any(ur => ur.UserId == u.Id && db.Roles.Any(r => r.Id == ur.RoleId && staffRoles.Contains(r.Name!))));
     }
 
     /// <summary>Creates a ticket; throws <see cref="DomainException"/> when the input breaks a rule.</summary>
@@ -244,13 +246,9 @@ public class TicketService(
     {
         if (!string.IsNullOrEmpty(assigneeId))
         {
-            var assignee = await userManager.FindByIdAsync(assigneeId);
-
-            if (assignee is not { IsActive: true }
-                || !(await userManager.IsInRoleAsync(assignee, RoleNames.Operator)
-                    || await userManager.IsInRoleAsync(assignee, RoleNames.Admin)))
+            if (!await AssignableStaff(actor).AnyAsync(u => u.Id == assigneeId))
             {
-                return ServiceResult.Invalid("Tickets can be assigned to active operators and admins only.");
+                return ServiceResult.Invalid("Tickets can be assigned to active operators and admins of this help desk only.");
             }
         }
 
