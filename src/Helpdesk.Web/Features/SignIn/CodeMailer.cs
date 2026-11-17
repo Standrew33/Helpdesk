@@ -45,7 +45,7 @@ public partial class CodeMailer(
         }
 
         var challenge = issued.Challenge!;
-        var link = $"{BaseUrl(request)}/Account/Link?token={Uri.EscapeDataString(challenge.Token)}";
+        var link = $"{site.Value.BaseUrl(request)}/Account/Link?token={Uri.EscapeDataString(challenge.Token)}";
 
         try
         {
@@ -61,12 +61,6 @@ public partial class CodeMailer(
 
         return new SendResult(SendOutcome.Sent, challenge.Id, TimeSpan.Zero);
     }
-
-    /// <summary>The configured address of the site; the request's own host only when none is configured (development, tests).</summary>
-    private string BaseUrl(HttpRequest request)
-        => !string.IsNullOrWhiteSpace(site.Value.PublicUrl)
-            ? site.Value.PublicUrl.TrimEnd('/')
-            : $"{request.Scheme}://{request.Host}{request.PathBase}";
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Could not send the {Purpose} e-mail")]
     private static partial void SendFailed(ILogger logger, Exception exception, ChallengePurpose purpose);

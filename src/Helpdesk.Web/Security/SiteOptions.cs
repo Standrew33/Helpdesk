@@ -15,6 +15,15 @@ public class SiteOptions
     /// which a client can forge to plant its own address in someone else's sign-in e-mail. Required in production.
     /// </summary>
     public string? PublicUrl { get; set; }
+
+    /// <summary>The configured address of the site; the request's own host only when none is configured (development, tests).</summary>
+    public string BaseUrl(Microsoft.AspNetCore.Http.HttpRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return !string.IsNullOrWhiteSpace(PublicUrl)
+            ? PublicUrl.TrimEnd('/')
+            : $"{request.Scheme}://{request.Host}{request.PathBase}";
+    }
 }
 
 /// <summary>How the application's cookies are protected; decided once at start-up.</summary>
