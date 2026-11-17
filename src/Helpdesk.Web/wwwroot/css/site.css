@@ -1385,3 +1385,19 @@ form[aria-busy="true"] select {
 .password-toggle[aria-pressed="false"] .password-toggle-slash {
   display: none;
 }
+
+/* Invitations: address, role and button on one line where there is room */
+.invite-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.invite-email {
+  flex: 1 1 18rem;
+}
+
+.invite-role {
+  flex: 0 1 11rem;
+}

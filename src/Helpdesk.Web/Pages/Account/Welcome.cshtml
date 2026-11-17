@@ -5,8 +5,22 @@
     ViewData["Title"] = "Create your account";
 }
 
-<h1 class="h3 fw-bold mb-1">Welcome to Helpdesk</h1>
-<p class="text-secondary mb-4"><strong class="text-body">@Model.Email</strong> is confirmed.</p>
+@if (Model.InvitationGone)
+{
+    <h1 class="h3 fw-bold mb-3">This invitation no longer works</h1>
+    <p class="text-secondary mb-4">@Helpdesk.Web.Features.Workspaces.InvitationService.GoneMessage</p>
+    <a asp-page="Login" class="btn btn-outline-secondary w-100">Go to sign-in</a>
+    return;
+}
+
+<h1 class="h3 fw-bold mb-1">@(Model.Invitation is null ? "Welcome to Helpdesk" : $"Join {Model.Invitation.WorkspaceName}")</h1>
+<p class="text-secondary mb-4">
+    <strong class="text-body">@Model.Email</strong> is confirmed.
+    @if (Model.Invitation is not null)
+    {
+        <span>You join as @(Model.Invitation.Role == "Customer" ? "a" : "an") @Model.Invitation.Role.ToLowerInvariant().</span>
+    }
+</p>
 
 <form method="post">
     <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
@@ -17,12 +31,15 @@
         <input asp-for="Input.DisplayName" class="form-control" autocomplete="name" autofocus />
         <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
     </div>
-    <div class="mb-3">
-        <label asp-for="Input.WorkspaceName" class="form-label"></label>
-        <input asp-for="Input.WorkspaceName" class="form-control" autocomplete="organization" aria-describedby="workspace-help" />
-        <div id="workspace-help" class="form-text">You get a help desk of your own and run it as its administrator. Without a name it is called after you.</div>
-        <span asp-validation-for="Input.WorkspaceName" class="field-validation-error"></span>
-    </div>
+    @if (Model.Invitation is null)
+    {
+        <div class="mb-3">
+            <label asp-for="Input.WorkspaceName" class="form-label"></label>
+            <input asp-for="Input.WorkspaceName" class="form-control" autocomplete="organization" aria-describedby="workspace-help" />
+            <div id="workspace-help" class="form-text">You get a help desk of your own and run it as its administrator. Without a name it is called after you.</div>
+            <span asp-validation-for="Input.WorkspaceName" class="field-validation-error"></span>
+        </div>
+    }
     <div class="mb-3">
         <label asp-for="Input.Password" class="form-label"></label>
         <input asp-for="Input.Password" class="form-control" autocomplete="new-password" data-strength data-strength-related="#Email, #Input_DisplayName" />

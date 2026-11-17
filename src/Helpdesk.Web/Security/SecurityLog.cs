@@ -41,4 +41,10 @@ public static partial class SecurityLog
 
     [LoggerMessage(EventId = 1014, Level = LogLevel.Warning, Message = "A file for ticket {TicketId} was refused: its content does not match its type")]
     public static partial void UploadRefused(ILogger logger, int ticketId);
+
+    [LoggerMessage(EventId = 1015, Level = LogLevel.Information, Message = "User {ActorId} invited someone to workspace {WorkspaceId} as {Role}")]
+    public static partial void Invited(ILogger logger, string actorId, int workspaceId, string role);
+
+    [LoggerMessage(EventId = 1016, Level = LogLevel.Information, Message = "Account {UserId} joined workspace {WorkspaceId} by invitation")]
+    public static partial void JoinedByInvitation(ILogger logger, string userId, int workspaceId);
 }

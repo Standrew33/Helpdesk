@@ -1,0 +1,32 @@
+@page
+@model InvitationModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Invitation";
+    var invitation = Model.Invitation;
+}
+
+@if (invitation is null)
+{
+    <h1 class="h3 fw-bold mb-3">This invitation no longer works</h1>
+    <p class="text-secondary mb-4">It was used already, withdrawn, replaced by a newer one, or it is older than @((int)Helpdesk.Web.Data.Invitation.Lifetime.TotalDays) days. Ask the person who invited you to send a new one.</p>
+    <a asp-page="Login" class="btn btn-outline-secondary w-100">Go to sign-in</a>
+}
+else if (invitation.AddressHasAccount)
+{
+    <h1 class="h3 fw-bold mb-3">This address already has an account</h1>
+    <p class="text-secondary mb-4"><strong class="text-body">@invitation.Email</strong> belongs to another help desk already, and one address can belong to one help desk only. Ask @invitation.InvitedBy to invite another address.</p>
+    <a asp-page="Login" class="btn btn-outline-secondary w-100">Sign in with this address</a>
+}
+else
+{
+    <h1 class="h3 fw-bold mb-1">Join @invitation.WorkspaceName</h1>
+    <p class="text-secondary mb-4">@invitation.InvitedBy invited <strong class="text-body">@invitation.Email</strong> to this help desk as @(invitation.Role == "Admin" || invitation.Role == "Operator" ? "an" : "a") @invitation.Role.ToLowerInvariant().</p>
+
+    <form method="post">
+        <input type="hidden" asp-for="Token" />
+        <button type="submit" class="btn btn-primary w-100">Accept the invitation</button>
+    </form>
+
+    <p class="text-secondary mt-4 mb-0">Not for you? Just close this page; nothing happens.</p>
+}

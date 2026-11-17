@@ -20,6 +20,7 @@ namespace Helpdesk.Web.Pages.Account;
 public class WelcomeModel(
     UserManager<ApplicationUser> userManager,
     WorkspaceSignUp workspaceSignUp,
+    InvitationService invitations,
     SignInManager<ApplicationUser> signInManager,
     EmailSignIn emailSignIn,
     ILogger<WelcomeModel> logger) : PageModel
@@ -29,7 +30,13 @@ public class WelcomeModel(
 
     public string Email { get; private set; } = string.Empty;
 
-    public IActionResult OnGet()
+    /// <summary>The help desk the person was invited to; null for someone who starts a help desk of their own.</summary>
+    public OpenInvitation? Invitation { get; private set; }
+
+    /// <summary>The invitation that brought the person here was used, withdrawn or ran out in the meantime.</summary>
+    public bool InvitationGone { get; private set; }
+
+    public async Task<IActionResult> OnGetAsync()
     {
         var pending = emailSignIn.ReadPendingSignUp(HttpContext);
 
@@ -39,6 +46,7 @@ public class WelcomeModel(
         }
 
         Email = pending.Email;
+        await ReadInvitationAsync(pending);
         return Page();
     }
 
@@ -53,6 +61,12 @@ public class WelcomeModel(
         }
 
         Email = pending.Email;
+        await ReadInvitationAsync(pending);
+
+        if (InvitationGone)
+        {
+            return Page();
+        }
 
         if (skip)
         {
@@ -71,18 +85,31 @@ public class WelcomeModel(
         {
             var displayName = NameFor(Input.DisplayName, Email);
             user = new ApplicationUser { UserName = Email, Email = Email, EmailConfirmed = true, DisplayName = displayName };
-            var workspaceName = string.IsNullOrWhiteSpace(Input.WorkspaceName) ? WorkspaceSignUp.DefaultName(displayName) : Input.WorkspaceName;
-
             IdentityResult created;
 
-            try
+            if (Invitation is not null)
             {
-                created = await workspaceSignUp.CreateAsync(user, Input.Password, workspaceName);
+                created = await invitations.JoinAsync(Invitation.Id, user, Input.Password);
+
+                if (created.Errors.Any(e => e.Code == InvitationService.GoneCode))
+                {
+                    InvitationGone = true;
+                    return Page();
+                }
             }
-            catch (DomainException ex)
+            else
             {
-                ModelState.AddModelError("Input.WorkspaceName", ex.Message);
-                return Page();
+                var workspaceName = string.IsNullOrWhiteSpace(Input.WorkspaceName) ? WorkspaceSignUp.DefaultName(displayName) : Input.WorkspaceName;
+
+                try
+                {
+                    created = await workspaceSignUp.CreateAsync(user, Input.Password, workspaceName);
+                }
+                catch (DomainException ex)
+                {
+                    ModelState.AddModelError("Input.WorkspaceName", ex.Message);
+                    return Page();
+                }
             }
 
             if (!created.Succeeded)
@@ -110,6 +137,15 @@ public class WelcomeModel(
         return !string.IsNullOrEmpty(pending.ReturnUrl) && Url.IsLocalUrl(pending.ReturnUrl)
             ? LocalRedirect(pending.ReturnUrl)
             : RedirectToPage("/Tickets/Index");
+    }
+
+    private async Task ReadInvitationAsync(PendingSignUp pending)
+    {
+        if (pending.InvitationId is { } id)
+        {
+            Invitation = await invitations.FindOpenAsync(id);
+            InvitationGone = Invitation is null;
+        }
     }
 
     /// <summary>Without a name the part of the address before the @ stands in; it can be changed in the settings.</summary>

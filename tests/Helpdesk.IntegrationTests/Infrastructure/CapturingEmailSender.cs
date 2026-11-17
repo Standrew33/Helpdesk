@@ -35,9 +35,15 @@ public sealed partial class CapturingEmailSender : IEmailSender
 
     public static string LinkIn(EmailMessage message) => LinkPattern().Match(message.Text).Value;
 
+    /// <summary>The invitation link of a message, as a path the test client can open.</summary>
+    public static string InvitationLinkIn(EmailMessage message) => new Uri(InvitationPattern().Match(message.Text).Value).PathAndQuery;
+
     [GeneratedRegex(@"^\s*(\d{6})\s*$", RegexOptions.Multiline)]
     private static partial Regex CodePattern();
 
     [GeneratedRegex(@"https?://\S+/Account/Link\?token=\S+")]
     private static partial Regex LinkPattern();
+
+    [GeneratedRegex(@"https?://\S+/Account/Invitation\?token=\S+")]
+    private static partial Regex InvitationPattern();
 }

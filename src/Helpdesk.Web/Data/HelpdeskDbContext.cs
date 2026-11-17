@@ -21,6 +21,8 @@ public class HelpdeskDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<SignInChallenge> SignInChallenges => Set<SignInChallenge>();
 
+    public DbSet<Invitation> Invitations => Set<Invitation>();
+
     /// <summary>
     /// The only workspace whose tickets this context reads. It is read anew for every query.
     /// Without one (start-up work, a signed-out request) no ticket is read at all, unless a query asks for every

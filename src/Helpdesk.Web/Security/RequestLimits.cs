@@ -29,6 +29,9 @@ public class RequestLimitOptions
 
     /// <summary>File uploads per ten minutes. Storage is the scarce resource of the free tier.</summary>
     public int UploadsPer10Minutes { get; set; } = 10;
+
+    /// <summary>Invitations sent from one address; each one is an e-mail to someone else.</summary>
+    public int InvitationsPer10Minutes { get; set; } = 20;
 }
 
 /// <summary>The counters behind the limits: one fixed window per kind of action and client address.</summary>
@@ -65,6 +68,7 @@ public sealed class RequestLimiter : IDisposable
                 Bucket.SignIn => ("signin", limits.SignInAttemptsPerMinute, TimeSpan.FromMinutes(1)),
                 Bucket.Registration => ("register", limits.RegistrationsPer10Minutes, TenMinutes),
                 Bucket.Upload => ("upload", limits.UploadsPer10Minutes, TenMinutes),
+                Bucket.Invitation => ("invite", limits.InvitationsPer10Minutes, TenMinutes),
                 _ => ("tickets", limits.TicketChangesPer10Minutes, TenMinutes),
             };
 
@@ -124,6 +128,7 @@ public sealed class RequestLimiter : IDisposable
         SignIn,
         Registration,
         Upload,
+        Invitation,
         TicketChange,
     }
 
@@ -150,6 +155,11 @@ public sealed class RequestLimiter : IDisposable
         if (path.Equals("/Account/Welcome", StringComparison.OrdinalIgnoreCase))
         {
             return Bucket.Registration;
+        }
+
+        if (path.Equals("/Invitations", StringComparison.OrdinalIgnoreCase) && handler.Length == 0)
+        {
+            return Bucket.Invitation;
         }
 
         if (path.StartsWithSegments("/Tickets", StringComparison.OrdinalIgnoreCase))

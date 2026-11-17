@@ -1,0 +1,110 @@
+@page
+@model Helpdesk.Web.Pages.InvitationsModel
+@using Helpdesk.Web.Features.Tickets
+@{
+    ViewData["Title"] = "Invitations";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Invitations</h1>
+        <p class="page-subtitle">Bring people into your help desk. They get an e-mail with a link that is valid for @((int)Helpdesk.Web.Data.Invitation.Lifetime.TotalDays) days.</p>
+    </div>
+</div>
+
+@if (Model.Error is not null)
+{
+    <div class="alert alert-danger" role="alert">@Model.Error</div>
+}
+@if (Model.Notice is not null)
+{
+    <div class="alert alert-success" role="status">@Model.Notice</div>
+}
+
+<div class="card mb-4">
+    <div class="card-body p-4">
+        <h2 class="h5 mb-3">Invite someone</h2>
+        <form method="post" class="invite-form">
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-2"></div>
+            <div class="invite-fields">
+                <div class="invite-email">
+                    <label asp-for="Input.Email" class="form-label"></label>
+                    <input asp-for="Input.Email" class="form-control" type="email" autocomplete="off" />
+                    <span asp-validation-for="Input.Email" class="field-validation-error"></span>
+                </div>
+                @if (Model.Roles.Count > 1)
+                {
+                    <div class="invite-role">
+                        <label asp-for="Input.Role" class="form-label"></label>
+                        <select asp-for="Input.Role" class="form-select">
+                            @foreach (var role in Model.Roles)
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        </select>
+                    </div>
+                }
+                else
+                {
+                    <input type="hidden" asp-for="Input.Role" value="@Model.Roles[0]" />
+                }
+                <div class="invite-send">
+                    <button type="submit" class="btn btn-primary">Send invitation</button>
+                </div>
+            </div>
+            @if (Model.Roles.Count == 1)
+            {
+                <p class="form-text mb-0 mt-2">Operators invite customers. Ask an administrator to invite staff.</p>
+            }
+        </form>
+    </div>
+</div>
+
+<h2 class="h5 mb-3">Waiting for an answer</h2>
+
+@if (Model.Waiting.Count == 0)
+{
+    <div class="card"><div class="empty-state"><h2>No open invitations</h2><p>Everyone invited has joined, or nobody has been invited yet.</p></div></div>
+}
+else
+{
+    <div class="card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle ticket-table">
+                <thead>
+                    <tr>
+                        <th>E-mail</th>
+                        <th>Role</th>
+                        <th>Invited by</th>
+                        <th>Valid until</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var invitation in Model.Waiting)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@invitation.Email</td>
+                            <td>@invitation.Role</td>
+                            <td>@invitation.InvitedBy</td>
+                            <td class="text-nowrap">@TicketDisplay.Date(invitation.ExpiresAt)</td>
+                            <td class="text-end">
+                                @if (invitation.CanWithdraw)
+                                {
+                                    <form method="post" asp-page-handler="Withdraw">
+                                        <input type="hidden" name="id" value="@invitation.Id" />
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">Withdraw</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

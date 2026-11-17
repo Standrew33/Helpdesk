@@ -35,6 +35,7 @@ public sealed class HelpdeskWebFactory(string connectionString, bool demoEnabled
             ["RequestLimits:RegistrationsPer10Minutes"] = "1000",
             ["RequestLimits:TicketChangesPer10Minutes"] = "1000",
             ["RequestLimits:UploadsPer10Minutes"] = "1000",
+            ["RequestLimits:InvitationsPer10Minutes"] = "1000",
         }));
 
         builder.ConfigureTestServices(services => services.AddSingleton<IEmailSender>(Mail));

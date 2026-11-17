@@ -83,6 +83,13 @@ public class EmailSignIn(
         return EmailSignInResult.PasswordResetReady;
     }
 
+    /// <summary>
+    /// For an accepted invitation: the link reached the invited address, which proves it, so the welcome step comes
+    /// next and creates the account in the inviting help desk.
+    /// </summary>
+    public void BeginInvitedSignUp(HttpContext context, string email, Guid invitationId)
+        => Remember(context, SignUpStep, new PendingSignUp(email.ToLowerInvariant(), null, invitationId));
+
     /// <summary>The address proven a moment ago in this browser, waiting for a name; null when there is none or it is too old.</summary>
     public PendingSignUp? ReadPendingSignUp(HttpContext context) => Read<PendingSignUp>(context, SignUpStep);
 
@@ -161,6 +168,7 @@ public class EmailSignIn(
     private sealed record PendingStep(string Cookie, string Purpose);
 }
 
-public sealed record PendingSignUp(string Email, string? ReturnUrl);
+/// <param name="InvitationId">Set when the address was proven by accepting an invitation.</param>
+public sealed record PendingSignUp(string Email, string? ReturnUrl, Guid? InvitationId = null);
 
 public sealed record PendingReset(string UserId, string Token);
