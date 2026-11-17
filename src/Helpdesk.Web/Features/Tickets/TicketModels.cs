@@ -3,7 +3,7 @@ using Helpdesk.Core.Tickets;
 namespace Helpdesk.Web.Features.Tickets;
 
 public sealed record TicketListItem(
-    int Id,
+    int Number,
     string Subject,
     TicketStatus Status,
     TicketPriority Priority,
@@ -24,7 +24,7 @@ public enum TicketScope
 public enum TicketSort
 {
     Updated,
-    Id,
+    Number,
     Subject,
     Status,
     Priority,

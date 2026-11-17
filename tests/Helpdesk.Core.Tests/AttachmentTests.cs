@@ -5,13 +5,15 @@ namespace Helpdesk.Core.Tests;
 
 public class AttachmentTests
 {
+    private const int Workspace = 1;
+
     private static readonly DateTimeOffset Now = new(2026, 3, 2, 9, 0, 0, TimeSpan.Zero);
 
-    private static readonly Actor Customer = new("customer-1", UserRole.Customer);
-    private static readonly Actor OtherCustomer = new("customer-2", UserRole.Customer);
-    private static readonly Actor Operator = new("operator-1", UserRole.Operator);
+    private static readonly Actor Customer = new("customer-1", UserRole.Customer, Workspace);
+    private static readonly Actor OtherCustomer = new("customer-2", UserRole.Customer, Workspace);
+    private static readonly Actor Operator = new("operator-1", UserRole.Operator, Workspace);
 
-    private static Ticket NewTicket() => Ticket.Create(1, 1, "Printer is down", "It prints blank pages.", TicketPriority.Normal, Customer, Now);
+    private static Ticket NewTicket() => Ticket.Create(1, "Printer is down", "It prints blank pages.", TicketPriority.Normal, Customer, Now);
 
     [Fact]
     public void Owner_can_attach_a_file_and_the_change_is_recorded()

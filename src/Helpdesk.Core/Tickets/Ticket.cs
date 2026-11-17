@@ -56,11 +56,11 @@ public sealed class Ticket
 
     public IReadOnlyList<TicketHistoryEntry> History => _history;
 
-    public static Ticket Create(
-        int workspaceId, int number, string subject, string description, TicketPriority priority, Actor customer, DateTimeOffset now)
+    /// <summary>Opens a ticket in the customer's workspace, under the number the workspace gave out for it.</summary>
+    public static Ticket Create(int number, string subject, string description, TicketPriority priority, Actor customer, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(customer);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(workspaceId);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(customer.WorkspaceId);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(number);
 
         if (customer.Role != UserRole.Customer)
@@ -75,7 +75,7 @@ public sealed class Ticket
 
         var ticket = new Ticket
         {
-            WorkspaceId = workspaceId,
+            WorkspaceId = customer.WorkspaceId,
             Number = number,
             Subject = RequireText(subject, "Subject", MaxSubjectLength),
             Description = RequireText(description, "Description", MaxDescriptionLength),
@@ -91,10 +91,11 @@ public sealed class Ticket
         return ticket;
     }
 
+    /// <summary>Staff see the tickets of their own workspace, a customer only their own tickets; nobody sees past the workspace.</summary>
     public bool CanBeViewedBy(Actor actor)
     {
         ArgumentNullException.ThrowIfNull(actor);
-        return actor.Role.IsStaff() || actor.Id == CustomerId;
+        return actor.WorkspaceId == WorkspaceId && (actor.Role.IsStaff() || actor.Id == CustomerId);
     }
 
     /// <summary>Comments the actor is allowed to see: customers do not see internal notes.</summary>

@@ -91,8 +91,8 @@ else
                     @foreach (var item in result.Items)
                     {
                         <tr>
-                            <td class="ticket-id">@item.Id</td>
-                            <td><a class="ticket-subject" asp-page="Details" asp-route-id="@item.Id">@item.Subject</a></td>
+                            <td class="ticket-id">@item.Number</td>
+                            <td><a class="ticket-subject" asp-page="Details" asp-route-number="@item.Number">@item.Subject</a></td>
                             <td><span class="@TicketDisplay.StatusClass(item.Status)">@TicketDisplay.StatusText(item.Status)</span></td>
                             <td><partial name="_Priority" model="item.Priority" /></td>
                             <td>@item.CustomerName</td>

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Helpdesk.Core.Users;
 using Helpdesk.Web.Data;
@@ -27,7 +28,19 @@ public static class ClaimsPrincipalExtensions
             : principal.IsInRole(RoleNames.Customer) ? UserRole.Customer
             : throw new InvalidOperationException("The user has no role.");
 
-        return new Actor(id, role, principal.IsDemoAccount());
+        var workspaceId = principal.WorkspaceId()
+            ?? throw new InvalidOperationException("The user does not belong to a workspace.");
+
+        return new Actor(id, role, workspaceId, principal.IsDemoAccount());
+    }
+
+    /// <summary>The help desk of the signed-in user; null when signed out or for an account outside every workspace.</summary>
+    public static int? WorkspaceId(this ClaimsPrincipal principal)
+    {
+        ArgumentNullException.ThrowIfNull(principal);
+        return int.TryParse(principal.FindFirstValue(AppClaimTypes.Workspace), NumberStyles.None, CultureInfo.InvariantCulture, out var id) && id > 0
+            ? id
+            : null;
     }
 
     /// <summary>True for the shared public demo accounts, which must not reach data or users of real visitors.</summary>

@@ -11,8 +11,9 @@ namespace Helpdesk.Web.Pages.Tickets;
 [RequestSizeLimit(AttachmentPolicy.MaxFileBytes + 512 * 1024)]
 public class DetailsModel(TicketService tickets) : PageModel
 {
+    /// <summary>The number of the ticket within the user's workspace.</summary>
     [FromRoute]
-    public int Id { get; set; }
+    public int Number { get; set; }
 
     [TempData]
     public string? Error { get; set; }
@@ -34,7 +35,7 @@ public class DetailsModel(TicketService tickets) : PageModel
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
         var actor = User.ToActor();
-        var details = await tickets.GetAsync(Id, actor, ct);
+        var details = await tickets.GetAsync(Number, actor, ct);
 
         if (details is null)
         {
@@ -56,23 +57,23 @@ public class DetailsModel(TicketService tickets) : PageModel
     }
 
     public Task<IActionResult> OnPostCommentAsync(string? rowVersion, string? body, bool isInternal)
-        => RunAsync(actor => tickets.AddCommentAsync(Id, actor, rowVersion, body ?? string.Empty, isInternal));
+        => RunAsync(actor => tickets.AddCommentAsync(Number, actor, rowVersion, body ?? string.Empty, isInternal));
 
     public async Task<IActionResult> OnPostAttachmentAsync(string? rowVersion, IFormFile? file, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
         {
             Error = "Choose a file to attach.";
-            return RedirectToPage(new { id = Id });
+            return RedirectToPage(new { number = Number });
         }
 
         await using var content = file.OpenReadStream();
-        return await RunAsync(actor => tickets.AddAttachmentAsync(Id, actor, rowVersion, file.FileName, file.Length, content, ct));
+        return await RunAsync(actor => tickets.AddAttachmentAsync(Number, actor, rowVersion, file.FileName, file.Length, content, ct));
     }
 
     public async Task<IActionResult> OnGetDownloadAsync(int attachmentId, CancellationToken ct)
     {
-        var download = await tickets.OpenAttachmentAsync(Id, attachmentId, User.ToActor(), ct);
+        var download = await tickets.OpenAttachmentAsync(Number, attachmentId, User.ToActor(), ct);
 
         if (download is null)
         {
@@ -88,28 +89,28 @@ public class DetailsModel(TicketService tickets) : PageModel
     }
 
     public Task<IActionResult> OnPostStatusAsync(string? rowVersion, TicketStatus status)
-        => RunAsync(actor => tickets.ChangeStatusAsync(Id, actor, rowVersion, status));
+        => RunAsync(actor => tickets.ChangeStatusAsync(Number, actor, rowVersion, status));
 
     // An empty field arrives as null; it is passed on as empty so that it is refused rather than left unchanged.
     public Task<IActionResult> OnPostSubjectAsync(string? rowVersion, string? subject)
-        => RunAsync(actor => tickets.EditAsync(Id, actor, rowVersion, subject: subject ?? string.Empty));
+        => RunAsync(actor => tickets.EditAsync(Number, actor, rowVersion, subject: subject ?? string.Empty));
 
     public Task<IActionResult> OnPostDescriptionAsync(string? rowVersion, string? description)
-        => RunAsync(actor => tickets.EditAsync(Id, actor, rowVersion, description: description ?? string.Empty));
+        => RunAsync(actor => tickets.EditAsync(Number, actor, rowVersion, description: description ?? string.Empty));
 
     public async Task<IActionResult> OnPostPriorityAsync(string? rowVersion, TicketPriority? priority)
     {
         if (priority is null)
         {
             Error = "Choose a priority.";
-            return RedirectToPage(new { id = Id });
+            return RedirectToPage(new { number = Number });
         }
 
-        return await RunAsync(actor => tickets.EditAsync(Id, actor, rowVersion, priority: priority));
+        return await RunAsync(actor => tickets.EditAsync(Number, actor, rowVersion, priority: priority));
     }
 
     public Task<IActionResult> OnPostAssignAsync(string? rowVersion, string? assigneeId)
-        => RunAsync(actor => tickets.AssignAsync(Id, actor, rowVersion, assigneeId));
+        => RunAsync(actor => tickets.AssignAsync(Number, actor, rowVersion, assigneeId));
 
     private async Task<IActionResult> RunAsync(Func<Actor, Task<ServiceResult>> operation)
     {
@@ -125,6 +126,6 @@ public class DetailsModel(TicketService tickets) : PageModel
             Error = result.Message;
         }
 
-        return RedirectToPage(new { id = Id });
+        return RedirectToPage(new { number = Number });
     }
 }

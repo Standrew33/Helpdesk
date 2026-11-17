@@ -69,7 +69,7 @@ public static class DatabaseSeeder
     {
         var db = services.GetRequiredService<HelpdeskDbContext>();
 
-        if (await db.Tickets.AnyAsync())
+        if (await db.Tickets.AnyAsync(t => t.WorkspaceId == SharedWorkspace.Id))
         {
             return;
         }
@@ -82,13 +82,12 @@ public static class DatabaseSeeder
             return;
         }
 
-        var customer = new Actor(customerUser.Id, UserRole.Customer);
-        var op = new Actor(operatorUser.Id, UserRole.Operator);
+        var customer = new Actor(customerUser.Id, UserRole.Customer, SharedWorkspace.Id);
+        var op = new Actor(operatorUser.Id, UserRole.Operator, SharedWorkspace.Id);
         var now = services.GetRequiredService<TimeProvider>().GetUtcNow();
 
         async Task<Ticket> NewTicketAsync(string subject, string description, TicketPriority priority, Actor by, DateTimeOffset at)
-            => Ticket.Create(
-                SharedWorkspace.Id, await TicketNumbers.ReserveAsync(db, SharedWorkspace.Id), subject, description, priority, by, at);
+            => Ticket.Create(await TicketNumbers.ReserveAsync(db, SharedWorkspace.Id), subject, description, priority, by, at);
 
         // Each ticket is created in the past and moved through the workflow so the list shows every state.
         var vpn = await NewTicketAsync(

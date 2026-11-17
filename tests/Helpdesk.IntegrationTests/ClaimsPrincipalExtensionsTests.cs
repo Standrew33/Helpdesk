@@ -8,12 +8,20 @@ namespace Helpdesk.IntegrationTests;
 public class ClaimsPrincipalExtensionsTests
 {
     private static ClaimsPrincipal Principal(string? id, params string[] roles)
+        => PrincipalIn("5", id, roles);
+
+    private static ClaimsPrincipal PrincipalIn(string? workspace, string? id, params string[] roles)
     {
         var claims = roles.Select(r => new Claim(ClaimTypes.Role, r)).ToList();
 
         if (id is not null)
         {
             claims.Add(new Claim(ClaimTypes.NameIdentifier, id));
+        }
+
+        if (workspace is not null)
+        {
+            claims.Add(new Claim(AppClaimTypes.Workspace, workspace));
         }
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
@@ -27,7 +35,7 @@ public class ClaimsPrincipalExtensionsTests
     {
         var actor = Principal("user-1", roleName).ToActor();
 
-        Assert.Equal(new Actor("user-1", expected), actor);
+        Assert.Equal(new Actor("user-1", expected, 5), actor);
     }
 
     [Fact]
@@ -42,6 +50,17 @@ public class ClaimsPrincipalExtensionsTests
     public void ToActor_requires_a_user_id()
     {
         Assert.Throws<InvalidOperationException>(() => Principal(null, RoleNames.Customer).ToActor());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("0")]
+    [InlineData("-1")]
+    [InlineData("five")]
+    public void ToActor_requires_a_workspace(string? workspace)
+    {
+        Assert.Throws<InvalidOperationException>(() => PrincipalIn(workspace, "user-1", RoleNames.Customer).ToActor());
     }
 
     [Fact]

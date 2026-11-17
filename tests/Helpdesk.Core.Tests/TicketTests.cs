@@ -5,17 +5,20 @@ namespace Helpdesk.Core.Tests;
 
 public class TicketTests
 {
+    private const int Workspace = 1;
+    private const int OtherWorkspace = 2;
+
     private static readonly DateTimeOffset Now = new(2026, 3, 2, 9, 0, 0, TimeSpan.Zero);
 
-    private static readonly Actor Customer = new("customer-1", UserRole.Customer);
-    private static readonly Actor OtherCustomer = new("customer-2", UserRole.Customer);
-    private static readonly Actor Operator = new("operator-1", UserRole.Operator);
-    private static readonly Actor Admin = new("admin-1", UserRole.Admin);
+    private static readonly Actor Customer = new("customer-1", UserRole.Customer, Workspace);
+    private static readonly Actor OtherCustomer = new("customer-2", UserRole.Customer, Workspace);
+    private static readonly Actor Operator = new("operator-1", UserRole.Operator, Workspace);
+    private static readonly Actor Admin = new("admin-1", UserRole.Admin, Workspace);
 
     private static Ticket NewTicket(TicketPriority priority = TicketPriority.Normal)
     {
         // Customers cannot open urgent tickets; staff raises the priority afterwards.
-        var ticket = Ticket.Create(1, 1, "Printer is down", "It prints blank pages.", priority == TicketPriority.Urgent ? TicketPriority.High : priority, Customer, Now);
+        var ticket = Ticket.Create(1, "Printer is down", "It prints blank pages.", priority == TicketPriority.Urgent ? TicketPriority.High : priority, Customer, Now);
 
         if (priority == TicketPriority.Urgent)
         {
@@ -39,9 +42,9 @@ public class TicketTests
     }
 
     [Fact]
-    public void Create_keeps_the_workspace_and_the_number()
+    public void Create_puts_the_ticket_in_the_workspace_of_the_customer()
     {
-        var ticket = Ticket.Create(7, 42, "Printer is down", "It prints blank pages.", TicketPriority.Normal, Customer, Now);
+        var ticket = Ticket.Create(42, "Printer is down", "It prints blank pages.", TicketPriority.Normal, Customer with { WorkspaceId = 7 }, Now);
 
         Assert.Equal(7, ticket.WorkspaceId);
         Assert.Equal(42, ticket.Number);
@@ -52,12 +55,12 @@ public class TicketTests
     [InlineData(1, 0)]
     public void Create_needs_a_workspace_and_a_number(int workspaceId, int number)
         => Assert.Throws<ArgumentOutOfRangeException>(
-            () => Ticket.Create(workspaceId, number, "Printer is down", "It prints blank pages.", TicketPriority.Normal, Customer, Now));
+            () => Ticket.Create(number, "Printer is down", "It prints blank pages.", TicketPriority.Normal, Customer with { WorkspaceId = workspaceId }, Now));
 
     [Fact]
     public void Create_trims_text()
     {
-        var ticket = Ticket.Create(1, 1, "  Subject  ", "  Body  ", TicketPriority.Low, Customer, Now);
+        var ticket = Ticket.Create(1, "  Subject  ", "  Body  ", TicketPriority.Low, Customer, Now);
 
         Assert.Equal("Subject", ticket.Subject);
         Assert.Equal("Body", ticket.Description);
@@ -69,7 +72,7 @@ public class TicketTests
     [InlineData("subject", "")]
     public void Create_requires_subject_and_description(string subject, string description)
     {
-        Assert.Throws<DomainException>(() => Ticket.Create(1, 1, subject, description, TicketPriority.Normal, Customer, Now));
+        Assert.Throws<DomainException>(() => Ticket.Create(1, subject, description, TicketPriority.Normal, Customer, Now));
     }
 
     [Fact]
@@ -77,19 +80,19 @@ public class TicketTests
     {
         var subject = new string('a', Ticket.MaxSubjectLength + 1);
 
-        Assert.Throws<DomainException>(() => Ticket.Create(1, 1, subject, "text", TicketPriority.Normal, Customer, Now));
+        Assert.Throws<DomainException>(() => Ticket.Create(1, subject, "text", TicketPriority.Normal, Customer, Now));
     }
 
     [Fact]
     public void Create_is_allowed_for_customers_only()
     {
-        Assert.Throws<DomainException>(() => Ticket.Create(1, 1, "s", "d", TicketPriority.Normal, Operator, Now));
+        Assert.Throws<DomainException>(() => Ticket.Create(1, "s", "d", TicketPriority.Normal, Operator, Now));
     }
 
     [Fact]
     public void Create_does_not_allow_customers_to_set_urgent_priority()
     {
-        Assert.Throws<DomainException>(() => Ticket.Create(1, 1, "s", "d", TicketPriority.Urgent, Customer, Now));
+        Assert.Throws<DomainException>(() => Ticket.Create(1, "s", "d", TicketPriority.Urgent, Customer, Now));
     }
 
     [Fact]
@@ -101,6 +104,32 @@ public class TicketTests
         Assert.False(ticket.CanBeViewedBy(OtherCustomer));
         Assert.True(ticket.CanBeViewedBy(Operator));
         Assert.True(ticket.CanBeViewedBy(Admin));
+    }
+
+    [Fact]
+    public void Nobody_sees_a_ticket_of_another_workspace()
+    {
+        var ticket = NewTicket();
+
+        Assert.False(ticket.CanBeViewedBy(Operator with { WorkspaceId = OtherWorkspace }));
+        Assert.False(ticket.CanBeViewedBy(Admin with { WorkspaceId = OtherWorkspace }));
+
+        // Even an account with the same id, should one ever exist, is someone else in another workspace.
+        Assert.False(ticket.CanBeViewedBy(Customer with { WorkspaceId = OtherWorkspace }));
+    }
+
+    [Fact]
+    public void Staff_of_another_workspace_cannot_change_the_ticket()
+    {
+        var ticket = NewTicket();
+        var stranger = Admin with { WorkspaceId = OtherWorkspace };
+
+        Assert.Throws<DomainException>(() => ticket.ChangeStatus(stranger, TicketStatus.InProgress, Now));
+        Assert.Throws<DomainException>(() => ticket.AddComment(stranger, "Hello", false, Now));
+        Assert.Throws<DomainException>(() => ticket.Assign(stranger, stranger.Id, Now));
+        Assert.Throws<DomainException>(() => ticket.Edit(stranger, "Other", "Other", TicketPriority.Low, Now));
+        Assert.Equal(TicketStatus.New, ticket.Status);
+        Assert.Empty(ticket.Comments);
     }
 
     [Fact]

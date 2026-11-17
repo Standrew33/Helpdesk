@@ -25,7 +25,7 @@ public class IndexModel(TicketService tickets) : PageModel
 
     public static readonly IReadOnlyList<(TicketSort Column, string Title)> Columns =
     [
-        (TicketSort.Id, "#"),
+        (TicketSort.Number, "#"),
         (TicketSort.Subject, "Subject"),
         (TicketSort.Status, "Status"),
         (TicketSort.Priority, "Priority"),
@@ -78,7 +78,7 @@ public class IndexModel(TicketService tickets) : PageModel
     {
         "asc" => false,
         "desc" => true,
-        _ => Sort is null or TicketSort.Updated or TicketSort.Id or TicketSort.Priority,
+        _ => Sort is null or TicketSort.Updated or TicketSort.Number or TicketSort.Priority,
     };
 
     /// <summary>"ascending", "descending" or null, for the column header's aria-sort.</summary>

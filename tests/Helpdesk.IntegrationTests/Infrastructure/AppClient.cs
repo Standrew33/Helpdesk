@@ -104,8 +104,12 @@ public sealed partial class AppClient : IDisposable
         return await PostFormAsync(url, $"{url}?handler={handler}", form);
     }
 
-    /// <summary>Uploads a file through the attachment form of the ticket page.</summary>
-    public async Task<HttpResponseMessage> UploadAttachmentAsync(int ticketId, string fileName, byte[] content, string? rowVersion = null)
+    /// <summary>
+    /// Uploads a file through the attachment form of the ticket page. <paramref name="postTo"/> sends the form to
+    /// another ticket than the one it was taken from, as someone would who cannot open that ticket.
+    /// </summary>
+    public async Task<HttpResponseMessage> UploadAttachmentAsync(
+        int ticketId, string fileName, byte[] content, string? rowVersion = null, int? postTo = null)
     {
         var url = $"/Tickets/Details/{ticketId}";
         var html = await GetHtmlAsync(url);
@@ -119,7 +123,7 @@ public sealed partial class AppClient : IDisposable
         var file = new ByteArrayContent(content);
         form.Add(file, "file", fileName);
 
-        return await _http.PostAsync($"{url}?handler=Attachment", form);
+        return await _http.PostAsync($"/Tickets/Details/{postTo ?? ticketId}?handler=Attachment", form);
     }
 
     public static string ExtractRowVersion(string html)

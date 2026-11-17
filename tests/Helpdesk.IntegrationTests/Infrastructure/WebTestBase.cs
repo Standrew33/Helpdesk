@@ -1,3 +1,4 @@
+using Helpdesk.Core.Workspaces;
 using Helpdesk.Web.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -77,6 +78,26 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
         var factory = new HelpdeskWebFactory(await sql.CreateDatabaseAsync(), demoEnabled: false);
         _extraFactories.Add(factory);
         return factory;
+    }
+
+    /// <summary>Creates another help desk next to the shared one.</summary>
+    protected async Task<int> CreateWorkspaceAsync(string name)
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>();
+        var workspace = Workspace.Create(name, DateTimeOffset.UtcNow);
+        db.Workspaces.Add(workspace);
+        await db.SaveChangesAsync();
+        return workspace.Id;
+    }
+
+    /// <summary>Creates a user and signs them in with the password form.</summary>
+    protected async Task<AppClient> SignedInAsUserAsync(string role, string email, int workspaceId = SharedWorkspace.Id)
+    {
+        await CreateUserAsync(role, email, workspaceId: workspaceId);
+        var client = NewClient();
+        await client.SignInAsync(email, TestPassword);
+        return client;
     }
 
     /// <summary>Creates a user with a known password, so tests can use the real sign-in form.</summary>

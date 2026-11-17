@@ -31,8 +31,8 @@ public class CreateModel(TicketService tickets) : PageModel
 
         try
         {
-            var id = await tickets.CreateAsync(User.ToActor(), Input.Subject, Input.Description, Input.Priority);
-            return RedirectToPage("Details", new { id });
+            var number = await tickets.CreateAsync(User.ToActor(), Input.Subject, Input.Description, Input.Priority);
+            return RedirectToPage("Details", new { number });
         }
         catch (DomainException ex)
         {

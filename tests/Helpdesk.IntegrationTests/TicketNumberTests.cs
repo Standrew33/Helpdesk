@@ -1,7 +1,6 @@
 using Helpdesk.Core;
 using Helpdesk.Core.Tickets;
 using Helpdesk.Core.Users;
-using Helpdesk.Core.Workspaces;
 using Helpdesk.IntegrationTests.Infrastructure;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Tickets;
@@ -12,21 +11,11 @@ namespace Helpdesk.IntegrationTests;
 
 public class TicketNumberTests(SqlServerFixture sql) : WebTestBase(sql)
 {
-    private async Task<int> CreateWorkspaceAsync(string name)
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>();
-        var workspace = Workspace.Create(name, DateTimeOffset.UtcNow);
-        db.Workspaces.Add(workspace);
-        await db.SaveChangesAsync();
-        return workspace.Id;
-    }
-
-    private async Task<int> OpenTicketAsync(string customerId, string subject = "Printer is down")
+    private async Task<int> OpenTicketAsync(string customerId, int workspaceId = SharedWorkspace.Id, string subject = "Printer is down")
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var tickets = scope.ServiceProvider.GetRequiredService<TicketService>();
-        return await tickets.CreateAsync(new Actor(customerId, UserRole.Customer), subject, "It prints blank pages.", TicketPriority.Normal);
+        return await tickets.CreateAsync(new Actor(customerId, UserRole.Customer, workspaceId), subject, "It prints blank pages.", TicketPriority.Normal);
     }
 
     private async Task<List<(int WorkspaceId, int Number)>> NumbersAsync()
@@ -45,9 +34,9 @@ public class TicketNumberTests(SqlServerFixture sql) : WebTestBase(sql)
         var otherCustomer = await CreateUserAsync("Customer", "other@example.test", workspaceId: other);
 
         await OpenTicketAsync(sharedCustomer);
-        await OpenTicketAsync(otherCustomer);
+        await OpenTicketAsync(otherCustomer, other);
         await OpenTicketAsync(sharedCustomer);
-        await OpenTicketAsync(otherCustomer);
+        await OpenTicketAsync(otherCustomer, other);
 
         Assert.Equal(
             [(SharedWorkspace.Id, 1), (other, 1), (SharedWorkspace.Id, 2), (other, 2)],
