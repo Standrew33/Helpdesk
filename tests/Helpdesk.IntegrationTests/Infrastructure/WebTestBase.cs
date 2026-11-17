@@ -58,10 +58,16 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
     }
 
     /// <summary>Signs up a new address with the e-mail code and the welcome step.</summary>
-    protected async Task<HttpResponseMessage> SignUpAsync(AppClient client, string email, string name = "Nina Novak", string? password = null)
+    protected async Task<HttpResponseMessage> SignUpAsync(
+        AppClient client, string email, string name = "Nina Novak", string? password = null, string? workspace = null)
     {
         await SignInWithCodeAsync(client, email);
         var form = new Dictionary<string, string> { ["Input.DisplayName"] = name };
+
+        if (workspace is not null)
+        {
+            form["Input.WorkspaceName"] = workspace;
+        }
 
         if (password is not null)
         {

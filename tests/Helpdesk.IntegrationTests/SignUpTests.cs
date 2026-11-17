@@ -1,12 +1,17 @@
 using System.Net;
+using Helpdesk.Core.Workspaces;
 using Helpdesk.IntegrationTests.Infrastructure;
 using Helpdesk.Web.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Helpdesk.IntegrationTests;
 
-/// <summary>A new address becomes an account only after it was proven with a code, and only as a customer.</summary>
+/// <summary>
+/// A new address becomes an account only after it was proven with a code. It comes with a help desk of its own,
+/// which the new user runs as its administrator.
+/// </summary>
 public class SignUpTests(SqlServerFixture sql) : WebTestBase(sql)
 {
     private const string Email = "nina@example.test";
@@ -30,23 +35,78 @@ public class SignUpTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Null(await UserAsync(Email));
     }
 
+    private async Task<Workspace?> WorkspaceOfAsync(string email)
+    {
+        var user = await UserAsync(email);
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>();
+        return await db.Workspaces.SingleOrDefaultAsync(w => w.Id == user!.WorkspaceId);
+    }
+
+    private async Task<int> WorkspaceCountAsync()
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>().Workspaces.CountAsync();
+    }
+
     [Fact]
-    public async Task Finishing_the_welcome_step_creates_a_signed_in_customer()
+    public async Task Finishing_the_welcome_step_creates_a_help_desk_run_by_the_new_user()
     {
         var client = NewClient();
 
-        var response = await SignUpAsync(client, Email, "Nina Novak");
+        var response = await SignUpAsync(client, Email, "Nina Novak", workspace: "Acme support");
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         var list = await client.GetHtmlAsync("/Tickets");
         Assert.Contains("Nina Novak", list);
-        Assert.Contains("New ticket", list);
+        Assert.Contains("0 tickets in total", list);
 
         var user = (await UserAsync(Email))!;
         Assert.True(user.EmailConfirmed);
-        Assert.False(user.PasswordHash is not null);
-        Assert.Equal(SharedWorkspace.Id, user.WorkspaceId);
-        Assert.Equal(HttpStatusCode.Redirect, (await client.GetAsync("/Admin/Users")).StatusCode);
+        Assert.Null(user.PasswordHash);
+        Assert.NotEqual(SharedWorkspace.Id, user.WorkspaceId);
+        Assert.Equal("Acme support", (await WorkspaceOfAsync(Email))!.Name);
+
+        // The new user runs the help desk; nobody else is in it yet.
+        var users = await client.GetHtmlAsync("/Admin/Users");
+        Assert.Contains(Email, users);
+        Assert.DoesNotContain("@helpdesk.test", users);
+    }
+
+    [Fact]
+    public async Task Without_a_help_desk_name_it_is_called_after_the_user()
+    {
+        await SignUpAsync(NewClient(), Email, "Nina Novak");
+
+        Assert.Equal("Nina Novak's help desk", (await WorkspaceOfAsync(Email))!.Name);
+    }
+
+    [Fact]
+    public async Task Everyone_who_signs_up_gets_a_help_desk_of_their_own()
+    {
+        var nina = NewClient();
+        var otto = NewClient();
+
+        await SignUpAsync(nina, Email, "Nina Novak");
+        await SignUpAsync(otto, "otto@example.test", "Otto Olsen");
+
+        Assert.NotEqual((await UserAsync(Email))!.WorkspaceId, (await UserAsync("otto@example.test"))!.WorkspaceId);
+        Assert.DoesNotContain(Email, await otto.GetHtmlAsync("/Admin/Users"));
+        Assert.DoesNotContain("otto@example.test", await nina.GetHtmlAsync("/Admin/Users"));
+    }
+
+    [Theory]
+    [InlineData("\u202Eevil")]
+    [InlineData("A name far too long for a help desk, A name far too long for a help desk, A name far too long for it, really")]
+    public async Task A_bad_help_desk_name_is_refused_and_nothing_is_created(string name)
+    {
+        var workspaces = await WorkspaceCountAsync();
+
+        var response = await SignUpAsync(NewClient(), Email, workspace: System.Text.RegularExpressions.Regex.Unescape(name));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Null(await UserAsync(Email));
+        Assert.Equal(workspaces, await WorkspaceCountAsync());
     }
 
     [Fact]
@@ -67,12 +127,14 @@ public class SignUpTests(SqlServerFixture sql) : WebTestBase(sql)
     [InlineData("12345678901")]
     public async Task A_weak_password_is_refused_and_no_account_is_created(string password)
     {
+        var workspaces = await WorkspaceCountAsync();
         var client = NewClient();
 
         var response = await SignUpAsync(client, Email, password: password);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Null(await UserAsync(Email));
+        Assert.Equal(workspaces, await WorkspaceCountAsync());
     }
 
     [Fact]

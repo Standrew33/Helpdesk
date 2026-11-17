@@ -1,6 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using Helpdesk.Core;
+using Helpdesk.Core.Workspaces;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.SignIn;
+using Helpdesk.Web.Features.Workspaces;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -11,11 +14,12 @@ namespace Helpdesk.Web.Pages.Account;
 
 /// <summary>
 /// Last step for a new address: the account is created only now, after the address was proven with a code or link,
-/// so nobody can register an address that is not theirs.
+/// so nobody can register an address that is not theirs. It comes with a help desk of its own, run by the new user.
 /// </summary>
 [AllowAnonymous]
 public class WelcomeModel(
     UserManager<ApplicationUser> userManager,
+    WorkspaceSignUp workspaceSignUp,
     SignInManager<ApplicationUser> signInManager,
     EmailSignIn emailSignIn,
     ILogger<WelcomeModel> logger) : PageModel
@@ -65,18 +69,21 @@ public class WelcomeModel(
 
         if (user is null)
         {
-            user = new ApplicationUser
-            {
-                UserName = Email,
-                Email = Email,
-                EmailConfirmed = true,
-                DisplayName = NameFor(Input.DisplayName, Email),
-                WorkspaceId = SharedWorkspace.Id,
-            };
+            var displayName = NameFor(Input.DisplayName, Email);
+            user = new ApplicationUser { UserName = Email, Email = Email, EmailConfirmed = true, DisplayName = displayName };
+            var workspaceName = string.IsNullOrWhiteSpace(Input.WorkspaceName) ? WorkspaceSignUp.DefaultName(displayName) : Input.WorkspaceName;
 
-            var created = string.IsNullOrEmpty(Input.Password)
-                ? await userManager.CreateAsync(user)
-                : await userManager.CreateAsync(user, Input.Password);
+            IdentityResult created;
+
+            try
+            {
+                created = await workspaceSignUp.CreateAsync(user, Input.Password, workspaceName);
+            }
+            catch (DomainException ex)
+            {
+                ModelState.AddModelError("Input.WorkspaceName", ex.Message);
+                return Page();
+            }
 
             if (!created.Succeeded)
             {
@@ -86,16 +93,6 @@ public class WelcomeModel(
                     ModelState.AddModelError(field.Key, string.Join(" ", field.Select(e => e.Description).Distinct()));
                 }
 
-                return Page();
-            }
-
-            // Everyone who signs up by themselves is a customer; staff roles are given by an administrator.
-            var inRole = await userManager.AddToRoleAsync(user, RoleNames.Customer);
-
-            if (!inRole.Succeeded)
-            {
-                await userManager.DeleteAsync(user);
-                ModelState.AddModelError(string.Empty, "The account could not be created. Please try again.");
                 return Page();
             }
 
@@ -125,6 +122,11 @@ public class WelcomeModel(
         [SafeText]
         [Display(Name = "Your name (optional)")]
         public string? DisplayName { get; set; }
+
+        [StringLength(Workspace.MaxNameLength)]
+        [SafeText]
+        [Display(Name = "Name of your help desk (optional)")]
+        public string? WorkspaceName { get; set; }
 
         /// <summary>Optional: the e-mail code always works, a password is a second way in.</summary>
         [DataType(DataType.Password)]
