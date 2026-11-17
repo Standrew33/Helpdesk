@@ -31,6 +31,7 @@ builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddScoped<WorkspaceSignUp>();
 builder.Services.AddScoped<InvitationService>();
+builder.Services.AddScoped<JoinLinkService>();
 builder.Services.AddSingleton<SignInTimingGuard>();
 builder.Services.AddScoped<OneTimeCodeService>();
 builder.Services.AddScoped<CodeMailer>();

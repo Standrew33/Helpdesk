@@ -21,6 +21,7 @@ public class WelcomeModel(
     UserManager<ApplicationUser> userManager,
     WorkspaceSignUp workspaceSignUp,
     InvitationService invitations,
+    JoinLinkService joinLinks,
     SignInManager<ApplicationUser> signInManager,
     EmailSignIn emailSignIn,
     ILogger<WelcomeModel> logger) : PageModel
@@ -30,11 +31,23 @@ public class WelcomeModel(
 
     public string Email { get; private set; } = string.Empty;
 
-    /// <summary>The help desk the person was invited to; null for someone who starts a help desk of their own.</summary>
+    /// <summary>The help desk the person was invited to, if an invitation brought them here.</summary>
     public OpenInvitation? Invitation { get; private set; }
 
-    /// <summary>The invitation that brought the person here was used, withdrawn or ran out in the meantime.</summary>
-    public bool InvitationGone { get; private set; }
+    /// <summary>The help desk whose public link brought the person here, if one did and there is no invitation.</summary>
+    public OpenJoin? Join { get; private set; }
+
+    /// <summary>Set when the invitation or link that brought the person here stopped working in the meantime.</summary>
+    public string? GoneMessage { get; private set; }
+
+    public string GoneTitle => IsInvited ? "This invitation no longer works" : "This link no longer works";
+
+    private bool IsInvited { get; set; }
+
+    /// <summary>The help desk the new account joins; null when it starts one of its own.</summary>
+    public string? JoinName => Invitation?.WorkspaceName ?? Join?.WorkspaceName;
+
+    public string? JoinRole => Invitation?.Role ?? (Join is null ? null : RoleNames.Customer);
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -46,7 +59,7 @@ public class WelcomeModel(
         }
 
         Email = pending.Email;
-        await ReadInvitationAsync(pending);
+        await ReadWhereToJoinAsync(pending);
         return Page();
     }
 
@@ -61,9 +74,9 @@ public class WelcomeModel(
         }
 
         Email = pending.Email;
-        await ReadInvitationAsync(pending);
+        await ReadWhereToJoinAsync(pending);
 
-        if (InvitationGone)
+        if (GoneMessage is not null)
         {
             return Page();
         }
@@ -93,9 +106,13 @@ public class WelcomeModel(
 
                 if (created.Errors.Any(e => e.Code == InvitationService.GoneCode))
                 {
-                    InvitationGone = true;
+                    GoneMessage = InvitationService.GoneMessage;
                     return Page();
                 }
+            }
+            else if (Join is not null)
+            {
+                created = await workspaceSignUp.JoinAsCustomerAsync(user, Input.Password, Join.WorkspaceId);
             }
             else
             {
@@ -131,6 +148,7 @@ public class WelcomeModel(
         }
 
         emailSignIn.ForgetPendingSignUp(HttpContext);
+        emailSignIn.ForgetPendingJoin(HttpContext);
         await signInManager.SignInAsync(user, isPersistent: false);
         SecurityLog.SignedIn(logger, user.Id);
 
@@ -139,12 +157,21 @@ public class WelcomeModel(
             : RedirectToPage("/Tickets/Index");
     }
 
-    private async Task ReadInvitationAsync(PendingSignUp pending)
+    /// <summary>An invitation comes first; otherwise the public link this browser came through, if any.</summary>
+    private async Task ReadWhereToJoinAsync(PendingSignUp pending)
     {
         if (pending.InvitationId is { } id)
         {
+            IsInvited = true;
             Invitation = await invitations.FindOpenAsync(id);
-            InvitationGone = Invitation is null;
+            GoneMessage = Invitation is null ? InvitationService.GoneMessage : null;
+            return;
+        }
+
+        if (emailSignIn.ReadPendingJoin(HttpContext) is { } code)
+        {
+            Join = await joinLinks.FindOpenAsync(code);
+            GoneMessage = Join is null ? "The help desk turned its link off or replaced it. Ask the help desk for its current link." : null;
         }
     }
 

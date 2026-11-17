@@ -5,8 +5,16 @@
     ViewData["Title"] = "Sign in";
 }
 
-<h1 class="h3 fw-bold mb-1">Sign in or create an account</h1>
-<p class="text-secondary mb-4">Enter your e-mail address and we will send you a code. No password needed.</p>
+@if (Model.JoiningName is not null)
+{
+    <h1 class="h3 fw-bold mb-1">Contact @Model.JoiningName</h1>
+    <p class="text-secondary mb-4">Enter your e-mail address and we will send you a code. A new account becomes a customer of this help desk.</p>
+}
+else
+{
+    <h1 class="h3 fw-bold mb-1">Sign in or create an account</h1>
+    <p class="text-secondary mb-4">Enter your e-mail address and we will send you a code. No password needed.</p>
+}
 
 @if (Model.Notice is not null)
 {

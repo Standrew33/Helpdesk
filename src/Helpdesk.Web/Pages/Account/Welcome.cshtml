@@ -5,20 +5,20 @@
     ViewData["Title"] = "Create your account";
 }
 
-@if (Model.InvitationGone)
+@if (Model.GoneMessage is not null)
 {
-    <h1 class="h3 fw-bold mb-3">This invitation no longer works</h1>
-    <p class="text-secondary mb-4">@Helpdesk.Web.Features.Workspaces.InvitationService.GoneMessage</p>
+    <h1 class="h3 fw-bold mb-3">@Model.GoneTitle</h1>
+    <p class="text-secondary mb-4">@Model.GoneMessage</p>
     <a asp-page="Login" class="btn btn-outline-secondary w-100">Go to sign-in</a>
     return;
 }
 
-<h1 class="h3 fw-bold mb-1">@(Model.Invitation is null ? "Welcome to Helpdesk" : $"Join {Model.Invitation.WorkspaceName}")</h1>
+<h1 class="h3 fw-bold mb-1">@(Model.JoinName is null ? "Welcome to Helpdesk" : $"Join {Model.JoinName}")</h1>
 <p class="text-secondary mb-4">
     <strong class="text-body">@Model.Email</strong> is confirmed.
-    @if (Model.Invitation is not null)
+    @if (Model.JoinRole is not null)
     {
-        <span>You join as @(Model.Invitation.Role == "Customer" ? "a" : "an") @Model.Invitation.Role.ToLowerInvariant().</span>
+        <span>You join as @(Model.JoinRole == "Customer" ? "a" : "an") @Model.JoinRole.ToLowerInvariant().</span>
     }
 </p>
 
@@ -31,7 +31,7 @@
         <input asp-for="Input.DisplayName" class="form-control" autocomplete="name" autofocus />
         <span asp-validation-for="Input.DisplayName" class="field-validation-error"></span>
     </div>
-    @if (Model.Invitation is null)
+    @if (Model.JoinName is null)
     {
         <div class="mb-3">
             <label asp-for="Input.WorkspaceName" class="form-label"></label>

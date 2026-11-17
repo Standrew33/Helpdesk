@@ -60,6 +60,39 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-body p-4">
+        <h2 class="h5 mb-1">Link for customers</h2>
+        @if (Model.JoinLink.IsOpen)
+        {
+            <p class="text-secondary mb-3">Anyone with this link can sign up as a customer of your help desk. Put it on your site or in your e-mails.</p>
+            <label for="join-link" class="visually-hidden">Link for customers</label>
+            <input id="join-link" class="form-control join-link" value="@Model.JoinLink.Url" readonly />
+        }
+        else
+        {
+            <p class="text-secondary mb-0">The link is turned off: customers join by invitation only.</p>
+        }
+
+        @if (Model.CanChangeJoinLink)
+        {
+            <div class="join-actions mt-3">
+                <form method="post" asp-page-handler="JoinLink">
+                    <input type="hidden" name="open" value="@((!Model.JoinLink.IsOpen).ToString().ToLowerInvariant())" />
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">@(Model.JoinLink.IsOpen ? "Turn the link off" : "Turn the link on")</button>
+                </form>
+                @if (Model.JoinLink.IsOpen)
+                {
+                    <form method="post" asp-page-handler="NewJoinLink">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Make a new link</button>
+                    </form>
+                    <span class="form-text m-0">A new link stops the old one from working.</span>
+                }
+            </div>
+        }
+    </div>
+</div>
+
 <h2 class="h5 mb-3">Waiting for an answer</h2>
 
 @if (Model.Waiting.Count == 0)

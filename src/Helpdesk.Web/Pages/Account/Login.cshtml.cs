@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.SignIn;
+using Helpdesk.Web.Features.Workspaces;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -22,6 +23,8 @@ public class LoginModel(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
     IOptions<DemoOptions> demoOptions,
+    JoinLinkService joinLinks,
+    EmailSignIn emailSignIn,
     ILogger<LoginModel> logger) : PageModel
 {
     [BindProperty]
@@ -34,11 +37,19 @@ public class LoginModel(
 
     public string? ReturnUrl { get; private set; }
 
-    public void OnGet(string? returnUrl = null) => ReturnUrl = returnUrl;
+    /// <summary>The help desk whose public link brought the visitor here; a new account becomes its customer.</summary>
+    public string? JoiningName { get; private set; }
+
+    public async Task OnGetAsync(string? returnUrl = null, CancellationToken ct = default)
+    {
+        ReturnUrl = returnUrl;
+        JoiningName = (await joinLinks.FindOpenAsync(emailSignIn.ReadPendingJoin(HttpContext), ct))?.WorkspaceName;
+    }
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null, CancellationToken ct = default)
     {
         ReturnUrl = returnUrl;
+        JoiningName = (await joinLinks.FindOpenAsync(emailSignIn.ReadPendingJoin(HttpContext), ct))?.WorkspaceName;
 
         // A person never sees the hidden "Website" field; only a program that fills in every field does.
         if (!string.IsNullOrEmpty(Input.Website))

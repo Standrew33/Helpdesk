@@ -1,0 +1,10 @@
+@page "/Join/{code}"
+@model Helpdesk.Web.Pages.JoinModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Link not working";
+}
+
+<h1 class="h3 fw-bold mb-3">This link does not work</h1>
+<p class="text-secondary mb-4">The help desk turned its link off or replaced it with a new one. Ask the help desk for its current link, or for an invitation by e-mail.</p>
+<a asp-page="/Account/Login" class="btn btn-outline-secondary w-100">Go to sign-in</a>

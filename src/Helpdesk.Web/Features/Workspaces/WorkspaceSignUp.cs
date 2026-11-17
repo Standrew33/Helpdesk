@@ -49,4 +49,29 @@ public class WorkspaceSignUp(HelpdeskDbContext db, UserManager<ApplicationUser> 
 
         return inRole;
     }
+
+    /// <summary>Creates the account of someone who came through the public link of a help desk, as its customer.</summary>
+    public async Task<IdentityResult> JoinAsCustomerAsync(ApplicationUser user, string? password, int workspaceId)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        user.WorkspaceId = workspaceId;
+
+        var created = string.IsNullOrEmpty(password)
+            ? await userManager.CreateAsync(user)
+            : await userManager.CreateAsync(user, password);
+
+        if (!created.Succeeded)
+        {
+            return created;
+        }
+
+        var inRole = await userManager.AddToRoleAsync(user, RoleNames.Customer);
+
+        if (!inRole.Succeeded)
+        {
+            await userManager.DeleteAsync(user);
+        }
+
+        return inRole;
+    }
 }
