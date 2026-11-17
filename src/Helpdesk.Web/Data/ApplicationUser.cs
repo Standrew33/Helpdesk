@@ -7,4 +7,7 @@ public class ApplicationUser : IdentityUser
     public string DisplayName { get; set; } = string.Empty;
 
     public bool IsActive { get; set; } = true;
+
+    /// <summary>The help desk the user belongs to.</summary>
+    public int? WorkspaceId { get; set; }
 }

@@ -206,6 +206,30 @@ namespace Helpdesk.Web.Data.Migrations
                     b.ToTable("TicketHistory", (string)null);
                 });
 
+            modelBuilder.Entity("Helpdesk.Core.Workspaces.Workspace", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("LastTicketNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Workspaces", (string)null);
+                });
+
             modelBuilder.Entity("Helpdesk.Web.Data.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -265,6 +289,9 @@ namespace Helpdesk.Web.Data.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<int?>("WorkspaceId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
@@ -274,6 +301,8 @@ namespace Helpdesk.Web.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.HasIndex("WorkspaceId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -516,6 +545,14 @@ namespace Helpdesk.Web.Data.Migrations
                         .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Helpdesk.Web.Data.ApplicationUser", b =>
+                {
+                    b.HasOne("Helpdesk.Core.Workspaces.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

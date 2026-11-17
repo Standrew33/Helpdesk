@@ -51,6 +51,7 @@ public static class DatabaseSeeder
                 Email = email,
                 EmailConfirmed = true,
                 DisplayName = $"Demo {role.ToLowerInvariant()}",
+                WorkspaceId = SharedWorkspace.Id,
             };
 
             // Demo users sign in with the demo buttons only; their password is random and never shown.

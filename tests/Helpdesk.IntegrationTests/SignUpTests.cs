@@ -45,6 +45,7 @@ public class SignUpTests(SqlServerFixture sql) : WebTestBase(sql)
         var user = (await UserAsync(Email))!;
         Assert.True(user.EmailConfirmed);
         Assert.False(user.PasswordHash is not null);
+        Assert.Equal(SharedWorkspace.Id, user.WorkspaceId);
         Assert.Equal(HttpStatusCode.Redirect, (await client.GetAsync("/Admin/Users")).StatusCode);
     }
 

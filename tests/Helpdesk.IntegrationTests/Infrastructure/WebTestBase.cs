@@ -85,7 +85,14 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
         await using var scope = Factory.Services.CreateAsyncScope();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        var user = new ApplicationUser { UserName = email, Email = email, DisplayName = email, IsActive = isActive };
+        var user = new ApplicationUser
+        {
+            UserName = email,
+            Email = email,
+            DisplayName = email,
+            IsActive = isActive,
+            WorkspaceId = SharedWorkspace.Id,
+        };
         Assert.True((await users.CreateAsync(user, TestPassword)).Succeeded);
         Assert.True((await users.AddToRoleAsync(user, role)).Succeeded);
         return user.Id;

@@ -65,7 +65,14 @@ public class WelcomeModel(
 
         if (user is null)
         {
-            user = new ApplicationUser { UserName = Email, Email = Email, EmailConfirmed = true, DisplayName = NameFor(Input.DisplayName, Email) };
+            user = new ApplicationUser
+            {
+                UserName = Email,
+                Email = Email,
+                EmailConfirmed = true,
+                DisplayName = NameFor(Input.DisplayName, Email),
+                WorkspaceId = SharedWorkspace.Id,
+            };
 
             var created = string.IsNullOrEmpty(Input.Password)
                 ? await userManager.CreateAsync(user)

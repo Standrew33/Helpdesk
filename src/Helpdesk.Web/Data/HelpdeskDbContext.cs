@@ -1,4 +1,5 @@
 using Helpdesk.Core.Tickets;
+using Helpdesk.Core.Workspaces;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,8 @@ public class HelpdeskDbContext : IdentityDbContext<ApplicationUser>
         : base(options)
     {
     }
+
+    public DbSet<Workspace> Workspaces => Set<Workspace>();
 
     public DbSet<Ticket> Tickets => Set<Ticket>();
 
