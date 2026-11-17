@@ -36,6 +36,9 @@ public sealed class Workspace
     /// <summary>Whether the public link works; when it does not, people join by invitation only.</summary>
     public bool IsJoinOpen { get; private set; }
 
+    /// <summary>Blocked by the owner of the platform: nobody in the help desk can sign in or keep working.</summary>
+    public bool IsBlocked { get; private set; }
+
     public static Workspace Create(string name, DateTimeOffset now)
     {
         var text = name?.Trim();
@@ -56,6 +59,8 @@ public sealed class Workspace
     public void RenewJoinCode() => JoinCode = NewJoinCode();
 
     public void SetJoinOpen(bool open) => IsJoinOpen = open;
+
+    public void SetBlocked(bool blocked) => IsBlocked = blocked;
 
     private static string NewJoinCode() => Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(JoinCodeLength / 2));
 }

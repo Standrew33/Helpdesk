@@ -16,6 +16,7 @@ public class PasswordModel(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
     SignInTimingGuard timing,
+    AccountAccess access,
     ILogger<PasswordModel> logger) : PageModel
 {
     /// <summary>One message for every failure, so it does not reveal whether the address has an account or is locked.</summary>
@@ -45,7 +46,7 @@ public class PasswordModel(
 
         var user = await userManager.FindByEmailAsync(Input.Email.Trim());
 
-        if (user is { IsActive: true })
+        if (user is not null && await access.AllowsAsync(user, ct))
         {
             var result = await signInManager.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: true);
 

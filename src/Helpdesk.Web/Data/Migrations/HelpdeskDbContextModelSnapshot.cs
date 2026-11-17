@@ -226,6 +226,9 @@ namespace Helpdesk.Web.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsJoinOpen")
                         .HasColumnType("bit");
 

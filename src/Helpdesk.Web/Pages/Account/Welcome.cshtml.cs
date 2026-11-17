@@ -22,6 +22,7 @@ public class WelcomeModel(
     WorkspaceSignUp workspaceSignUp,
     InvitationService invitations,
     JoinLinkService joinLinks,
+    AccountAccess access,
     SignInManager<ApplicationUser> signInManager,
     EmailSignIn emailSignIn,
     ILogger<WelcomeModel> logger) : PageModel
@@ -142,7 +143,7 @@ public class WelcomeModel(
 
             SecurityLog.Registered(logger, user.Id);
         }
-        else if (!user.IsActive)
+        else if (!await access.AllowsAsync(user))
         {
             return RedirectToPage("Login");
         }

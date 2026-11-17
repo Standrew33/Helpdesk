@@ -27,6 +27,7 @@ builder.Services.AddAttachmentStore(builder.Configuration);
 builder.Services.AddEmail(builder.Configuration, builder.Environment);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentWorkspace>();
+builder.Services.AddScoped<AccountAccess>();
 builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddScoped<WorkspaceSignUp>();
@@ -87,6 +88,7 @@ builder.Services
     })
     .AddEntityFrameworkStores<HelpdeskDbContext>()
     .AddDefaultTokenProviders()
+    .AddSignInManager<AppSignInManager>()
     .AddPasswordValidator<PasswordPolicyValidator>()
     .AddClaimsPrincipalFactory<AppClaimsPrincipalFactory>();
 

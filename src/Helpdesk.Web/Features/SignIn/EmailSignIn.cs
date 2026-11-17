@@ -26,6 +26,7 @@ public class EmailSignIn(
     IDataProtectionProvider dataProtection,
     IOptions<AppCookieOptions> cookies,
     IOptions<OneTimeCodeOptions> codes,
+    AccountAccess access,
     ILogger<EmailSignIn> logger)
 {
     /// <summary>How long a proven address waits for the person to finish the next step.</summary>
@@ -117,7 +118,7 @@ public class EmailSignIn(
 
     private async Task<bool> CanUseAsync(ApplicationUser user)
     {
-        if (!user.IsActive)
+        if (!await access.AllowsAsync(user))
         {
             SecurityLog.SignInFailed(logger, user.Id);
             return false;

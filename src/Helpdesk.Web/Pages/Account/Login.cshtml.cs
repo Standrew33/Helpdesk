@@ -25,6 +25,7 @@ public class LoginModel(
     IOptions<DemoOptions> demoOptions,
     JoinLinkService joinLinks,
     EmailSignIn emailSignIn,
+    AccountAccess access,
     ILogger<LoginModel> logger) : PageModel
 {
     [BindProperty]
@@ -111,13 +112,13 @@ public class LoginModel(
 
         var user = await userManager.FindByEmailAsync(DatabaseSeeder.DemoEmail(role));
 
-        if (user is not { IsActive: true })
+        if (!await access.AllowsAsync(user))
         {
             return NotFound();
         }
 
-        await signInManager.SignInAsync(user, isPersistent: false);
-        SecurityLog.SignedIn(logger, user.Id);
+        await signInManager.SignInAsync(user!, isPersistent: false);
+        SecurityLog.SignedIn(logger, user!.Id);
         return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : RedirectToPage("/Tickets/Index");
     }
 

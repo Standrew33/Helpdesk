@@ -15,6 +15,7 @@ public class NewPasswordModel(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     EmailSignIn emailSignIn,
+    AccountAccess access,
     ILogger<NewPasswordModel> logger) : PageModel
 {
     [BindProperty]
@@ -72,7 +73,7 @@ public class NewPasswordModel(
         var pending = emailSignIn.ReadPendingReset(HttpContext);
         var user = pending is null ? null : await userManager.FindByIdAsync(pending.UserId);
 
-        if (user is not { IsActive: true })
+        if (user is null || !await access.AllowsAsync(user))
         {
             return null;
         }
