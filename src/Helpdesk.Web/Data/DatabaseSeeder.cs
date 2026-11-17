@@ -69,7 +69,7 @@ public static class DatabaseSeeder
     {
         var db = services.GetRequiredService<HelpdeskDbContext>();
 
-        if (await db.Tickets.AnyAsync(t => t.WorkspaceId == SharedWorkspace.Id))
+        if (await db.Tickets.IgnoreQueryFilters().AnyAsync(t => t.WorkspaceId == SharedWorkspace.Id))
         {
             return;
         }

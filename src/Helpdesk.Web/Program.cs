@@ -24,6 +24,8 @@ builder.Services.AddRazorPages(options => options.Conventions.AuthorizeFolder("/
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAttachmentStore(builder.Configuration);
 builder.Services.AddEmail(builder.Configuration, builder.Environment);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CurrentWorkspace>();
 builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddSingleton<SignInTimingGuard>();

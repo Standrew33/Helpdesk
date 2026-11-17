@@ -22,7 +22,7 @@ public class TicketNumberTests(SqlServerFixture sql) : WebTestBase(sql)
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>();
-        var rows = await db.Tickets.OrderBy(t => t.Id).Select(t => new { t.WorkspaceId, t.Number }).ToListAsync();
+        var rows = await db.Tickets.IgnoreQueryFilters().OrderBy(t => t.Id).Select(t => new { t.WorkspaceId, t.Number }).ToListAsync();
         return rows.Select(r => (r.WorkspaceId, r.Number)).ToList();
     }
 

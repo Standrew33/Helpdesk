@@ -250,7 +250,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
 
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>();
-        var ticket = await db.Tickets.Include(t => t.History).SingleAsync(t => t.Id == id);
+        var ticket = await db.Tickets.IgnoreQueryFilters().Include(t => t.History).SingleAsync(t => t.WorkspaceId == SharedWorkspace.Id && t.Number == id);
 
         Assert.Equal(TicketStatus.InProgress, ticket.Status);
         Assert.Equal(TicketPriority.Urgent, ticket.Priority);

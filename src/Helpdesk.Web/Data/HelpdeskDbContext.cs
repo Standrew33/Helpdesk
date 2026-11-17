@@ -7,9 +7,12 @@ namespace Helpdesk.Web.Data;
 
 public class HelpdeskDbContext : IdentityDbContext<ApplicationUser>
 {
-    public HelpdeskDbContext(DbContextOptions<HelpdeskDbContext> options)
+    private readonly CurrentWorkspace? _workspace;
+
+    public HelpdeskDbContext(DbContextOptions<HelpdeskDbContext> options, CurrentWorkspace? workspace = null)
         : base(options)
     {
+        _workspace = workspace;
     }
 
     public DbSet<Workspace> Workspaces => Set<Workspace>();
@@ -18,9 +21,19 @@ public class HelpdeskDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<SignInChallenge> SignInChallenges => Set<SignInChallenge>();
 
+    /// <summary>
+    /// The only workspace whose tickets this context reads. It is read anew for every query.
+    /// Without one (start-up work, a signed-out request) no ticket is read at all, unless a query asks for every
+    /// workspace on purpose with <c>IgnoreQueryFilters</c>.
+    /// </summary>
+    public int? WorkspaceId => _workspace?.Id;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(HelpdeskDbContext).Assembly);
+
+        // A second guard behind the checks of the services: a query that forgets the workspace still stays inside it.
+        builder.Entity<Ticket>().HasQueryFilter(t => t.WorkspaceId == WorkspaceId);
     }
 }

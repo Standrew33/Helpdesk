@@ -1,5 +1,11 @@
+using System.Globalization;
 using System.Net;
+using System.Security.Claims;
 using Helpdesk.IntegrationTests.Infrastructure;
+using Helpdesk.Web.Data;
+using Helpdesk.Web.Security;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace Helpdesk.IntegrationTests;
 
@@ -100,6 +106,34 @@ public class WorkspaceIsolationTests(SqlServerFixture sql) : WebTestBase(sql)
         var after = await customer.GetHtmlAsync("/Tickets/Details/2");
         Assert.Equal(AppClient.ExtractRowVersion(before), AppClient.ExtractRowVersion(after));
         Assert.DoesNotContain("company B", after);
+    }
+
+    [Fact]
+    public async Task The_database_reads_tickets_of_the_current_workspace_only()
+    {
+        var (_, other) = await TwoCompaniesAsync();
+        var options = new DbContextOptionsBuilder<HelpdeskDbContext>().UseSqlServer(ConnectionString).Options;
+
+        async Task<List<string>> SubjectsSeenAsync(HttpContext? request, bool everyWorkspace = false)
+        {
+            await using var db = new HelpdeskDbContext(options, new CurrentWorkspace(new HttpContextAccessor { HttpContext = request }));
+            var tickets = everyWorkspace ? db.Tickets.IgnoreQueryFilters() : db.Tickets;
+
+            // No workspace condition here on purpose: the filter of the context alone must keep the others out.
+            return await tickets.OrderBy(t => t.Id).Select(t => t.Subject).ToListAsync();
+        }
+
+        static HttpContext SignedInTo(int workspaceId) => new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+                [new Claim(AppClaimTypes.Workspace, workspaceId.ToString(CultureInfo.InvariantCulture))], "test")),
+        };
+
+        Assert.Equal(["Only matter of company B"], await SubjectsSeenAsync(SignedInTo(other)));
+        Assert.Equal(["First matter of company A", "Second matter of company A"], await SubjectsSeenAsync(SignedInTo(SharedWorkspace.Id)));
+        Assert.Empty(await SubjectsSeenAsync(new DefaultHttpContext()));
+        Assert.Empty(await SubjectsSeenAsync(null));
+        Assert.Equal(3, (await SubjectsSeenAsync(null, everyWorkspace: true)).Count);
     }
 
     [Fact]
