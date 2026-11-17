@@ -127,6 +127,48 @@ public class WorkspaceIsolationTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task Admins_list_only_the_people_of_their_workspace()
+    {
+        var (_, other) = await TwoCompaniesAsync();
+        var stranger = await SignedInAsUserAsync("Admin", "alex@company-b.test", other);
+
+        var users = await stranger.GetHtmlAsync("/Admin/Users");
+        var found = await stranger.GetHtmlAsync("/Admin/Users?q=anna");
+
+        Assert.Contains("boris@company-b.test", users);
+        Assert.DoesNotContain("anna@company-a.test", users);
+        Assert.DoesNotContain("@helpdesk.test", users);
+        Assert.DoesNotContain("anna@company-a.test", found);
+    }
+
+    [Fact]
+    public async Task Admins_cannot_change_people_of_another_workspace()
+    {
+        var (customer, other) = await TwoCompaniesAsync();
+        var annaId = await UserIdAsync("anna@company-a.test");
+        var stranger = await SignedInAsUserAsync("Admin", "alex@company-b.test", other);
+
+        var role = await stranger.PostFormAsync("/Tickets", "/Admin/Users?handler=Role", new Dictionary<string, string>
+        {
+            ["id"] = annaId,
+            ["role"] = "Admin",
+        });
+        var active = await stranger.PostFormAsync("/Tickets", "/Admin/Users?handler=Active", new Dictionary<string, string>
+        {
+            ["id"] = annaId,
+            ["active"] = "false",
+        });
+
+        Assert.Equal(HttpStatusCode.NotFound, role.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, active.StatusCode);
+
+        // Anna is still signed in, still a customer, and still sees only her own tickets.
+        var list = await customer.GetHtmlAsync("/Tickets");
+        Assert.Contains("Second matter of company A", list);
+        Assert.Equal(HttpStatusCode.Redirect, (await customer.GetAsync("/Admin/Users")).StatusCode);
+    }
+
+    [Fact]
     public async Task The_database_reads_tickets_of_the_current_workspace_only()
     {
         var (_, other) = await TwoCompaniesAsync();

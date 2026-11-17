@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Features.Users;
@@ -26,15 +25,13 @@ public class UsersModel(UserAdminService admin) : PageModel
     public int MaxListSize => UserAdminService.MaxListSize;
 
     public async Task OnGetAsync(CancellationToken ct)
-        => Users = await admin.ListAsync(CurrentUserId, User.IsDemoAccount(), Search, ct);
+        => Users = await admin.ListAsync(User.ToActor(), Search, ct);
 
     public Task<IActionResult> OnPostRoleAsync(string id, string role)
-        => RunAsync(() => admin.ChangeRoleAsync(CurrentUserId, User.IsDemoAccount(), id, role), "Role updated.");
+        => RunAsync(() => admin.ChangeRoleAsync(User.ToActor(), id, role), "Role updated.");
 
     public Task<IActionResult> OnPostActiveAsync(string id, bool active)
-        => RunAsync(() => admin.SetActiveAsync(CurrentUserId, User.IsDemoAccount(), id, active), active ? "Account activated." : "Account deactivated.");
-
-    private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        => RunAsync(() => admin.SetActiveAsync(User.ToActor(), id, active), active ? "Account activated." : "Account deactivated.");
 
     private async Task<IActionResult> RunAsync(Func<Task<ServiceResult>> operation, string success)
     {

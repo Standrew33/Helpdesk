@@ -1,3 +1,4 @@
+using Helpdesk.Core.Users;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Security;
@@ -9,7 +10,10 @@ namespace Helpdesk.Web.Features.Users;
 
 public sealed record UserRow(string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsSelf, bool IsProtected);
 
-/// <summary>Lets an administrator see the users, change their role and switch accounts on or off.</summary>
+/// <summary>
+/// Lets an administrator see the users of their own workspace, change their role and switch accounts on or off.
+/// People of other workspaces are out of reach: they are not listed, and asking for one of them finds nobody.
+/// </summary>
 public class UserAdminService(
     HelpdeskDbContext db,
     UserManager<ApplicationUser> userManager,
@@ -24,11 +28,11 @@ public class UserAdminService(
     private static readonly string[] RoleOrder = [RoleNames.Admin, RoleNames.Operator, RoleNames.Customer];
 
     /// <summary>The shared demo administrator only sees demo accounts, never the e-mail addresses of real visitors.</summary>
-    public async Task<IReadOnlyList<UserRow>> ListAsync(string currentUserId, bool isDemo, string? search, CancellationToken ct = default)
+    public async Task<IReadOnlyList<UserRow>> ListAsync(Actor admin, string? search, CancellationToken ct = default)
     {
-        var users = db.Users.AsNoTracking();
+        var users = db.Users.AsNoTracking().Where(u => u.WorkspaceId == admin.WorkspaceId);
 
-        if (isDemo)
+        if (admin.IsDemo)
         {
             users = users.Where(u => u.Email!.EndsWith(DatabaseSeeder.DemoDomain));
         }
@@ -60,16 +64,16 @@ public class UserAdminService(
                 u.Email ?? string.Empty,
                 rolesByUser.GetValueOrDefault(u.Id, "-"),
                 u.IsActive,
-                IsSelf: u.Id == currentUserId,
+                IsSelf: u.Id == admin.Id,
                 IsProtected: IsProtected(u)))
             .OrderBy(r => Array.IndexOf(RoleOrder, r.Role) is var i and >= 0 ? i : RoleOrder.Length)
             .ThenBy(r => r.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
     }
 
-    public async Task<ServiceResult> ChangeRoleAsync(string currentUserId, bool isDemo, string userId, string role)
+    public async Task<ServiceResult> ChangeRoleAsync(Actor admin, string userId, string role)
     {
-        if (isDemo)
+        if (admin.IsDemo)
         {
             return ServiceResult.Invalid(DemoAdminMessage);
         }
@@ -79,14 +83,14 @@ public class UserAdminService(
             return ServiceResult.Invalid("Unknown role.");
         }
 
-        var user = await userManager.FindByIdAsync(userId);
+        var user = await FindInWorkspaceAsync(admin, userId);
 
         if (user is null)
         {
             return ServiceResult.NotFound();
         }
 
-        if (user.Id == currentUserId)
+        if (user.Id == admin.Id)
         {
             return ServiceResult.Invalid("You cannot change your own role. Ask another administrator.");
         }
@@ -113,25 +117,25 @@ public class UserAdminService(
 
         // The role is part of the sign-in cookie; a new stamp makes the old cookie invalid, so the change applies at once.
         await userManager.UpdateSecurityStampAsync(user);
-        SecurityLog.RoleChanged(logger, currentUserId, user.Id, role);
+        SecurityLog.RoleChanged(logger, admin.Id, user.Id, role);
         return ServiceResult.Success();
     }
 
-    public async Task<ServiceResult> SetActiveAsync(string currentUserId, bool isDemo, string userId, bool active)
+    public async Task<ServiceResult> SetActiveAsync(Actor admin, string userId, bool active)
     {
-        if (isDemo)
+        if (admin.IsDemo)
         {
             return ServiceResult.Invalid(DemoAdminMessage);
         }
 
-        var user = await userManager.FindByIdAsync(userId);
+        var user = await FindInWorkspaceAsync(admin, userId);
 
         if (user is null)
         {
             return ServiceResult.NotFound();
         }
 
-        if (user.Id == currentUserId)
+        if (user.Id == admin.Id)
         {
             return ServiceResult.Invalid("You cannot deactivate your own account.");
         }
@@ -149,8 +153,15 @@ public class UserAdminService(
         }
 
         await userManager.UpdateSecurityStampAsync(user);
-        SecurityLog.ActiveChanged(logger, currentUserId, user.Id, active);
+        SecurityLog.ActiveChanged(logger, admin.Id, user.Id, active);
         return ServiceResult.Success();
+    }
+
+    /// <summary>A user of another workspace looks the same as one who does not exist.</summary>
+    private async Task<ApplicationUser?> FindInWorkspaceAsync(Actor admin, string userId)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        return user?.WorkspaceId == admin.WorkspaceId ? user : null;
     }
 
     /// <summary>The public demo must keep working for the next visitor, so its accounts are read-only.</summary>
