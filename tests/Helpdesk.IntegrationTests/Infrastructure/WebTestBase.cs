@@ -80,7 +80,7 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
     }
 
     /// <summary>Creates a user with a known password, so tests can use the real sign-in form.</summary>
-    protected async Task<string> CreateUserAsync(string role, string email, bool isActive = true)
+    protected async Task<string> CreateUserAsync(string role, string email, bool isActive = true, int workspaceId = SharedWorkspace.Id)
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -91,7 +91,7 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
             Email = email,
             DisplayName = email,
             IsActive = isActive,
-            WorkspaceId = SharedWorkspace.Id,
+            WorkspaceId = workspaceId,
         };
         Assert.True((await users.CreateAsync(user, TestPassword)).Succeeded);
         Assert.True((await users.AddToRoleAsync(user, role)).Succeeded);

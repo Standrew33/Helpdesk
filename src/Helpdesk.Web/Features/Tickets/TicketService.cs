@@ -159,10 +159,30 @@ public class TicketService(
     /// <summary>Creates a ticket; throws <see cref="DomainException"/> when the input breaks a rule.</summary>
     public async Task<int> CreateAsync(Actor actor, string subject, string description, TicketPriority priority)
     {
-        var ticket = Ticket.Create(subject, description, priority, actor, time.GetUtcNow());
-        db.Tickets.Add(ticket);
-        await db.SaveChangesAsync();
-        return ticket.Id;
+        var workspaceId = await db.Users.Where(u => u.Id == actor.Id).Select(u => u.WorkspaceId).SingleOrDefaultAsync()
+            ?? throw new DomainException("Your account does not belong to a help desk.");
+
+        // The number and the ticket are saved together: a ticket that is refused does not use up a number.
+        Ticket? ticket = null;
+        var strategy = db.Database.CreateExecutionStrategy();
+
+        await strategy.ExecuteAsync(async () =>
+        {
+            // A retried attempt starts over; the ticket of the failed one must not be saved twice.
+            if (ticket is not null)
+            {
+                db.Entry(ticket).State = EntityState.Detached;
+            }
+
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            var number = await TicketNumbers.ReserveAsync(db, workspaceId);
+            ticket = Ticket.Create(workspaceId, number, subject, description, priority, actor, time.GetUtcNow());
+            db.Tickets.Add(ticket);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+        });
+
+        return ticket!.Id;
     }
 
     public Task<ServiceResult> ChangeStatusAsync(int id, Actor actor, string? rowVersion, TicketStatus status)

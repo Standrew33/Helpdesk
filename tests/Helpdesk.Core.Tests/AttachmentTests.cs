@@ -11,7 +11,7 @@ public class AttachmentTests
     private static readonly Actor OtherCustomer = new("customer-2", UserRole.Customer);
     private static readonly Actor Operator = new("operator-1", UserRole.Operator);
 
-    private static Ticket NewTicket() => Ticket.Create("Printer is down", "It prints blank pages.", TicketPriority.Normal, Customer, Now);
+    private static Ticket NewTicket() => Ticket.Create(1, 1, "Printer is down", "It prints blank pages.", TicketPriority.Normal, Customer, Now);
 
     [Fact]
     public void Owner_can_attach_a_file_and_the_change_is_recorded()

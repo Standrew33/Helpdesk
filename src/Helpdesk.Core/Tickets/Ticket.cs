@@ -22,6 +22,11 @@ public sealed class Ticket
 
     public int Id { get; private set; }
 
+    public int WorkspaceId { get; private set; }
+
+    /// <summary>The number people see; it counts from 1 within the workspace.</summary>
+    public int Number { get; private set; }
+
     public string Subject { get; private set; }
 
     public string Description { get; private set; }
@@ -51,9 +56,12 @@ public sealed class Ticket
 
     public IReadOnlyList<TicketHistoryEntry> History => _history;
 
-    public static Ticket Create(string subject, string description, TicketPriority priority, Actor customer, DateTimeOffset now)
+    public static Ticket Create(
+        int workspaceId, int number, string subject, string description, TicketPriority priority, Actor customer, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(customer);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(workspaceId);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(number);
 
         if (customer.Role != UserRole.Customer)
         {
@@ -67,6 +75,8 @@ public sealed class Ticket
 
         var ticket = new Ticket
         {
+            WorkspaceId = workspaceId,
+            Number = number,
             Subject = RequireText(subject, "Subject", MaxSubjectLength),
             Description = RequireText(description, "Description", MaxDescriptionLength),
             Status = TicketStatus.New,

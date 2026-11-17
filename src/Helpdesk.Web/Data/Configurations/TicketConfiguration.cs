@@ -1,4 +1,5 @@
 using Helpdesk.Core.Tickets;
+using Helpdesk.Core.Workspaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,6 +16,11 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         builder.Property(t => t.Status).HasConversion<string>().HasMaxLength(32);
         builder.Property(t => t.Priority).HasConversion<string>().HasMaxLength(32);
         builder.Property(t => t.RowVersion).IsRowVersion();
+
+        builder.HasOne<Workspace>()
+            .WithMany()
+            .HasForeignKey(t => t.WorkspaceId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<ApplicationUser>()
             .WithMany()
@@ -45,6 +51,7 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         builder.Navigation(t => t.Attachments).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(t => t.History).UsePropertyAccessMode(PropertyAccessMode.Field);
 
+        builder.HasIndex(t => new { t.WorkspaceId, t.Number }).IsUnique();
         builder.HasIndex(t => t.CustomerId);
         builder.HasIndex(t => t.AssigneeId);
         builder.HasIndex(t => new { t.Status, t.DueAt });

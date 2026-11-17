@@ -131,6 +131,9 @@ namespace Helpdesk.Web.Data.Migrations
                     b.Property<DateTimeOffset>("DueAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -155,6 +158,9 @@ namespace Helpdesk.Web.Data.Migrations
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int>("WorkspaceId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AssigneeId");
@@ -162,6 +168,9 @@ namespace Helpdesk.Web.Data.Migrations
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("Status", "DueAt");
+
+                    b.HasIndex("WorkspaceId", "Number")
+                        .IsUnique();
 
                     b.ToTable("Tickets", (string)null);
                 });
@@ -528,6 +537,12 @@ namespace Helpdesk.Web.Data.Migrations
                     b.HasOne("Helpdesk.Web.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Helpdesk.Core.Workspaces.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

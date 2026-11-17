@@ -86,8 +86,12 @@ public static class DatabaseSeeder
         var op = new Actor(operatorUser.Id, UserRole.Operator);
         var now = services.GetRequiredService<TimeProvider>().GetUtcNow();
 
+        async Task<Ticket> NewTicketAsync(string subject, string description, TicketPriority priority, Actor by, DateTimeOffset at)
+            => Ticket.Create(
+                SharedWorkspace.Id, await TicketNumbers.ReserveAsync(db, SharedWorkspace.Id), subject, description, priority, by, at);
+
         // Each ticket is created in the past and moved through the workflow so the list shows every state.
-        var vpn = Ticket.Create(
+        var vpn = await NewTicketAsync(
             "VPN disconnects every ten minutes",
             "Since Monday the VPN client drops the connection roughly every ten minutes while I work from home.\nIt happens on Wi-Fi and on a cable.",
             TicketPriority.Normal, customer, now.AddHours(-30));
@@ -96,7 +100,7 @@ public static class DatabaseSeeder
         vpn.AddComment(op, "Which VPN client version do you use? Please send a screenshot of the About page.", false, now.AddHours(-28));
         vpn.ChangeStatus(op, TicketStatus.WaitingForCustomer, now.AddHours(-28));
 
-        var share = Ticket.Create(
+        var share = await NewTicketAsync(
             "No access to the Finance share",
             "After the file server migration I get \"access denied\" on the Finance share.",
             TicketPriority.High, customer, now.AddHours(-5));
@@ -105,12 +109,12 @@ public static class DatabaseSeeder
         share.AddComment(op, "Looking into the permissions on the share now.", false, now.AddHours(-4));
         share.AddComment(op, "The migration script skipped the Finance group, needs a manual fix.", true, now.AddHours(-3));
 
-        var monitor = Ticket.Create(
+        var monitor = await NewTicketAsync(
             "Second monitor for room 3.12",
             "Please add a second monitor to my desk.",
             TicketPriority.Low, customer, now.AddHours(-2));
 
-        var printer = Ticket.Create(
+        var printer = await NewTicketAsync(
             "Printer on the second floor is offline",
             "The printer next to the kitchen shows an offline status for everyone on the floor.",
             TicketPriority.High, customer, now.AddDays(-3));

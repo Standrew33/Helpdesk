@@ -15,7 +15,7 @@ public class TicketTests
     private static Ticket NewTicket(TicketPriority priority = TicketPriority.Normal)
     {
         // Customers cannot open urgent tickets; staff raises the priority afterwards.
-        var ticket = Ticket.Create("Printer is down", "It prints blank pages.", priority == TicketPriority.Urgent ? TicketPriority.High : priority, Customer, Now);
+        var ticket = Ticket.Create(1, 1, "Printer is down", "It prints blank pages.", priority == TicketPriority.Urgent ? TicketPriority.High : priority, Customer, Now);
 
         if (priority == TicketPriority.Urgent)
         {
@@ -39,9 +39,25 @@ public class TicketTests
     }
 
     [Fact]
+    public void Create_keeps_the_workspace_and_the_number()
+    {
+        var ticket = Ticket.Create(7, 42, "Printer is down", "It prints blank pages.", TicketPriority.Normal, Customer, Now);
+
+        Assert.Equal(7, ticket.WorkspaceId);
+        Assert.Equal(42, ticket.Number);
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(1, 0)]
+    public void Create_needs_a_workspace_and_a_number(int workspaceId, int number)
+        => Assert.Throws<ArgumentOutOfRangeException>(
+            () => Ticket.Create(workspaceId, number, "Printer is down", "It prints blank pages.", TicketPriority.Normal, Customer, Now));
+
+    [Fact]
     public void Create_trims_text()
     {
-        var ticket = Ticket.Create("  Subject  ", "  Body  ", TicketPriority.Low, Customer, Now);
+        var ticket = Ticket.Create(1, 1, "  Subject  ", "  Body  ", TicketPriority.Low, Customer, Now);
 
         Assert.Equal("Subject", ticket.Subject);
         Assert.Equal("Body", ticket.Description);
@@ -53,7 +69,7 @@ public class TicketTests
     [InlineData("subject", "")]
     public void Create_requires_subject_and_description(string subject, string description)
     {
-        Assert.Throws<DomainException>(() => Ticket.Create(subject, description, TicketPriority.Normal, Customer, Now));
+        Assert.Throws<DomainException>(() => Ticket.Create(1, 1, subject, description, TicketPriority.Normal, Customer, Now));
     }
 
     [Fact]
@@ -61,19 +77,19 @@ public class TicketTests
     {
         var subject = new string('a', Ticket.MaxSubjectLength + 1);
 
-        Assert.Throws<DomainException>(() => Ticket.Create(subject, "text", TicketPriority.Normal, Customer, Now));
+        Assert.Throws<DomainException>(() => Ticket.Create(1, 1, subject, "text", TicketPriority.Normal, Customer, Now));
     }
 
     [Fact]
     public void Create_is_allowed_for_customers_only()
     {
-        Assert.Throws<DomainException>(() => Ticket.Create("s", "d", TicketPriority.Normal, Operator, Now));
+        Assert.Throws<DomainException>(() => Ticket.Create(1, 1, "s", "d", TicketPriority.Normal, Operator, Now));
     }
 
     [Fact]
     public void Create_does_not_allow_customers_to_set_urgent_priority()
     {
-        Assert.Throws<DomainException>(() => Ticket.Create("s", "d", TicketPriority.Urgent, Customer, Now));
+        Assert.Throws<DomainException>(() => Ticket.Create(1, 1, "s", "d", TicketPriority.Urgent, Customer, Now));
     }
 
     [Fact]
