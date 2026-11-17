@@ -129,25 +129,7 @@ public class AuthenticationTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Contains("temporarily locked", await response.Content.ReadAsStringAsync());
     }
 
-    [Fact]
-    public async Task Demo_sign_in_works_when_enabled()
-    {
-        var client = await SignedInAsync("Operator");
 
-        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/Tickets")).StatusCode);
-    }
-
-    [Fact]
-    public async Task Demo_sign_in_is_unavailable_when_disabled()
-    {
-        var factory = await CreateFactoryWithoutDemoAsync();
-        var client = NewClient(factory);
-
-        var response = await client.PostFormAsync("/Account/Login", "/Account/Login?handler=Demo&role=Admin", new Dictionary<string, string>());
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.DoesNotContain("Demo: sign in", await client.GetHtmlAsync("/Account/Login"));
-    }
 
     [Fact]
     public async Task Unknown_addresses_show_a_friendly_not_found_page()

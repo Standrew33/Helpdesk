@@ -69,10 +69,11 @@ public partial class JoinLinkTests(SqlServerFixture sql) : WebTestBase(sql)
         var boss = await AcmeAdminAsync();
         Assert.Contains("Anyone with this link", await boss.GetHtmlAsync("/Invitations"));
 
-        var demo = await SignedInAsync("Admin");
-        var demoPage = await demo.GetHtmlAsync("/Invitations");
-        Assert.Contains("The link is turned off", demoPage);
-        Assert.DoesNotContain("Turn the link on", demoPage);
+        // The shared help desk existed before links did, so its link stays off until an administrator turns it on.
+        var shared = await SignedInAsync("Admin");
+        var sharedPage = await shared.GetHtmlAsync("/Invitations");
+        Assert.Contains("The link is turned off", sharedPage);
+        Assert.Contains("Turn the link on", sharedPage);
     }
 
     [Fact]

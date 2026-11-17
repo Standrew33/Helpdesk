@@ -85,20 +85,6 @@ public class AccountSettingsTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact]
-    public async Task Demo_accounts_cannot_be_edited()
-    {
-        var demo = await SignedInAsync("Customer");
-
-        var page = await demo.GetHtmlAsync("/Account/Settings");
-        var response = await demo.PostFormAsync("/Account/Settings", "/Account/Settings?handler=Profile", new Dictionary<string, string> { ["Profile.DisplayName"] = "Hacked" });
-
-        Assert.Contains("shared demo account", page);
-        Assert.DoesNotContain("Change password", page);
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Contains("/Account/AccessDenied", response.Headers.Location!.OriginalString);
-        Assert.DoesNotContain("Hacked", await demo.GetHtmlAsync("/Tickets"));
-    }
 
     private static Dictionary<string, string> PasswordForm(string current, string next) => new()
     {

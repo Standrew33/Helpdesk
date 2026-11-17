@@ -17,8 +17,9 @@ public class SessionTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Contains("httponly", antiforgery, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("samesite=strict", antiforgery, StringComparison.OrdinalIgnoreCase);
 
-        var demo = await client.PostFormAsync("/Account/Login", "/Account/Login?handler=Demo&role=Customer", new Dictionary<string, string>());
-        var auth = demo.Headers.GetValues("Set-Cookie").Single(c => c.StartsWith("__Host-Helpdesk.Auth", StringComparison.Ordinal));
+        await StandardUserIdAsync("Customer");
+        var signedIn = await client.SignInAsync(StandardEmail("Customer"), TestPassword);
+        var auth = signedIn.Headers.GetValues("Set-Cookie").Single(c => c.StartsWith("__Host-Helpdesk.Auth", StringComparison.Ordinal));
 
         Assert.Contains("secure", auth, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("httponly", auth, StringComparison.OrdinalIgnoreCase);

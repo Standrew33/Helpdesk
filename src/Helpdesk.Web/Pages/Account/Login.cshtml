@@ -42,29 +42,6 @@ else
     Have a password? <a asp-page="Password" asp-route-returnUrl="@Model.ReturnUrl">Sign in with a password</a>
 </p>
 
-@if (Model.DemoEnabled)
-{
-    <div class="divider">Explore the demo as</div>
-    <div class="d-grid gap-2">
-        @foreach (var (role, description) in new[]
-        {
-            ("Customer", "Opens tickets and follows only their own requests"),
-            ("Operator", "Works the queue: assigns, answers, changes status and priority"),
-            ("Admin", "Manages users and roles, sees every ticket and its history"),
-        })
-        {
-            <form method="post" asp-page-handler="Demo" asp-route-role="@role" asp-route-returnUrl="@Model.ReturnUrl">
-                <button type="submit" class="demo-role">
-                    <strong>@role</strong>
-                    <span>@description</span>
-                </button>
-            </form>
-        }
-    </div>
-    <p class="text-secondary small mt-3 mb-0">
-        The demo uses sample data, so you can look around as each role without an account.
-    </p>
-}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

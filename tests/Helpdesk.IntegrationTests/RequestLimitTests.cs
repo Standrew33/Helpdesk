@@ -60,8 +60,7 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
     public async Task A_refused_ticket_change_changes_nothing()
     {
         using var factory = WithLimit("TicketChangesPer10Minutes", 1);
-        var customer = NewClient(factory);
-        await customer.SignInAsDemoAsync("Customer");
+        var customer = await SignedInAsync("Customer", factory);
         await customer.CreateTicketAsync("First");
 
         var blocked = await customer.PostFormAsync("/Tickets/Create", "/Tickets/Create", new Dictionary<string, string>
@@ -138,15 +137,15 @@ public class RequestLimitTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Empty(Factory.Mail.To("third@example.test"));
 
         // Other sign-in forms have their own allowance.
-        await client.SignInAsDemoAsync("Customer");
+        await StandardUserIdAsync("Customer");
+        Assert.Equal(HttpStatusCode.Redirect, (await client.SignInAsync(StandardEmail("Customer"), TestPassword)).StatusCode);
     }
 
     [Fact]
     public async Task Uploads_are_limited_per_address()
     {
         using var factory = WithLimit("UploadsPer10Minutes", 1);
-        var customer = NewClient(factory);
-        await customer.SignInAsDemoAsync("Customer");
+        var customer = await SignedInAsync("Customer", factory);
         var id = await customer.CreateTicketAsync("Many files");
 
         await customer.UploadAttachmentAsync(id, "one.txt", "first"u8.ToArray());

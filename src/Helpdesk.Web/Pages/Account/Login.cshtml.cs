@@ -20,12 +20,8 @@ namespace Helpdesk.Web.Pages.Account;
 public class LoginModel(
     CodeMailer mailer,
     CaptchaGuard captcha,
-    SignInManager<ApplicationUser> signInManager,
-    UserManager<ApplicationUser> userManager,
-    IOptions<DemoOptions> demoOptions,
     JoinLinkService joinLinks,
     EmailSignIn emailSignIn,
-    AccountAccess access,
     ILogger<LoginModel> logger) : PageModel
 {
     [BindProperty]
@@ -33,8 +29,6 @@ public class LoginModel(
 
     [TempData]
     public string? Notice { get; set; }
-
-    public bool DemoEnabled => demoOptions.Value.Enabled;
 
     public string? ReturnUrl { get; private set; }
 
@@ -72,12 +66,6 @@ public class LoginModel(
 
         var email = Input.Email.Trim();
 
-        if (DatabaseSeeder.IsDemoAddress(email))
-        {
-            ModelState.AddModelError("Input.Email", "This address belongs to the demo. Use your own e-mail address.");
-            return Page();
-        }
-
         var sent = await mailer.SendAsync(email, ChallengePurpose.SignIn, Request, ct);
 
         switch (sent.Outcome)
@@ -103,24 +91,6 @@ public class LoginModel(
         }
     }
 
-    public async Task<IActionResult> OnPostDemoAsync(string role, string? returnUrl = null)
-    {
-        if (!DemoEnabled || !RoleNames.All.Contains(role))
-        {
-            return NotFound();
-        }
-
-        var user = await userManager.FindByEmailAsync(DatabaseSeeder.DemoEmail(role));
-
-        if (!await access.AllowsAsync(user))
-        {
-            return NotFound();
-        }
-
-        await signInManager.SignInAsync(user!, isPersistent: false);
-        SecurityLog.SignedIn(logger, user!.Id);
-        return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : RedirectToPage("/Tickets/Index");
-    }
 
 
     public class InputModel

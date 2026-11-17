@@ -33,12 +33,12 @@ Copy `src/Helpdesk.Web/appsettings.example.json` and fill in the values using
 user secrets or environment variables. Do not commit secrets.
 
 Useful settings: `Database:MigrateOnStartup` applies migrations at startup (always on in
-Development), `Demo:Enabled` shows password-less demo sign-in buttons, `Demo:SeedUsers` and
-`Demo:SeedTickets` create demo users and sample tickets.
+Development), `Platform:OwnerEmail` names the owner of the platform, the superadmin who looks
+after every help desk.
 
 ## Deployment
 
-The demo runs on Azure free tiers and is deployed by GitHub Actions after CI passes.
+The application runs on Azure free tiers and is deployed by GitHub Actions after CI passes.
 See [docs/azure-setup.md](docs/azure-setup.md).
 
 ## Build and test

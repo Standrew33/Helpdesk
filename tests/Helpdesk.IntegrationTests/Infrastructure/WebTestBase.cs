@@ -1,3 +1,4 @@
+using System.Net;
 using Helpdesk.Core.Workspaces;
 using Helpdesk.Web.Data;
 using Microsoft.AspNetCore.Identity;
@@ -40,11 +41,45 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
         return client;
     }
 
-    protected async Task<AppClient> SignedInAsync(string role)
+    /// <summary>
+    /// Signs in the standard user of a role, made on first use in the shared workspace: one account per role, the way
+    /// several people of a team share a help desk. <paramref name="factory"/> is a variant of the application, such
+    /// as one with other limits; it shares the database.
+    /// </summary>
+    protected async Task<AppClient> SignedInAsync(string role, WebApplicationFactory<Program>? factory = null, string? captcha = null)
     {
-        var client = NewClient();
-        await client.SignInAsDemoAsync(role);
+        await StandardUserIdAsync(role);
+        var client = NewClient(factory);
+        var response = await client.SignInAsync(StandardEmail(role), TestPassword, captcha);
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         return client;
+    }
+
+    protected static string StandardEmail(string role) => $"{role.ToLowerInvariant()}@shared.test";
+
+    /// <summary>The standard user of a role, named "Test operator" and so on; made when it does not exist yet.</summary>
+    protected async Task<string> StandardUserIdAsync(string role)
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await users.FindByEmailAsync(StandardEmail(role));
+
+        if (user is null)
+        {
+            user = new ApplicationUser
+            {
+                UserName = StandardEmail(role),
+                Email = StandardEmail(role),
+                EmailConfirmed = true,
+                DisplayName = $"Test {role.ToLowerInvariant()}",
+                WorkspaceId = SharedWorkspace.Id,
+            };
+
+            Assert.True((await users.CreateAsync(user, TestPassword)).Succeeded);
+            Assert.True((await users.AddToRoleAsync(user, role)).Succeeded);
+        }
+
+        return user.Id;
     }
 
     /// <summary>
@@ -76,14 +111,6 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
         }
 
         return await client.PostFormAsync("/Account/Welcome", "/Account/Welcome", form);
-    }
-
-    /// <summary>A web application on a fresh database with demo sign-in switched off.</summary>
-    protected async Task<HelpdeskWebFactory> CreateFactoryWithoutDemoAsync()
-    {
-        var factory = new HelpdeskWebFactory(await sql.CreateDatabaseAsync(), demoEnabled: false);
-        _extraFactories.Add(factory);
-        return factory;
     }
 
     /// <summary>Creates another help desk next to the shared one.</summary>
@@ -132,11 +159,4 @@ public abstract class WebTestBase(SqlServerFixture sql) : IAsyncLifetime
         return (await users.FindByEmailAsync(email))!.Id;
     }
 
-    protected async Task<string> DemoUserIdAsync(string role)
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var user = await users.FindByEmailAsync(DatabaseSeeder.DemoEmail(role));
-        return user!.Id;
-    }
 }

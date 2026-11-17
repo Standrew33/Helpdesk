@@ -46,7 +46,6 @@ builder.Services.AddScoped<OneTimeCodeService>();
 builder.Services.AddScoped<CodeMailer>();
 builder.Services.AddScoped<EmailSignIn>();
 builder.Services.Configure<OneTimeCodeOptions>(builder.Configuration.GetSection(OneTimeCodeOptions.SectionName));
-builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection(DemoOptions.SectionName));
 builder.Services.Configure<PlatformOptions>(builder.Configuration.GetSection(PlatformOptions.SectionName));
 
 // Links in e-mails need the real address of the site; in production it must be configured, never guessed from the request.

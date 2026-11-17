@@ -21,30 +21,20 @@ public sealed record UserRow(string Id, string DisplayName, string Email, string
 public class UserAdminService(
     HelpdeskDbContext db,
     UserManager<ApplicationUser> userManager,
-    IOptions<DemoOptions> demo,
     IOptions<PlatformOptions> platform,
     AccountDeletion deletion,
     ILogger<UserAdminService> logger)
 {
     public const int MaxListSize = 100;
 
-    private const string DemoAccount = "Demo account";
     private const string OwnerAccount = "Owner of the platform";
-
-    private const string DemoAdminMessage = "The demo administrator can look at accounts but cannot change them.";
 
     // Roles ordered from the most to the least powerful; a user shows as the first one they have.
     private static readonly string[] RoleOrder = [RoleNames.Admin, RoleNames.Operator, RoleNames.Customer];
 
-    /// <summary>The shared demo administrator only sees demo accounts, never the e-mail addresses of real visitors.</summary>
     public async Task<IReadOnlyList<UserRow>> ListAsync(Actor admin, string? search, CancellationToken ct = default)
     {
         var users = db.Users.AsNoTracking().Where(u => u.WorkspaceId == admin.WorkspaceId && u.DeletedAt == null);
-
-        if (admin.IsDemo)
-        {
-            users = users.Where(u => u.Email!.EndsWith(DatabaseSeeder.DemoDomain));
-        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -82,11 +72,6 @@ public class UserAdminService(
 
     public async Task<ServiceResult> ChangeRoleAsync(Actor admin, string userId, string role)
     {
-        if (admin.IsDemo)
-        {
-            return ServiceResult.Invalid(DemoAdminMessage);
-        }
-
         if (!RoleOrder.Contains(role))
         {
             return ServiceResult.Invalid("Unknown role.");
@@ -104,9 +89,9 @@ public class UserAdminService(
             return ServiceResult.Invalid("You cannot change your own role. Ask another administrator.");
         }
 
-        if (ProtectedAs(user) is { } reason)
+        if (ProtectedAs(user) is not null)
         {
-            return ServiceResult.Invalid(reason == OwnerAccount ? "The owner of the platform cannot be changed here." : "The demo accounts cannot be changed.");
+            return ServiceResult.Invalid("The owner of the platform cannot be changed here.");
         }
 
         var current = await userManager.GetRolesAsync(user);
@@ -132,11 +117,6 @@ public class UserAdminService(
 
     public async Task<ServiceResult> SetActiveAsync(Actor admin, string userId, bool active)
     {
-        if (admin.IsDemo)
-        {
-            return ServiceResult.Invalid(DemoAdminMessage);
-        }
-
         var user = await FindInWorkspaceAsync(admin, userId);
 
         if (user is null)
@@ -149,9 +129,9 @@ public class UserAdminService(
             return ServiceResult.Invalid("You cannot deactivate your own account.");
         }
 
-        if (ProtectedAs(user) is { } reason)
+        if (ProtectedAs(user) is not null)
         {
-            return ServiceResult.Invalid(reason == OwnerAccount ? "The owner of the platform cannot be changed here." : "The demo accounts cannot be changed.");
+            return ServiceResult.Invalid("The owner of the platform cannot be changed here.");
         }
 
         user.IsActive = active;
@@ -169,11 +149,6 @@ public class UserAdminService(
     /// <summary>Deletes a person of the own help desk for good; what they wrote stays, signed "Deleted user".</summary>
     public async Task<ServiceResult> DeleteAsync(Actor admin, string userId)
     {
-        if (admin.IsDemo)
-        {
-            return ServiceResult.Invalid(DemoAdminMessage);
-        }
-
         var user = await FindInWorkspaceAsync(admin, userId);
 
         if (user is null)
@@ -186,9 +161,9 @@ public class UserAdminService(
             return ServiceResult.Invalid("You cannot delete your own account. Ask another administrator.");
         }
 
-        if (ProtectedAs(user) is { } reason)
+        if (ProtectedAs(user) is not null)
         {
-            return ServiceResult.Invalid(reason == OwnerAccount ? "The owner of the platform cannot be changed here." : "The demo accounts cannot be changed.");
+            return ServiceResult.Invalid("The owner of the platform cannot be changed here.");
         }
 
         if (!await deletion.DeleteAsync(user))
@@ -207,10 +182,6 @@ public class UserAdminService(
         return user is { DeletedAt: null } && user.WorkspaceId == admin.WorkspaceId ? user : null;
     }
 
-    /// <summary>The public demo must keep working for the next visitor, so its accounts are read-only.</summary>
-    /// <remarks>The owner of the platform is out of reach of the administrators of a help desk, too.</remarks>
-    private string? ProtectedAs(ApplicationUser user)
-        => platform.Value.IsOwner(user.Email) ? OwnerAccount
-            : demo.Value.Enabled && DatabaseSeeder.IsDemoAddress(user.Email) ? DemoAccount
-            : null;
+    /// <summary>The owner of the platform is out of reach of the administrators of a help desk.</summary>
+    private string? ProtectedAs(ApplicationUser user) => platform.Value.IsOwner(user.Email) ? OwnerAccount : null;
 }

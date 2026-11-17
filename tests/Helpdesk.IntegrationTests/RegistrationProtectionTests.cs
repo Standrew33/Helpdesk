@@ -38,12 +38,4 @@ public class RegistrationProtectionTests(SqlServerFixture sql) : WebTestBase(sql
         Assert.Contains("contains characters that are not allowed", await response.Content.ReadAsStringAsync());
     }
 
-    [Fact]
-    public async Task A_demo_address_with_stray_spaces_is_still_reserved()
-    {
-        var response = await NewClient().RequestCodeAsync(" admin@helpdesk.test ");
-
-        Assert.NotEqual(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Empty(Factory.Mail.Messages);
-    }
 }

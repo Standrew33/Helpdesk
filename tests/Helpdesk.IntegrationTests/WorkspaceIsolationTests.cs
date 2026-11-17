@@ -137,7 +137,6 @@ public class WorkspaceIsolationTests(SqlServerFixture sql) : WebTestBase(sql)
 
         Assert.Contains("boris@company-b.test", users);
         Assert.DoesNotContain("anna@company-a.test", users);
-        Assert.DoesNotContain("@helpdesk.test", users);
         Assert.DoesNotContain("anna@company-a.test", found);
     }
 

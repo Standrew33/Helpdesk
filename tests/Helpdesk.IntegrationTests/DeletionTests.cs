@@ -117,16 +117,6 @@ public class DeletionTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Null((await UserAsync(Boss))!.DeletedAt);
     }
 
-    [Fact]
-    public async Task The_demo_administrator_cannot_delete_anyone()
-    {
-        var demo = await SignedInAsync("Admin");
-
-        var response = await AdminDeletesAsync(demo, await DemoUserIdAsync("Customer"));
-
-        Assert.Contains("cannot change them", await (await demo.FollowAsync(response)).Content.ReadAsStringAsync());
-        Assert.NotNull(await UserAsync(Helpdesk.Web.Data.DatabaseSeeder.DemoEmail("Customer")));
-    }
 
     [Fact]
     public async Task The_owner_deletes_an_administrator_of_a_help_desk()
@@ -174,16 +164,6 @@ public class DeletionTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Contains("Untouched matter", await other.GetHtmlAsync("/Tickets"));
     }
 
-    [Fact]
-    public async Task The_shared_help_desk_cannot_be_deleted()
-    {
-        var owner = await OwnerAsync();
-
-        var response = await DeleteWorkspaceAsync(owner, SharedWorkspace.Id, SharedWorkspace.Name);
-
-        Assert.Contains("cannot be deleted", await (await owner.FollowAsync(response)).Content.ReadAsStringAsync());
-        Assert.NotNull(await UserAsync(Helpdesk.Web.Data.DatabaseSeeder.DemoEmail("Admin")));
-    }
 
     [Fact]
     public async Task Only_the_owner_deletes_help_desks()

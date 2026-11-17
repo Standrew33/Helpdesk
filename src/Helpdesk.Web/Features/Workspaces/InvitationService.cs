@@ -46,11 +46,6 @@ public partial class InvitationService(
     {
         ArgumentNullException.ThrowIfNull(inviter);
 
-        if (inviter.IsDemo)
-        {
-            return ServiceResult.Invalid("The demo accounts cannot send invitations.");
-        }
-
         if (role is null || !RolesFor(inviter.Role).Contains(role))
         {
             return ServiceResult.Invalid("You cannot invite people with this role.");
@@ -61,11 +56,6 @@ public partial class InvitationService(
         if (to.Length is 0 or > 256 || !to.Contains('@', StringComparison.Ordinal))
         {
             return ServiceResult.Invalid("Enter the e-mail address of the person to invite.");
-        }
-
-        if (DatabaseSeeder.IsDemoAddress(to))
-        {
-            return ServiceResult.Invalid("This address is reserved for the demo.");
         }
 
         var now = time.GetUtcNow();
@@ -149,7 +139,7 @@ public partial class InvitationService(
             return ServiceResult.NotFound();
         }
 
-        if (actor.IsDemo || !RolesFor(actor.Role).Contains(invitation.Role))
+        if (!RolesFor(actor.Role).Contains(invitation.Role))
         {
             return ServiceResult.Invalid("You cannot withdraw this invitation.");
         }

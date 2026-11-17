@@ -83,9 +83,9 @@ public class PlatformTests(SqlServerFixture sql) : WebTestBase(sql)
     public async Task Nobody_else_reaches_the_platform()
     {
         var (boss, customer, acme) = await AcmeAsync();
-        var demo = await SignedInAsync("Admin");
+        var sharedAdmin = await SignedInAsync("Admin");
 
-        foreach (var client in new[] { boss, customer, demo })
+        foreach (var client in new[] { boss, customer, sharedAdmin })
         {
             foreach (var url in new[] { "/Platform", $"/Platform/Workspace/{acme}", $"/Platform/Ticket/{acme}/1" })
             {

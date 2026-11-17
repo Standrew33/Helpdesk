@@ -31,7 +31,7 @@ public static class ClaimsPrincipalExtensions
         var workspaceId = principal.WorkspaceId()
             ?? throw new InvalidOperationException("The user does not belong to a workspace.");
 
-        return new Actor(id, role, workspaceId, principal.IsDemoAccount());
+        return new Actor(id, role, workspaceId);
     }
 
     /// <summary>The help desk of the signed-in user; null when signed out or for an account outside every workspace.</summary>
@@ -50,10 +50,4 @@ public static class ClaimsPrincipalExtensions
         return principal.HasClaim(AppClaimTypes.PlatformOwner, "true");
     }
 
-    /// <summary>True for the shared public demo accounts, which must not reach data or users of real visitors.</summary>
-    public static bool IsDemoAccount(this ClaimsPrincipal principal)
-    {
-        ArgumentNullException.ThrowIfNull(principal);
-        return principal.HasClaim(AppClaimTypes.Demo, "true");
-    }
 }

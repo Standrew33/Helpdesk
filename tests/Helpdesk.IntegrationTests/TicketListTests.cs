@@ -149,8 +149,8 @@ public partial class TicketListTests(SqlServerFixture sql) : WebTestBase(sql)
         await customer.CreateTicketAsync("Free ticket");
         var other = await customer.CreateTicketAsync("Someone else's ticket");
         var op = await SignedInAsync("Operator");
-        await op.PostTicketActionAsync(taken, "Assign", new Dictionary<string, string> { ["assigneeId"] = await DemoUserIdAsync("Operator") });
-        await op.PostTicketActionAsync(other, "Assign", new Dictionary<string, string> { ["assigneeId"] = await DemoUserIdAsync("Admin") });
+        await op.PostTicketActionAsync(taken, "Assign", new Dictionary<string, string> { ["assigneeId"] = await StandardUserIdAsync("Operator") });
+        await op.PostTicketActionAsync(other, "Assign", new Dictionary<string, string> { ["assigneeId"] = await StandardUserIdAsync("Admin") });
 
         var html = await op.GetHtmlAsync("/Tickets?scope=Mine&scope=Unassigned");
 
@@ -202,14 +202,14 @@ public partial class TicketListTests(SqlServerFixture sql) : WebTestBase(sql)
     public async Task Filters_never_widen_what_a_customer_may_see()
     {
         var other = await SignedInAsync("Customer");
-        await other.CreateTicketAsync("Belongs to the demo customer");
+        await other.CreateTicketAsync("Belongs to another customer");
         await CreateUserAsync("Customer", "zoe@example.test");
         var zoe = NewClient();
         await zoe.SignInAsync("zoe@example.test", TestPassword);
 
-        var html = await zoe.GetHtmlAsync("/Tickets?scope=Unassigned&q=demo");
+        var html = await zoe.GetHtmlAsync("/Tickets?scope=Unassigned&q=another");
 
-        Assert.DoesNotContain("Belongs to the demo customer", html);
+        Assert.DoesNotContain("Belongs to another customer", html);
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public partial class TicketListTests(SqlServerFixture sql) : WebTestBase(sql)
         var taken = await customer.CreateTicketAsync("Taken ticket");
         await customer.CreateTicketAsync("Free ticket");
         var op = await SignedInAsync("Operator");
-        await op.PostTicketActionAsync(taken, "Assign", new Dictionary<string, string> { ["assigneeId"] = await DemoUserIdAsync("Operator") });
+        await op.PostTicketActionAsync(taken, "Assign", new Dictionary<string, string> { ["assigneeId"] = await StandardUserIdAsync("Operator") });
 
         var unassigned = await op.GetHtmlAsync("/Tickets?scope=Unassigned");
         var mine = await op.GetHtmlAsync("/Tickets?scope=Mine");

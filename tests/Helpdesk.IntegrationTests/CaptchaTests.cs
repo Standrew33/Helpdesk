@@ -78,8 +78,7 @@ public class CaptchaTests(SqlServerFixture sql) : WebTestBase(sql)
     public async Task Other_pages_keep_the_strict_policy()
     {
         using var factory = WithCaptcha();
-        var client = NewClient(factory);
-        await client.SignInAsDemoAsync("Customer");
+        var client = await SignedInAsync("Customer", factory, captcha: "person");
 
         var csp = (await client.GetAsync("/Tickets")).Headers.GetValues("Content-Security-Policy").Single();
 
@@ -155,15 +154,6 @@ public class CaptchaTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Contains("reset", _verifier.Actions);
     }
 
-    [Fact]
-    public async Task The_demo_buttons_are_not_slowed_down_by_the_check()
-    {
-        using var factory = WithCaptcha();
-
-        await NewClient(factory).SignInAsDemoAsync("Customer");
-
-        Assert.Empty(_verifier.Actions);
-    }
 }
 
 /// <summary>The part that talks to Google, with Google's answers played back.</summary>

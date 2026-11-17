@@ -10,9 +10,6 @@ public static class AppClaimTypes
 {
     public const string DisplayName = "display_name";
 
-    /// <summary>Present ("true") for the shared demo accounts.</summary>
-    public const string Demo = "is_demo";
-
     /// <summary>The help desk the user belongs to.</summary>
     public const string Workspace = "workspace_id";
 
@@ -44,11 +41,6 @@ public sealed class AppClaimsPrincipalFactory(
         if (user.EmailConfirmed && platform.Value.IsOwner(user.Email))
         {
             identity.AddClaim(new Claim(AppClaimTypes.PlatformOwner, "true"));
-        }
-
-        if (DatabaseSeeder.IsDemoAddress(user.Email))
-        {
-            identity.AddClaim(new Claim(AppClaimTypes.Demo, "true"));
         }
 
         return identity;

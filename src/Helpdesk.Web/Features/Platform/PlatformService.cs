@@ -210,11 +210,6 @@ public partial class PlatformService(
             return ServiceResult.NotFound();
         }
 
-        if (id == SharedWorkspace.Id)
-        {
-            return ServiceResult.Invalid("The shared help desk holds the demo and cannot be deleted.");
-        }
-
         if (!string.Equals(confirmName?.Trim(), workspace.Name, StringComparison.Ordinal))
         {
             return ServiceResult.Invalid("Type the name of the help desk exactly as it is shown to delete it.");

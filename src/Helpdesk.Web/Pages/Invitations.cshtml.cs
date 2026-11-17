@@ -30,7 +30,7 @@ public class InvitationsModel(InvitationService invitations, JoinLinkService joi
     /// <summary>The public link of the help desk, through which customers sign up by themselves.</summary>
     public JoinLink JoinLink { get; private set; } = null!;
 
-    public bool CanChangeJoinLink => User.IsInRole(RoleNames.Admin) && !User.IsDemoAccount();
+    public bool CanChangeJoinLink => User.IsInRole(RoleNames.Admin);
 
     public async Task OnGetAsync(CancellationToken ct) => await LoadAsync(ct);
 

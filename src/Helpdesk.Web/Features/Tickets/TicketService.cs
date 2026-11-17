@@ -27,11 +27,6 @@ public class TicketService(
         {
             tickets = tickets.Where(t => t.CustomerId == actor.Id);
         }
-        else if (actor.IsDemo)
-        {
-            // The shared demo staff work on demo data only; tickets of real visitors are out of their sight.
-            tickets = tickets.Where(t => db.Users.Any(u => u.Id == t.CustomerId && u.Email!.EndsWith(DatabaseSeeder.DemoDomain)));
-        }
 
         if (filter.Statuses is { Count: > 0 } statuses)
         {
@@ -111,7 +106,7 @@ public class TicketService(
             .FirstOrDefaultAsync(ct);
 
         // A ticket the user may not see looks the same as a ticket that does not exist.
-        if (ticket is null || !await CanSeeAsync(ticket, actor, ct))
+        if (ticket is null || !CanSee(ticket, actor))
         {
             return null;
         }
@@ -229,7 +224,7 @@ public class TicketService(
             .Include(t => t.Attachments)
             .FirstOrDefaultAsync(ct);
 
-        var attachment = ticket is not null && await CanSeeAsync(ticket, actor, ct)
+        var attachment = ticket is not null && CanSee(ticket, actor)
             ? ticket.Attachments.FirstOrDefault(a => a.Id == attachmentId)
             : null;
 
@@ -267,7 +262,7 @@ public class TicketService(
     {
         var ticket = await InWorkspace(db.Tickets, actor, number).Include(t => t.Attachments).FirstOrDefaultAsync();
 
-        if (ticket is null || !await CanSeeAsync(ticket, actor))
+        if (ticket is null || !CanSee(ticket, actor))
         {
             return ServiceResult.NotFound();
         }
@@ -300,15 +295,10 @@ public class TicketService(
     private static IQueryable<Ticket> InWorkspace(IQueryable<Ticket> tickets, Actor actor, int number)
         => tickets.Where(t => t.WorkspaceId == actor.WorkspaceId && t.Number == number);
 
-    /// <summary>The domain rule on who may see a ticket, plus the rule that demo staff never reach tickets of real visitors.</summary>
-    private async Task<bool> CanSeeAsync(Ticket ticket, Actor actor, CancellationToken ct = default)
+    /// <summary>The domain rule on who may see a ticket; a refusal is logged.</summary>
+    private bool CanSee(Ticket ticket, Actor actor)
     {
         var allowed = ticket.CanBeViewedBy(actor);
-
-        if (allowed && actor.IsDemo && actor.Role.IsStaff())
-        {
-            allowed = await db.Users.AnyAsync(u => u.Id == ticket.CustomerId && u.Email!.EndsWith(DatabaseSeeder.DemoDomain), ct);
-        }
 
         if (!allowed)
         {

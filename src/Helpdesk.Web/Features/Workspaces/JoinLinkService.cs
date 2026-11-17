@@ -47,7 +47,7 @@ public class JoinLinkService(HelpdeskDbContext db)
 
     private async Task<ServiceResult> ChangeAsync(Actor admin, Action<Workspace> change, CancellationToken ct)
     {
-        if (admin.Role != UserRole.Admin || admin.IsDemo)
+        if (admin.Role != UserRole.Admin)
         {
             return ServiceResult.Invalid("Only the administrators of this help desk can change its link.");
         }

@@ -8,7 +8,7 @@ namespace Helpdesk.IntegrationTests;
 
 public class UserAdministrationTests(SqlServerFixture sql) : WebTestBase(sql)
 {
-    /// <summary>A real administrator (not the shared demo one), signed in with the sign-in form.</summary>
+    /// <summary>An administrator of the shared help desk, signed in with the sign-in form.</summary>
     private async Task<AppClient> RealAdminAsync(string email = "boss@example.test")
     {
         await CreateUserAsync("Admin", email);
@@ -69,8 +69,8 @@ public class UserAdministrationTests(SqlServerFixture sql) : WebTestBase(sql)
         var html = await admin.GetHtmlAsync("/Admin/Users");
 
         Assert.Contains("zoe@example.test", html);
-        Assert.Contains("admin@helpdesk.test", html);
-        Assert.Contains("Demo account", html);
+        Assert.Contains("Customer", html);
+        Assert.Contains("(you)", html);
     }
 
     [Fact]
@@ -169,19 +169,6 @@ public class UserAdministrationTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/Admin/Users")).StatusCode);
     }
 
-    [Fact]
-    public async Task The_demo_accounts_cannot_be_changed()
-    {
-        var operatorId = await DemoUserIdAsync("Operator");
-        var admin = await RealAdminAsync();
-
-        var role = await AfterAsync(admin, await ChangeRoleAsync(admin, operatorId, "Customer"));
-        var active = await AfterAsync(admin, await SetActiveAsync(admin, operatorId, active: false));
-
-        Assert.Contains("demo accounts cannot be changed", role);
-        Assert.Contains("demo accounts cannot be changed", active);
-        Assert.Equal(HttpStatusCode.OK, (await (await SignedInAsync("Operator")).GetAsync("/Tickets")).StatusCode);
-    }
 
     [Fact]
     public async Task An_unknown_role_is_refused()

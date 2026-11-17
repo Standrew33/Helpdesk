@@ -44,12 +44,6 @@ public class ForgotPasswordModel(CodeMailer mailer, CaptchaGuard captcha, ILogge
 
         var email = Input.Email.Trim();
 
-        if (DatabaseSeeder.IsDemoAddress(email))
-        {
-            ModelState.AddModelError("Input.Email", "This address belongs to the demo. Use your own e-mail address.");
-            return Page();
-        }
-
         var sent = await mailer.SendAsync(email, ChallengePurpose.PasswordReset, Request, ct);
 
         switch (sent.Outcome)

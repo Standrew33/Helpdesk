@@ -202,16 +202,6 @@ public class InvitationTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.DoesNotContain("Invitations", await customer.GetHtmlAsync("/Tickets"));
     }
 
-    [Fact]
-    public async Task The_demo_staff_cannot_send_invitations()
-    {
-        var demo = await SignedInAsync("Admin");
-
-        var response = await InviteAsync(demo, "victim@example.test");
-
-        Assert.Contains("The demo accounts cannot send invitations", await response.Content.ReadAsStringAsync());
-        Assert.Empty(Factory.Mail.To("victim@example.test"));
-    }
 
     [Fact]
     public async Task A_help_desk_sends_a_limited_number_of_invitations_a_day()

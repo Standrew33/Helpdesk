@@ -11,7 +11,6 @@ namespace Helpdesk.Web.Pages.Account;
 public class SettingsModel(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
-    IOptions<DemoOptions> demo,
     ILogger<SettingsModel> logger) : PageModel
 {
     // The two forms are bound per handler, so one form never fails validation because of the other.
@@ -28,9 +27,6 @@ public class SettingsModel(
     public string? Notice { get; set; }
 
     public string Email { get; private set; } = string.Empty;
-
-    /// <summary>The public demo accounts are shared by every visitor, so they cannot be edited.</summary>
-    public bool IsReadOnly { get; private set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -49,7 +45,7 @@ public class SettingsModel(
     {
         var user = await LoadAsync();
 
-        if (user is null || IsReadOnly)
+        if (user is null)
         {
             return Forbid();
         }
@@ -74,7 +70,7 @@ public class SettingsModel(
     {
         var user = await LoadAsync();
 
-        if (user is null || IsReadOnly)
+        if (user is null)
         {
             return Forbid();
         }
@@ -116,7 +112,7 @@ public class SettingsModel(
     {
         var user = await LoadAsync();
 
-        if (user is null || IsReadOnly || HasPassword)
+        if (user is null || HasPassword)
         {
             return Forbid();
         }
@@ -151,7 +147,6 @@ public class SettingsModel(
         {
             Email = user.Email ?? string.Empty;
             HasPassword = await userManager.HasPasswordAsync(user);
-            IsReadOnly = demo.Value.Enabled && DatabaseSeeder.IsDemoAddress(user.Email);
         }
 
         return user;

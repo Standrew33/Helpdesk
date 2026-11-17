@@ -185,7 +185,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var customer = await SignedInAsync("Customer");
         var id = await customer.CreateTicketAsync("Mine");
 
-        var assign = await customer.PostTicketActionAsync(id, "Assign", Fields(("assigneeId", await DemoUserIdAsync("Operator"))));
+        var assign = await customer.PostTicketActionAsync(id, "Assign", Fields(("assigneeId", await StandardUserIdAsync("Operator"))));
         Assert.Contains("Only staff", await FollowedHtmlAsync(customer, assign));
 
         var urgent = await customer.PostTicketActionAsync(id, "Priority", Fields(("priority", "Urgent")));
@@ -200,10 +200,10 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         var id = await customer.CreateTicketAsync("Assign me");
         var op = await SignedInAsync("Operator");
 
-        var ok = await op.PostTicketActionAsync(id, "Assign", Fields(("assigneeId", await DemoUserIdAsync("Operator"))));
-        Assert.Contains("Demo operator", await FollowedHtmlAsync(op, ok));
+        var ok = await op.PostTicketActionAsync(id, "Assign", Fields(("assigneeId", await StandardUserIdAsync("Operator"))));
+        Assert.Contains("Test operator", await FollowedHtmlAsync(op, ok));
 
-        var bad = await op.PostTicketActionAsync(id, "Assign", Fields(("assigneeId", await DemoUserIdAsync("Customer"))));
+        var bad = await op.PostTicketActionAsync(id, "Assign", Fields(("assigneeId", await StandardUserIdAsync("Customer"))));
         Assert.Contains("active operators and admins of this help desk only", await FollowedHtmlAsync(op, bad));
     }
 

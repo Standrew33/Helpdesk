@@ -57,18 +57,22 @@ public sealed partial class AppClient : IDisposable
         return await _http.GetAsync(redirect.Headers.Location);
     }
 
-    public async Task SignInAsDemoAsync(string role)
+    /// <param name="captcha">The answer of the bot check, for applications that have it switched on.</param>
+    public Task<HttpResponseMessage> SignInAsync(string email, string password, string? captcha = null)
     {
-        var response = await PostFormAsync("/Account/Login", $"/Account/Login?handler=Demo&role={role}", new Dictionary<string, string>());
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-    }
-
-    public Task<HttpResponseMessage> SignInAsync(string email, string password)
-        => PostFormAsync("/Account/Password", "/Account/Password", new Dictionary<string, string>
+        var fields = new Dictionary<string, string>
         {
             ["Input.Email"] = email,
             ["Input.Password"] = password,
-        });
+        };
+
+        if (captcha is not null)
+        {
+            fields[Helpdesk.Web.Security.CaptchaGuard.FieldName] = captcha;
+        }
+
+        return PostFormAsync("/Account/Password", "/Account/Password", fields);
+    }
 
     /// <summary>First step of the e-mail sign-in: asks for a code. A success redirects to the page for the code.</summary>
     public Task<HttpResponseMessage> RequestCodeAsync(string email, string? returnUrl = null)

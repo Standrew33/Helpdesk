@@ -70,7 +70,7 @@ public class SignUpTests(SqlServerFixture sql) : WebTestBase(sql)
         // The new user runs the help desk; nobody else is in it yet.
         var users = await client.GetHtmlAsync("/Admin/Users");
         Assert.Contains(Email, users);
-        Assert.DoesNotContain("@helpdesk.test", users);
+        Assert.DoesNotContain("@shared.test", users);
     }
 
     [Fact]
@@ -213,13 +213,4 @@ public class SignUpTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Equal(HttpStatusCode.Redirect, (await NewClient().SignInAsync(Email, TestPassword)).StatusCode);
     }
 
-    [Fact]
-    public async Task The_demo_addresses_cannot_be_used()
-    {
-        var response = await NewClient().RequestCodeAsync("admin@helpdesk.test");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("belongs to the demo", await response.Content.ReadAsStringAsync());
-        Assert.Empty(Factory.Mail.Messages);
-    }
 }

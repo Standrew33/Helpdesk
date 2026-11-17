@@ -2,7 +2,7 @@ namespace Helpdesk.Web.Data;
 
 /// <summary>
 /// The workspace that the accounts and tickets made before workspaces existed were moved into.
-/// The demo users live here as well; everyone who signs up gets a workspace of their own instead.
+/// Everyone who signs up now gets a workspace of their own instead.
 /// </summary>
 public static class SharedWorkspace
 {

@@ -598,49 +598,6 @@ a.user-chip.active {
   max-width: 26rem;
 }
 
-.demo-role {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: var(--hd-surface);
-  border: 1px solid var(--hd-border);
-  border-radius: 0.6rem;
-  padding: 0.7rem 0.9rem;
-  color: var(--hd-text);
-  transition: border-color 0.15s, background-color 0.15s;
-}
-
-.demo-role:hover {
-  border-color: #7fc7ba;
-  background: var(--hd-accent-soft);
-}
-
-.demo-role strong {
-  display: block;
-}
-
-.demo-role span {
-  color: var(--hd-muted);
-  font-size: 0.85rem;
-}
-
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--hd-muted);
-  font-size: 0.8rem;
-  margin: 1.5rem 0 1rem;
-}
-
-.divider::before,
-.divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--hd-border);
-}
-
 @media (max-width: 899.98px) {
   .auth-split {
     grid-template-columns: 1fr;
