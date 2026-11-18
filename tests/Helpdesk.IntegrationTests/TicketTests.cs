@@ -388,11 +388,31 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task A_customer_closes_a_ticket_only_with_a_reason_that_staff_see_in_the_comments()
+    {
+        var customer = await SignedInAsync("Customer");
+        var id = await customer.CreateTicketAsync("No longer needed");
+        Assert.Contains("data-close-reason=\"required\"", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
+
+        var refused = await customer.PostTicketActionAsync(id, "Status", Fields(("status", "Closed")));
+        Assert.Contains("Say why the ticket is being closed", await FollowedHtmlAsync(customer, refused));
+
+        await customer.PostTicketActionAsync(id, "Status", Fields(("status", "Closed"), ("reason", "Found the answer in the manual.")));
+
+        var op = await SignedInAsync("Operator");
+        var page = await op.GetHtmlAsync($"/Tickets/Details/{id}");
+        Assert.Contains("pill pill-closed", page);
+        Assert.Contains("Found the answer in the manual.", page);
+        Assert.Contains("Reason for closing", page);
+        Assert.DoesNotContain("data-close-reason=\"required\"", page);
+    }
+
+    [Fact]
     public async Task A_closed_ticket_cannot_be_edited()
     {
         var customer = await SignedInAsync("Customer");
         var id = await customer.CreateTicketAsync("Done");
-        await customer.PostTicketActionAsync(id, "Status", Fields(("status", "Closed")));
+        await customer.PostTicketActionAsync(id, "Status", Fields(("status", "Closed"), ("reason", "Sorted it out myself.")));
 
         // Staff still see the ticket's version, in the form that reopens it.
         var op = await SignedInAsync("Operator");

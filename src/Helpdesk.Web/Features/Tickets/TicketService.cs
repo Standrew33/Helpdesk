@@ -179,8 +179,9 @@ public class TicketService(
         return ticket!.Number;
     }
 
-    public Task<ServiceResult> ChangeStatusAsync(int number, Actor actor, string? rowVersion, TicketStatus status)
-        => UpdateAsync(number, actor, rowVersion, (ticket, now) => ticket.ChangeStatus(actor, status, now));
+    /// <summary>Changes the status; a customer closing their ticket gives the <paramref name="reason"/>.</summary>
+    public Task<ServiceResult> ChangeStatusAsync(int number, Actor actor, string? rowVersion, TicketStatus status, string? reason = null)
+        => UpdateAsync(number, actor, rowVersion, (ticket, now) => ticket.ChangeStatus(actor, status, now, reason));
 
     /// <summary>Changes the fields that are given and keeps the others as they are.</summary>
     public Task<ServiceResult> EditAsync(

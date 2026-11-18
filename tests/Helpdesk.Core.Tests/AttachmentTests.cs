@@ -53,7 +53,7 @@ public class AttachmentTests
     public void Closed_ticket_rejects_files()
     {
         var ticket = NewTicket();
-        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now);
+        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now, "Not needed");
 
         Assert.Throws<DomainException>(() => ticket.AddAttachment(Customer, "a.txt", 10, "stored-1", Now));
     }

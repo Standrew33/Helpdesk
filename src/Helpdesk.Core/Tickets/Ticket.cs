@@ -112,7 +112,11 @@ public sealed class Ticket
         return actor.Role.IsStaff() ? _comments : _comments.Where(c => !c.IsInternal);
     }
 
-    public void ChangeStatus(Actor actor, TicketStatus target, DateTimeOffset now)
+    /// <summary>
+    /// Moves the ticket along the workflow. A customer who closes their ticket says why; the reason is added to the
+    /// comments, where staff and the customer both see it.
+    /// </summary>
+    public void ChangeStatus(Actor actor, TicketStatus target, DateTimeOffset now, string? reason = null)
     {
         EnsureCanView(actor);
 
@@ -124,6 +128,18 @@ public sealed class Ticket
         if (!TicketWorkflow.IsAllowed(Status, target, actor.Role))
         {
             throw new DomainException($"Changing status from {Status} to {target} is not allowed.");
+        }
+
+        if (target == TicketStatus.Closed && actor.Role == UserRole.Customer)
+        {
+            var why = OptionalText(reason, "The reason", MaxCommentLength);
+
+            if (why.Length == 0)
+            {
+                throw new DomainException("Say why the ticket is being closed.");
+            }
+
+            _comments.Add(new Comment(actor.Id, why, isInternal: false, now, isClosingReason: true));
         }
 
         SetStatus(actor, target, now);

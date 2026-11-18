@@ -499,6 +499,7 @@ a.user-chip.active {
 .pill-active { background: #d9f2e6; color: #166534; }
 
 .tag-internal { background: #ffedd5; color: #c2410c; }
+.tag-closing { background: #e5e7eb; color: #374151; }
 
 /* Priority: a bookmark in the colour of the text, no background. */
 .prio {

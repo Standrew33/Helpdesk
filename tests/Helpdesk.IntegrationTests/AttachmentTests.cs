@@ -115,7 +115,7 @@ public class AttachmentTests(SqlServerFixture sql) : WebTestBase(sql)
     {
         var customer = await SignedInAsync("Customer");
         var id = await customer.CreateTicketAsync("Done already");
-        await customer.PostTicketActionAsync(id, "Status", new Dictionary<string, string> { ["status"] = "Closed" });
+        await customer.PostTicketActionAsync(id, "Status", new Dictionary<string, string> { ["status"] = "Closed", ["reason"] = "Not needed" });
 
         // Staff still sees a form with the current version on a closed ticket, so the rule itself is what answers.
         var op = await SignedInAsync("Operator");

@@ -95,8 +95,8 @@ public class DetailsModel(TicketService tickets) : PageModel
         return File(download.Content, download.ContentType, download.FileName);
     }
 
-    public Task<IActionResult> OnPostStatusAsync(string? rowVersion, TicketStatus status)
-        => RunAsync(actor => tickets.ChangeStatusAsync(Number, actor, rowVersion, status));
+    public Task<IActionResult> OnPostStatusAsync(string? rowVersion, TicketStatus status, string? reason)
+        => RunAsync(actor => tickets.ChangeStatusAsync(Number, actor, rowVersion, status, reason));
 
     // An empty field arrives as null; it is passed on as empty so that it is refused rather than left unchanged.
     public Task<IActionResult> OnPostSubjectAsync(string? rowVersion, string? subject)

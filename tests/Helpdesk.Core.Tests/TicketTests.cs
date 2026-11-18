@@ -148,7 +148,7 @@ public class TicketTests
         var ticket = NewTicket();
 
         Assert.Throws<DomainException>(() => ticket.AddComment(OtherCustomer, "hello", false, Now));
-        Assert.Throws<DomainException>(() => ticket.ChangeStatus(OtherCustomer, TicketStatus.Closed, Now));
+        Assert.Throws<DomainException>(() => ticket.ChangeStatus(OtherCustomer, TicketStatus.Closed, Now, "Not mine"));
     }
 
     [Fact]
@@ -188,7 +188,7 @@ public class TicketTests
         var ticket = NewTicket();
         var closedAt = Now.AddHours(2);
 
-        ticket.ChangeStatus(Customer, TicketStatus.Closed, closedAt);
+        ticket.ChangeStatus(Customer, TicketStatus.Closed, closedAt, "Fixed itself");
         Assert.Equal(closedAt, ticket.ClosedAt);
 
         ticket.ChangeStatus(Operator, TicketStatus.InProgress, closedAt.AddHours(1));
@@ -196,10 +196,39 @@ public class TicketTests
     }
 
     [Fact]
+    public void A_customer_closes_a_ticket_only_with_a_reason_which_becomes_a_comment()
+    {
+        var ticket = NewTicket();
+
+        Assert.Throws<DomainException>(() => ticket.ChangeStatus(Customer, TicketStatus.Closed, Now));
+        Assert.Throws<DomainException>(() => ticket.ChangeStatus(Customer, TicketStatus.Closed, Now, "   "));
+        Assert.Throws<DomainException>(() => ticket.ChangeStatus(Customer, TicketStatus.Closed, Now, new string('x', Ticket.MaxCommentLength + 1)));
+        Assert.Equal(TicketStatus.New, ticket.Status);
+        Assert.Empty(ticket.Comments);
+
+        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now, "  The printer works again.  ");
+
+        Assert.Equal(TicketStatus.Closed, ticket.Status);
+        var reason = Assert.Single(ticket.Comments);
+        Assert.Equal(("The printer works again.", false, true, Customer.Id), (reason.Body, reason.IsInternal, reason.IsClosingReason, reason.AuthorId));
+    }
+
+    [Fact]
+    public void Staff_close_a_ticket_without_a_reason()
+    {
+        var ticket = NewTicket();
+
+        ticket.ChangeStatus(Operator, TicketStatus.Closed, Now);
+
+        Assert.Equal(TicketStatus.Closed, ticket.Status);
+        Assert.Empty(ticket.Comments);
+    }
+
+    [Fact]
     public void Customer_cannot_reopen_a_closed_ticket()
     {
         var ticket = NewTicket();
-        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now);
+        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now, "Not needed");
 
         Assert.Throws<DomainException>(() => ticket.ChangeStatus(Customer, TicketStatus.InProgress, Now));
     }
@@ -302,7 +331,7 @@ public class TicketTests
         Assert.Throws<DomainException>(() => ticket.SetDueDate(OtherCustomer, new DateOnly(2026, 3, 9), Now));
         Assert.Throws<DomainException>(() => ticket.SetDueDate(Operator with { WorkspaceId = OtherWorkspace }, new DateOnly(2026, 3, 9), Now));
 
-        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now);
+        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now, "Not needed");
         Assert.Throws<DomainException>(() => ticket.SetDueDate(Operator, new DateOnly(2026, 3, 9), Now));
     }
 
@@ -384,7 +413,7 @@ public class TicketTests
     public void Closed_ticket_cannot_be_assigned_commented_or_edited()
     {
         var ticket = NewTicket();
-        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now);
+        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now, "Not needed");
 
         Assert.Throws<DomainException>(() => ticket.Assign(Operator, Operator.Id, Now));
         Assert.Throws<DomainException>(() => ticket.AddComment(Customer, "hi", false, Now));
@@ -462,11 +491,11 @@ public class TicketTests
     {
         var onTime = NewTicket();
         onTime.SetDueDate(Operator, new DateOnly(2026, 3, 3), Now);
-        onTime.ChangeStatus(Customer, TicketStatus.Closed, Now.AddDays(1));
+        onTime.ChangeStatus(Customer, TicketStatus.Closed, Now.AddDays(1), "Done");
 
         var late = NewTicket();
         late.SetDueDate(Operator, new DateOnly(2026, 3, 3), Now);
-        late.ChangeStatus(Customer, TicketStatus.Closed, Now.AddDays(2));
+        late.ChangeStatus(Customer, TicketStatus.Closed, Now.AddDays(2), "Done");
 
         Assert.False(onTime.IsOverdue(Now.AddDays(30)));
         Assert.True(late.IsOverdue(Now.AddDays(30)));

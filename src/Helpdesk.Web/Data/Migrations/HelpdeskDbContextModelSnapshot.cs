@@ -87,6 +87,9 @@ namespace Helpdesk.Web.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<bool>("IsClosingReason")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsInternal")
                         .HasColumnType("bit");
 

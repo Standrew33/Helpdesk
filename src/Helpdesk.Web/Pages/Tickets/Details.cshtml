@@ -21,7 +21,7 @@
         <div class="d-flex flex-wrap align-items-center gap-2">
             @if (Model.StatusOptions.Count > 1)
             {
-                <form method="post" asp-page-handler="Status" data-instant>
+                <form method="post" asp-page-handler="Status" data-instant data-close-reason="@(Model.IsStaff ? "" : "required")">
                     <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
                     <span id="StatusLabel" class="visually-hidden">Status</span>
                     <div class="dropdown choice choice-inline" data-choice>
@@ -193,7 +193,7 @@
             </details>
         }
 
-        <details id="ticket-comments" class="activity" open>
+        <details id="ticket-comments" class="activity" open data-live>
             <summary>
                 <h2 class="section-title">Comments</h2>
                 <span class="activity-count">@Model.Details.Comments.Count</span>
@@ -215,6 +215,10 @@
                                 @if (comment.IsInternal)
                                 {
                                     <span class="tag tag-internal">Internal note</span>
+                                }
+                                @if (comment.IsClosingReason)
+                                {
+                                    <span class="tag tag-closing">Reason for closing</span>
                                 }
                             </div>
                             <div class="comment-text">@comment.Body</div>
@@ -308,6 +312,12 @@
     </div>
 </div>
 
+@if (!Model.IsStaff && Model.IsOpen)
+{
+    <partial name="_CloseReason" />
+}
+
 @section Scripts {
     <script src="~/js/ticket-page.js" asp-append-version="true"></script>
+    <script src="~/js/close-reason.js" asp-append-version="true"></script>
 }

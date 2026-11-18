@@ -2,12 +2,13 @@ namespace Helpdesk.Core.Tickets;
 
 public sealed class Comment
 {
-    internal Comment(string authorId, string body, bool isInternal, DateTimeOffset createdAt)
+    internal Comment(string authorId, string body, bool isInternal, DateTimeOffset createdAt, bool isClosingReason = false)
     {
         AuthorId = authorId;
         Body = body;
         IsInternal = isInternal;
         CreatedAt = createdAt;
+        IsClosingReason = isClosingReason;
     }
 
     // Required by EF Core.
@@ -29,4 +30,7 @@ public sealed class Comment
     public bool IsInternal { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
+
+    /// <summary>The reason a customer gave for closing the ticket.</summary>
+    public bool IsClosingReason { get; private set; }
 }
