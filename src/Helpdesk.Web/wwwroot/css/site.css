@@ -765,6 +765,12 @@ form[aria-busy="true"] select {
   margin-bottom: 1rem;
 }
 
+/* The parts the list redraws are not boxes of their own: an empty one takes no gap, so the row ends where the
+   table ends. */
+.toolbar > [data-live] {
+  display: contents;
+}
+
 .toolbar-search {
   flex: 1 1 16rem;
   min-width: 0;
