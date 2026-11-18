@@ -1020,7 +1020,12 @@ form[aria-busy="true"] select {
   gap: 0.75rem;
 }
 
-.inline-edit > .page-title,
+/* The pencil sits right after the title; the field that replaces the title takes the whole line. */
+.inline-edit > .page-title {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
 .inline-edit > .inline-field {
   flex: 1;
   min-width: 0;
