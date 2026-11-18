@@ -154,9 +154,10 @@
         }
 
         var value = parts.field.value.trim();
+        var erased = value === '' && !parts.field.hasAttribute('data-inline-optional');
 
-        // Nothing changed, or everything erased: the text stays as it was.
-        if (value === '' || value === parts.field.defaultValue.trim()) {
+        // Nothing changed, or a text that must be there erased: the text stays as it was.
+        if (erased || value === parts.field.defaultValue.trim()) {
             parts.field.value = parts.field.defaultValue;
             close(parts);
             return;

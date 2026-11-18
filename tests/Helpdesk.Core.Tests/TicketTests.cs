@@ -67,12 +67,22 @@ public class TicketTests
     }
 
     [Theory]
-    [InlineData("", "text")]
-    [InlineData("   ", "text")]
-    [InlineData("subject", "")]
-    public void Create_requires_subject_and_description(string subject, string description)
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Create_requires_a_subject(string subject)
     {
-        Assert.Throws<DomainException>(() => Ticket.Create(1, subject, description, TicketPriority.Normal, Customer, Now));
+        Assert.Throws<DomainException>(() => Ticket.Create(1, subject, "text", TicketPriority.Normal, Customer, Now));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void The_description_may_be_left_empty(string? description)
+    {
+        var ticket = Ticket.Create(1, "Subject", description!, TicketPriority.Normal, Customer, Now);
+
+        Assert.Equal(string.Empty, ticket.Description);
     }
 
     [Fact]
@@ -294,14 +304,23 @@ public class TicketTests
         Assert.Equal("Edited by staff", ticket.Subject);
     }
 
-    [Theory]
-    [InlineData("", "text")]
-    [InlineData("subject", " ")]
-    public void An_edit_needs_a_subject_and_a_description(string subject, string description)
+    [Fact]
+    public void An_edit_needs_a_subject()
     {
         var ticket = NewTicket();
 
-        Assert.Throws<DomainException>(() => ticket.Edit(Customer, subject, description, ticket.Priority, Now));
+        Assert.Throws<DomainException>(() => ticket.Edit(Customer, " ", ticket.Description, ticket.Priority, Now));
+    }
+
+    [Fact]
+    public void An_edit_may_erase_the_description()
+    {
+        var ticket = NewTicket();
+
+        ticket.Edit(Customer, ticket.Subject, " ", ticket.Priority, Now);
+
+        Assert.Equal(string.Empty, ticket.Description);
+        Assert.Equal("Description", ticket.History[^1].Field);
     }
 
     [Fact]

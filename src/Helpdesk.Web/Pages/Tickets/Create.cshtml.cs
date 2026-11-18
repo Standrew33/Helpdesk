@@ -31,7 +31,7 @@ public class CreateModel(TicketService tickets) : PageModel
 
         try
         {
-            var number = await tickets.CreateAsync(User.ToActor(), Input.Subject, Input.Description, Input.Priority);
+            var number = await tickets.CreateAsync(User.ToActor(), Input.Subject, Input.Description ?? string.Empty, Input.Priority);
             return RedirectToPage("Details", new { number });
         }
         catch (DomainException ex)
@@ -47,10 +47,9 @@ public class CreateModel(TicketService tickets) : PageModel
         [StringLength(Ticket.MaxSubjectLength)]
         public string Subject { get; set; } = string.Empty;
 
-        [Required]
         [StringLength(Ticket.MaxDescriptionLength)]
         [DataType(DataType.MultilineText)]
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; }
 
         public TicketPriority Priority { get; set; } = TicketPriority.Normal;
     }

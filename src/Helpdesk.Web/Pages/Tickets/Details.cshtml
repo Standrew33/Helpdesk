@@ -90,8 +90,8 @@
                             <button type="button" id="DescriptionEdit" class="icon-btn" title="Edit description" aria-label="Edit description" hidden data-inline-start>@pencil</button>
                         </div>
                         <p class="description" data-inline-view>@ticket.Description</p>
-                        <textarea id="Description" name="description" rows="4" maxlength="@Ticket.MaxDescriptionLength" required
-                                  class="form-control inline-field inline-field-text" aria-label="Description" hidden data-inline-field>@ticket.Description</textarea>
+                        <textarea id="Description" name="description" rows="4" maxlength="@Ticket.MaxDescriptionLength"
+                                  class="form-control inline-field inline-field-text" aria-label="Description" hidden data-inline-field data-inline-optional>@ticket.Description</textarea>
                     </form>
                 }
                 else

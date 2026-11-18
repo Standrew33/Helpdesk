@@ -78,7 +78,7 @@ public sealed class Ticket
             WorkspaceId = customer.WorkspaceId,
             Number = number,
             Subject = RequireText(subject, "Subject", MaxSubjectLength),
-            Description = RequireText(description, "Description", MaxDescriptionLength),
+            Description = OptionalText(description, "Description", MaxDescriptionLength),
             Status = TicketStatus.New,
             Priority = priority,
             CustomerId = customer.Id,
@@ -140,7 +140,7 @@ public sealed class Ticket
 
     /// <summary>
     /// Changes what the ticket says and how pressing it is. The customer who opened it and staff may edit an open
-    /// ticket; only staff may make it urgent. Each changed field is recorded; nothing changed means nothing recorded.
+    /// ticket; only staff may make it urgent. The description may be left empty. Each changed field is recorded; nothing changed means nothing recorded.
     /// </summary>
     public void Edit(Actor actor, string subject, string description, TicketPriority priority, DateTimeOffset now)
     {
@@ -148,7 +148,7 @@ public sealed class Ticket
         EnsureNotClosed();
 
         var newSubject = RequireText(subject, "Subject", MaxSubjectLength);
-        var newDescription = RequireText(description, "Description", MaxDescriptionLength);
+        var newDescription = OptionalText(description, "Description", MaxDescriptionLength);
 
         if (priority == TicketPriority.Urgent && Priority != TicketPriority.Urgent && !actor.Role.IsStaff())
         {
@@ -291,12 +291,20 @@ public sealed class Ticket
 
     private static string RequireText(string? value, string name, int maxLength)
     {
-        var text = value?.Trim();
+        var text = OptionalText(value, name, maxLength);
 
-        if (string.IsNullOrEmpty(text))
+        if (text.Length == 0)
         {
             throw new DomainException($"{name} is required.");
         }
+
+        return text;
+    }
+
+    /// <summary>Trimmed text that may be left empty, though not too long.</summary>
+    private static string OptionalText(string? value, string name, int maxLength)
+    {
+        var text = value?.Trim() ?? string.Empty;
 
         if (text.Length > maxLength)
         {

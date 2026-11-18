@@ -44,6 +44,23 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task A_ticket_can_be_created_without_a_description_and_it_can_be_erased_later()
+    {
+        var customer = await SignedInAsync("Customer");
+
+        var response = await customer.PostFormAsync("/Tickets/Create", "/Tickets/Create", Fields(
+            ("Input.Subject", "Just the subject"), ("Input.Description", ""), ("Input.Priority", "Normal")));
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        var number = int.Parse(response.Headers.Location!.OriginalString.Split('/')[^1], System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Contains("Just the subject", await customer.GetHtmlAsync($"/Tickets/Details/{number}"));
+
+        var other = await customer.CreateTicketAsync("With a text", "Some words to erase.");
+        await customer.PostTicketActionAsync(other, "Description", Fields(("description", "")));
+        Assert.DoesNotContain("Some words to erase.", await customer.GetHtmlAsync($"/Tickets/Details/{other}"));
+    }
+
+    [Fact]
     public async Task Customer_cannot_open_an_urgent_ticket()
     {
         var customer = await SignedInAsync("Customer");
