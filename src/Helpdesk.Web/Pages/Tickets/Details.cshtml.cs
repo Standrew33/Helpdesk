@@ -1,3 +1,4 @@
+using System.Globalization;
 using Helpdesk.Core.Tickets;
 using Helpdesk.Core.Users;
 using Helpdesk.Web.Features.Tickets;
@@ -31,6 +32,12 @@ public class DetailsModel(TicketService tickets) : PageModel
         "priority", "Priority", TicketDisplay.PrioritiesFor(IsStaff, Details.Ticket.Priority), Details.Ticket.Priority);
 
     public IReadOnlyList<AssigneeOption> Assignees { get; private set; } = [];
+
+    /// <summary>Today in UTC, the day due dates are measured against.</summary>
+    public DateOnly Today { get; } = Ticket.Today(DateTimeOffset.UtcNow);
+
+    /// <summary>The earliest day the calendar offers: today, or the due date already passed.</summary>
+    public DateOnly EarliestDueDate => Details.Ticket.DueDate is { } due && due < Today ? due : Today;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
@@ -107,6 +114,25 @@ public class DetailsModel(TicketService tickets) : PageModel
         }
 
         return await RunAsync(actor => tickets.EditAsync(Number, actor, rowVersion, priority: priority));
+    }
+
+    /// <summary>An empty field removes the due date; text that is not a day is refused rather than taken as empty.</summary>
+    public async Task<IActionResult> OnPostDueDateAsync(string? rowVersion, string? dueDate)
+    {
+        DateOnly? day = null;
+
+        if (!string.IsNullOrWhiteSpace(dueDate))
+        {
+            if (!DateOnly.TryParseExact(dueDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+            {
+                Error = "Choose the due date in the calendar.";
+                return RedirectToPage(new { number = Number });
+            }
+
+            day = parsed;
+        }
+
+        return await RunAsync(actor => tickets.SetDueDateAsync(Number, actor, rowVersion, day));
     }
 
     public Task<IActionResult> OnPostAssignAsync(string? rowVersion, string? assigneeId)

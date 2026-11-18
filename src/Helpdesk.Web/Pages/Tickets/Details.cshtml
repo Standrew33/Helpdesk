@@ -176,6 +176,10 @@
                                     {
                                         <text>Assignee: @Model.Details.NameOf(entry.OldValue) &rarr; @Model.Details.NameOf(entry.NewValue)</text>
                                     }
+                                    else if (entry.Field == "Due date")
+                                    {
+                                        <text>Due date: @TicketDisplay.DayInHistory(entry.OldValue) &rarr; @TicketDisplay.DayInHistory(entry.NewValue)</text>
+                                    }
                                     else
                                     {
                                         <text>@entry.Field: @entry.OldValue &rarr; @entry.NewValue</text>
@@ -278,7 +282,25 @@
                             }
                         </dd>
                     </div>
-                    <div><dt>Due</dt><dd class="@(ticket.IsOverdue(DateTimeOffset.UtcNow) ? "overdue" : "")">@TicketDisplay.Day(ticket.DueDate, Ticket.Today(DateTimeOffset.UtcNow))</dd></div>
+                    <div>
+                        <dt><label for="dueDate" class="m-0">Due</label></dt>
+                        <dd class="@(ticket.IsOverdue(DateTimeOffset.UtcNow) ? "overdue" : "")">
+                            @if (Model.IsOpen)
+                            {
+                                @* The calendar of the browser; an empty field means no due date. *@
+                                <form method="post" asp-page-handler="DueDate" data-instant>
+                                    <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
+                                    <input id="dueDate" type="date" name="dueDate" value="@TicketDisplay.DayValue(ticket.DueDate)"
+                                           min="@TicketDisplay.DayValue(Model.EarliestDueDate)" class="form-control form-control-sm meta-date" />
+                                    <noscript><button type="submit" class="btn btn-outline-primary btn-sm mt-2">Save</button></noscript>
+                                </form>
+                            }
+                            else
+                            {
+                                @TicketDisplay.Day(ticket.DueDate, Model.Today)
+                            }
+                        </dd>
+                    </div>
                     <div><dt>Last update</dt><dd>@TicketDisplay.Date(ticket.UpdatedAt)</dd></div>
                 </dl>
             </div>

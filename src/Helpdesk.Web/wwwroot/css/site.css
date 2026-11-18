@@ -755,9 +755,15 @@ form[aria-busy="true"] select {
   min-width: 0;
 }
 
-.meta-select {
+.meta-select,
+.meta-date {
   width: auto;
   max-width: 100%;
+}
+
+.overdue .meta-date {
+  color: var(--hd-danger);
+  font-weight: 600;
 }
 
 /* ---------- Ticket list ---------- */

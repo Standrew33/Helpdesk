@@ -67,6 +67,12 @@ public static class TicketDisplay
         { } day => day.ToString("d MMM yyyy", CultureInfo.InvariantCulture),
     };
 
+    /// <summary>A day kept in the history ("2026-03-09") as "9 Mar 2026"; "none" when there was none.</summary>
+    public static string DayInHistory(string? iso)
+        => DateOnly.TryParseExact(iso, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day)
+            ? day.ToString("d MMM yyyy", CultureInfo.InvariantCulture)
+            : "none";
+
     /// <summary>A day as the value of a date field.</summary>
     public static string DayValue(DateOnly? value) => value?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty;
 }

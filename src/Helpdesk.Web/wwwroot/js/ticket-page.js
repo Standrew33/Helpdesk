@@ -311,12 +311,37 @@
         }
     });
 
-    // Lists and choices that save on their own: no button to press.
+    // Lists and choices that save on their own: no button to press. A date can also be typed, and every digit of
+    // the year makes a new valid date; it is saved once the typing pauses, or when the field is left.
+    var dateTimers = new WeakMap();
+
+    function sendDate(form) {
+        clearTimeout(dateTimers.get(form));
+        dateTimers.delete(form);
+        send(form);
+    }
+
     document.addEventListener('change', function (event) {
         var form = event.target.closest('form[data-instant]');
 
-        if (form) {
-            send(form);
+        if (!form) {
+            return;
+        }
+
+        if (event.target.type === 'date') {
+            clearTimeout(dateTimers.get(form));
+            dateTimers.set(form, setTimeout(function () { sendDate(form); }, 800));
+            return;
+        }
+
+        send(form);
+    });
+
+    document.addEventListener('focusout', function (event) {
+        var form = event.target.type === 'date' ? event.target.closest('form[data-instant]') : null;
+
+        if (form && dateTimers.has(form)) {
+            sendDate(form);
         }
     });
 }());

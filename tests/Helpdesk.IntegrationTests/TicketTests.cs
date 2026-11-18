@@ -60,22 +60,49 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.DoesNotContain("Some words to erase.", await customer.GetHtmlAsync($"/Tickets/Details/{other}"));
     }
 
+    private static string DayValue(int daysFromToday)
+        => DateTime.UtcNow.Date.AddDays(daysFromToday).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string DueField(string value) => $"id=\"dueDate\" type=\"date\" name=\"dueDate\" value=\"{value}\"";
+
     [Fact]
-    public async Task A_due_date_is_shown_only_when_one_was_chosen_and_never_a_past_one()
+    public async Task A_due_date_is_there_only_when_one_was_chosen_and_never_a_past_one()
     {
         var customer = await SignedInAsync("Customer");
-        var due = DateTime.UtcNow.Date.AddDays(400);
 
         var dated = await customer.PostFormAsync("/Tickets/Create", "/Tickets/Create", Fields(
-            ("Input.Subject", "With a date"), ("Input.Priority", "Normal"), ("Input.DueDate", due.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))));
+            ("Input.Subject", "With a date"), ("Input.Priority", "Normal"), ("Input.DueDate", DayValue(400))));
         var past = await customer.PostFormAsync("/Tickets/Create", "/Tickets/Create", Fields(
             ("Input.Subject", "In the past"), ("Input.Priority", "Normal"), ("Input.DueDate", "2020-01-01")));
         var undated = await customer.CreateTicketAsync("Without a date");
 
         Assert.Equal(HttpStatusCode.Redirect, dated.StatusCode);
-        Assert.Contains($"<dt>Due</dt><dd class=\"\">{due.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)}</dd>", await (await customer.FollowAsync(dated)).Content.ReadAsStringAsync());
+        Assert.Contains(DueField(DayValue(400)), await (await customer.FollowAsync(dated)).Content.ReadAsStringAsync());
         Assert.Contains("The due date cannot be in the past", await past.Content.ReadAsStringAsync());
-        Assert.Contains("<dt>Due</dt><dd class=\"\">&#x2013;</dd>", await customer.GetHtmlAsync($"/Tickets/Details/{undated}"));
+        Assert.Contains(DueField(string.Empty), await customer.GetHtmlAsync($"/Tickets/Details/{undated}"));
+    }
+
+    [Fact]
+    public async Task The_customer_and_staff_change_the_due_date_on_the_ticket_page()
+    {
+        var customer = await SignedInAsync("Customer");
+        var number = await customer.CreateTicketAsync("Needs a date");
+        var op = await SignedInAsync("Operator");
+
+        await customer.PostTicketActionAsync(number, "DueDate", Fields(("dueDate", DayValue(5))));
+        Assert.Contains(DueField(DayValue(5)), await op.GetHtmlAsync($"/Tickets/Details/{number}"));
+
+        await op.PostTicketActionAsync(number, "DueDate", Fields(("dueDate", DayValue(3))));
+        var past = await op.PostTicketActionAsync(number, "DueDate", Fields(("dueDate", "2020-01-01")));
+        Assert.Contains("The due date cannot be in the past", await FollowedHtmlAsync(op, past));
+        var garbage = await op.PostTicketActionAsync(number, "DueDate", Fields(("dueDate", "next week")));
+        Assert.Contains("Choose the due date in the calendar", await FollowedHtmlAsync(op, garbage));
+        var page = await op.GetHtmlAsync($"/Tickets/Details/{number}");
+        Assert.Contains(DueField(DayValue(3)), page);
+        Assert.Contains("Due date: none &rarr; ", page);
+
+        await customer.PostTicketActionAsync(number, "DueDate", Fields(("dueDate", "")));
+        Assert.Contains(DueField(string.Empty), await customer.GetHtmlAsync($"/Tickets/Details/{number}"));
     }
 
     [Fact]

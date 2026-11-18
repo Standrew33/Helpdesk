@@ -188,6 +188,10 @@ public class TicketService(
         => UpdateAsync(number, actor, rowVersion, (ticket, now) => ticket.Edit(
             actor, subject ?? ticket.Subject, description ?? ticket.Description, priority ?? ticket.Priority, now));
 
+    /// <summary>Sets the due date of a ticket, or removes it with null.</summary>
+    public Task<ServiceResult> SetDueDateAsync(int number, Actor actor, string? rowVersion, DateOnly? dueDate)
+        => UpdateAsync(number, actor, rowVersion, (ticket, now) => ticket.SetDueDate(actor, dueDate, now));
+
     public Task<ServiceResult> AddCommentAsync(int number, Actor actor, string? rowVersion, string body, bool isInternal)
         => UpdateAsync(number, actor, rowVersion, (ticket, now) => ticket.AddComment(actor, body, isInternal, now));
 

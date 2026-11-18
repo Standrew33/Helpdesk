@@ -70,6 +70,10 @@
                             {
                                 <text>Assignee: @details.NameOf(entry.OldValue) &rarr; @details.NameOf(entry.NewValue)</text>
                             }
+                            else if (entry.Field == "Due date")
+                            {
+                                <text>Due date: @TicketDisplay.DayInHistory(entry.OldValue) &rarr; @TicketDisplay.DayInHistory(entry.NewValue)</text>
+                            }
                             else
                             {
                                 <text>@entry.Field: @entry.OldValue &rarr; @entry.NewValue</text>
