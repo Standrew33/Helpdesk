@@ -391,6 +391,21 @@ a.user-chip.active {
   --bs-btn-focus-shadow-rgb: 15, 143, 126;
 }
 
+/* A button that is only an icon: as tall as the others, and as wide as it is tall. */
+.btn-square {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(1.5em + 0.75rem + 2px);
+  height: calc(1.5em + 0.75rem + 2px);
+  padding: 0;
+}
+
+.btn-square svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
 .btn-outline-primary {
   --bs-btn-color: var(--hd-accent-dark);
   --bs-btn-border-color: #a9d9d0;

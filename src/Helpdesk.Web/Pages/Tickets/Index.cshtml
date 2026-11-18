@@ -16,7 +16,9 @@
     </div>
     @if (Model.IsCustomer)
     {
-        <a class="btn btn-primary" asp-page="Create">New ticket</a>
+        <a class="btn btn-primary btn-square" asp-page="Create" title="New ticket" aria-label="New ticket">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        </a>
     }
 </div>
 
