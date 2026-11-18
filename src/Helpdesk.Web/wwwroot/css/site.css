@@ -208,9 +208,12 @@ a.user-chip.active {
   white-space: nowrap;
 }
 
-.user-role {
+.user-email {
   font-size: 0.75rem;
   color: #7f9a95;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .btn-signout {

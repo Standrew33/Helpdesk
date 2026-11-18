@@ -14,6 +14,13 @@ public static class ClaimsPrincipalExtensions
         return principal.FindFirstValue(AppClaimTypes.DisplayName) ?? principal.Identity?.Name ?? string.Empty;
     }
 
+    /// <summary>The e-mail address of the signed-in user; the sign-in name is the address too.</summary>
+    public static string Email(this ClaimsPrincipal principal)
+    {
+        ArgumentNullException.ThrowIfNull(principal);
+        return principal.FindFirstValue(ClaimTypes.Email) ?? principal.Identity?.Name ?? string.Empty;
+    }
+
     /// <summary>Maps the signed-in user to the actor the domain works with.</summary>
     public static Actor ToActor(this ClaimsPrincipal principal)
     {

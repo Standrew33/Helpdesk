@@ -74,7 +74,7 @@ public class PlatformTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Equal("/Platform", landing.Headers.Location!.OriginalString);
 
         var platform = await client.GetHtmlAsync("/Platform");
-        Assert.Contains("Superadmin", platform);
+        Assert.Contains($"<span class=\"user-email\">{Owner}</span>", platform);
         Assert.Contains("Help desks", platform);
         Assert.DoesNotContain("href=\"/Tickets\"", platform);
     }

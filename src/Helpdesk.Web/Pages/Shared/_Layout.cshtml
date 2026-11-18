@@ -2,13 +2,13 @@
     var page = ViewContext.RouteData.Values["page"] as string ?? "";
     var isSignedIn = User.Identity?.IsAuthenticated == true;
     var displayName = User.DisplayName();
+    var email = User.Email();
     var role = User.IsInRole(RoleNames.Admin) ? RoleNames.Admin
         : User.IsInRole(RoleNames.Operator) ? RoleNames.Operator
         : User.IsInRole(RoleNames.Customer) ? RoleNames.Customer
         : "";
     var isOwner = User.IsPlatformOwner();
     var inWorkspace = User.WorkspaceId() is not null;
-    var roleLabel = role.Length > 0 ? role : isOwner ? "Superadmin" : "";
     var home = inWorkspace ? "/Tickets/Index" : "/Platform/Index";
     var onTickets = page is "/Tickets/Index" or "/Tickets/Details";
     var body = RenderBody();
@@ -85,7 +85,7 @@
                         <span class="avatar" aria-hidden="true">@(displayName.Length > 0 ? displayName[..1].ToUpperInvariant() : "?")</span>
                         <span class="user-meta">
                             <span class="user-name">@displayName</span>
-                            <span class="user-role">@roleLabel</span>
+                            <span class="user-email">@email</span>
                         </span>
                     </a>
                     <form method="post" asp-page="/Account/Logout">
