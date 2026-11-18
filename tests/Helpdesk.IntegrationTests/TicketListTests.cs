@@ -24,6 +24,19 @@ public partial class TicketListTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task Every_row_opens_its_ticket_from_the_icon_at_its_end_and_on_a_double_click()
+    {
+        var customer = await SignedInAsync("Customer");
+        var number = await customer.CreateTicketAsync("Open me");
+
+        var list = await customer.GetHtmlAsync("/Tickets");
+
+        Assert.Contains($"<tr data-open=\"/Tickets/Details/{number}\">", list);
+        Assert.Contains($"aria-label=\"Open ticket #{number}\"", list);
+        Assert.Contains("<span class=\"ticket-subject\">Open me</span>", list);
+    }
+
+    [Fact]
     public async Task Long_lists_are_split_into_pages()
     {
         var customer = await SignedInAsync("Customer");

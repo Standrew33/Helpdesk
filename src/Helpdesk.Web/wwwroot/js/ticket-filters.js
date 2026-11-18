@@ -94,6 +94,15 @@
         load(urlOfForm());
     });
 
+    // A double click on a row opens its ticket, unless it was on something of its own, such as a link.
+    document.addEventListener('dblclick', function (event) {
+        var row = event.target.closest('tr[data-open]');
+
+        if (row && !event.target.closest('a, button, input, select, label, .dropdown-menu')) {
+            window.location.href = row.getAttribute('data-open');
+        }
+    });
+
     document.addEventListener('click', function (event) {
         var link = event.target.closest('a[data-live-link]');
 

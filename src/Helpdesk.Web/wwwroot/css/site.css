@@ -933,8 +933,18 @@ form[aria-busy="true"] select {
   color: var(--hd-text);
 }
 
-.ticket-subject:hover {
-  color: var(--hd-accent-dark);
+/* A row opens with a double click; the icon at its end opens it with one click or from the keyboard. */
+.ticket-table tbody tr[data-open] {
+  cursor: default;
+  user-select: none;
+}
+
+.ticket-table .ticket-open-col {
+  width: 1%;
+  padding-left: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  text-align: right;
 }
 
 .overdue {
