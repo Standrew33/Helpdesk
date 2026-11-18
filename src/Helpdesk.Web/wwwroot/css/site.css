@@ -799,6 +799,48 @@ form[aria-busy="true"] select {
   width: auto;
 }
 
+/* While the list asks for new results: a bar runs along its top and the old results fade. Both wait a moment,
+   so a quick answer does not make the page flicker. */
+#ticket-results {
+  position: relative;
+}
+
+#ticket-results[aria-busy="true"]::before {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent 0%, var(--hd-accent) 40%, var(--hd-accent) 60%, transparent 100%) no-repeat;
+  background-size: 40% 100%;
+  opacity: 0;
+  animation: results-loading 1s linear 0.15s infinite, results-show 0s linear 0.15s forwards;
+}
+
+#ticket-results[aria-busy="true"] > * {
+  opacity: 0.55;
+  transition: opacity 0.2s ease 0.15s;
+}
+
+@keyframes results-loading {
+  from { background-position: -70% 0; }
+  to { background-position: 170% 0; }
+}
+
+@keyframes results-show {
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ticket-results[aria-busy="true"]::before {
+    animation: results-show 0s linear 0.15s forwards;
+    background: var(--hd-accent);
+  }
+}
+
 .pager {
   display: flex;
   align-items: center;

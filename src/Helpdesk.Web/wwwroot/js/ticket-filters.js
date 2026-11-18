@@ -19,6 +19,13 @@
 
         pending = new AbortController();
 
+        // The style sheet shows a loading bar; the results drawn anew come without the mark.
+        var results = document.getElementById('ticket-results');
+
+        if (results) {
+            results.setAttribute('aria-busy', 'true');
+        }
+
         fetch(url, { signal: pending.signal, credentials: 'same-origin' })
             .then(function (response) {
                 // A signed-out session or an error page is shown as a whole page.
