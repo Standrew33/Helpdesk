@@ -52,6 +52,9 @@
     </span>
 </form>
 
+@* A change made in a row that was refused is told here; the list itself is drawn again either way. *@
+<div id="ticket-list-alert" class="alert alert-danger" role="alert" hidden></div>
+
 <div id="ticket-results" data-live>
 
 @if (result.Items.Count == 0)
@@ -98,8 +101,51 @@ else
                         <tr data-open="@Url.Page("Details", new { number = item.Number })">
                             <td class="ticket-id">@item.Number</td>
                             <td><span class="ticket-subject">@item.Subject</span></td>
-                            <td><span class="@TicketDisplay.StatusClass(item.Status)">@TicketDisplay.StatusText(item.Status)</span></td>
-                            <td><partial name="_Priority" model="item.Priority" /></td>
+                            @* Status and priority change right here, through the handlers of the ticket page. *@
+                            <td>
+                                @if (Model.StatusOptionsFor(item.Status) is { Count: > 1 } statuses)
+                                {
+                                    <form method="post" asp-page="Details" asp-page-handler="Status" asp-route-number="@item.Number"
+                                          data-row-instant data-close-reason="@(Model.IsCustomer ? "required" : "")">
+                                        <input type="hidden" name="rowVersion" value="@item.RowVersion" />
+                                        <span id="Status@(item.Number)Label" class="visually-hidden">Status of ticket #@item.Number</span>
+                                        <div class="dropdown choice choice-inline" data-choice>
+                                            <button type="button" id="Status@(item.Number)" class="choice-toggle" data-bs-toggle="dropdown" aria-expanded="false"
+                                                    aria-labelledby="Status@(item.Number)Label Status@(item.Number)" data-bs-popper-config="{&quot;strategy&quot;:&quot;fixed&quot;}">
+                                                <span data-choice-label><span class="@TicketDisplay.StatusClass(item.Status)">@TicketDisplay.StatusText(item.Status)</span></span>
+                                            </button>
+                                            <div class="dropdown-menu choice-menu">
+                                                @foreach (var status in statuses)
+                                                {
+                                                    <label class="choice-option">
+                                                        <input type="radio" name="status" value="@status" checked="@(status == item.Status)" class="form-check-input" />
+                                                        <span data-choice-view><span class="@TicketDisplay.StatusClass(status)">@TicketDisplay.StatusText(status)</span></span>
+                                                    </label>
+                                                }
+                                            </div>
+                                        </div>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="@TicketDisplay.StatusClass(item.Status)">@TicketDisplay.StatusText(item.Status)</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.Status != TicketStatus.Closed)
+                                {
+                                    <form method="post" asp-page="Details" asp-page-handler="Priority" asp-route-number="@item.Number"
+                                          class="choice-inline" data-row-instant>
+                                        <input type="hidden" name="rowVersion" value="@item.RowVersion" />
+                                        <span id="Priority@(item.Number)Label" class="visually-hidden">Priority of ticket #@item.Number</span>
+                                        <partial name="_PriorityChoice" model="Model.PriorityChoiceFor(item)" />
+                                    </form>
+                                }
+                                else
+                                {
+                                    <partial name="_Priority" model="item.Priority" />
+                                }
+                            </td>
                             <td>@item.CustomerName</td>
                             <td>@(item.AssigneeName ?? "–")</td>
                             <td class="text-nowrap @(item.IsOverdue ? "overdue" : "")">@TicketDisplay.Day(item.DueDate, Model.Today)</td>
@@ -140,6 +186,12 @@ else
 }
 </div>
 
+@if (Model.IsCustomer)
+{
+    <partial name="_CloseReason" />
+}
+
 @section Scripts {
     <script src="~/js/ticket-filters.js" asp-append-version="true"></script>
+    <script src="~/js/close-reason.js" asp-append-version="true"></script>
 }

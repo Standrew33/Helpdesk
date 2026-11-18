@@ -10,7 +10,8 @@ public sealed record TicketListItem(
     string CustomerName,
     string? AssigneeName,
     DateOnly? DueDate,
-    bool IsOverdue);
+    bool IsOverdue,
+    string RowVersion);
 
 /// <summary>Narrows the queue for staff; customers always see only their own tickets.</summary>
 public enum TicketScope

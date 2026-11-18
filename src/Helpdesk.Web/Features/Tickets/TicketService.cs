@@ -80,6 +80,7 @@ public class TicketService(
                 AssigneeName = a.DisplayName,
                 DueDate = t.DueDate,
                 UpdatedAt = t.UpdatedAt,
+                RowVersion = t.RowVersion,
             },
             filter.Sort,
             filter.Descending)
@@ -90,7 +91,8 @@ public class TicketService(
         var items = rows
             .Select(r => new TicketListItem(
                 r.Number, r.Subject, r.Status, r.Priority, r.CustomerName, r.AssigneeName, r.DueDate,
-                IsOverdue: r.Status != TicketStatus.Closed && r.DueDate < today))
+                IsOverdue: r.Status != TicketStatus.Closed && r.DueDate < today,
+                RowVersion: Convert.ToBase64String(r.RowVersion)))
             .ToList();
 
         return new PagedList<TicketListItem>(items, total, page, PageSize);
@@ -406,4 +408,6 @@ internal sealed class ListRow
     public DateOnly? DueDate { get; init; }
 
     public DateTimeOffset UpdatedAt { get; init; }
+
+    public byte[] RowVersion { get; init; } = [];
 }

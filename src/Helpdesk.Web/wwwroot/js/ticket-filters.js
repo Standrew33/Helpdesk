@@ -55,6 +55,11 @@
                     window.helpdeskLocalTime(document.getElementById('ticket-results'));
                 }
 
+                // The status and priority buttons of the rows show their choice in colour.
+                if (window.helpdeskChoice) {
+                    window.helpdeskChoice(document.getElementById('ticket-results'));
+                }
+
                 history.replaceState(null, '', url);
             })
             .catch(function (error) {
@@ -92,6 +97,52 @@
         event.preventDefault();
         clearTimeout(typing);
         load(urlOfForm());
+    });
+
+    // ----- Status and priority change in the row: the ticket page saves the change, then the list is drawn again. -----
+
+    var notice = document.getElementById('ticket-list-alert');
+
+    function tell(message) {
+        notice.textContent = message;
+        notice.hidden = !message;
+    }
+
+    function sendRow(rowForm) {
+        rowForm.setAttribute('aria-busy', 'true');
+        tell('');
+
+        return fetch(rowForm.action, { method: 'POST', body: new FormData(rowForm), credentials: 'same-origin' })
+            .then(function (response) {
+                return response.ok ? response.text() : null;
+            })
+            .then(function (html) {
+                var page = html === null ? null : new DOMParser().parseFromString(html, 'text/html');
+
+                // Signed out, or a ticket that is gone: the whole list is shown afresh.
+                if (!page || !page.getElementById('ticket-header')) {
+                    window.location.reload();
+                    return;
+                }
+
+                var refused = page.querySelector('#ticket-alert .alert');
+                tell(refused ? refused.textContent.trim() : '');
+                load(window.location.pathname + window.location.search);
+            })
+            .catch(function () {
+                rowForm.submit();
+            });
+    }
+
+    // The dialog that asks a customer why a ticket is closed sends its form this way too.
+    window.helpdeskSend = sendRow;
+
+    document.addEventListener('change', function (event) {
+        var rowForm = event.target.closest('form[data-row-instant]');
+
+        if (rowForm) {
+            sendRow(rowForm);
+        }
     });
 
     // A double click on a row opens its ticket, unless it was on something of its own, such as a link.

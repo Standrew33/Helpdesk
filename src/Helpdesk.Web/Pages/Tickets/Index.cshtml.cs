@@ -52,6 +52,17 @@ public class IndexModel(TicketService tickets) : PageModel
 
     public bool IsCustomer { get; private set; }
 
+    private UserRole Role { get; set; }
+
+    /// <summary>The current status and the ones the user may move it to; a single entry means it cannot be changed.</summary>
+    public IReadOnlyList<TicketStatus> StatusOptionsFor(TicketStatus current) => Enum.GetValues<TicketStatus>()
+        .Where(s => s == current || TicketWorkflow.IsAllowed(current, s, Role))
+        .ToList();
+
+    /// <summary>The priority picker of a row; customers cannot make a ticket urgent.</summary>
+    public PriorityChoice PriorityChoiceFor(TicketListItem item) => new(
+        "priority", $"Priority{item.Number}", TicketDisplay.PrioritiesFor(!IsCustomer, item.Priority), item.Priority, Floating: true);
+
     public bool IsFiltered => !string.IsNullOrWhiteSpace(Search) || Status.Count > 0 || Priority.Count > 0 || Scope.Count > 0;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
@@ -63,6 +74,7 @@ public class IndexModel(TicketService tickets) : PageModel
         }
 
         var actor = User.ToActor();
+        Role = actor.Role;
         IsCustomer = actor.Role == UserRole.Customer;
         Result = await tickets.ListAsync(actor, new TicketFilter(Search, Status, Priority, Scope, PageNumber, Sort ?? TicketSort.Updated, IsDescending), ct);
         return Page();

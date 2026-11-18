@@ -951,6 +951,12 @@ form[aria-busy="true"] select {
   user-select: none;
 }
 
+/* The status and priority buttons of a row sit in the line of text, without making the row taller. */
+.ticket-table td .choice-inline .choice-toggle {
+  min-height: 0;
+  margin: -0.3rem 0 -0.3rem -0.45rem;
+}
+
 .ticket-table .ticket-open-col {
   width: 1%;
   padding-left: 0;

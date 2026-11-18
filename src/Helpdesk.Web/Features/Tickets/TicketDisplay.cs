@@ -77,8 +77,11 @@ public static class TicketDisplay
     public static string DayValue(DateOnly? value) => value?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty;
 }
 
-/// <summary>A one-choice priority picker: the form field name, the options offered and the one chosen.</summary>
-public sealed record PriorityChoice(string Name, string Id, IReadOnlyList<TicketPriority> Options, TicketPriority Selected);
+/// <summary>
+/// A one-choice priority picker: the form field name, the options offered and the one chosen. A picker inside a
+/// scrolling table floats its list above the page (<paramref name="Floating"/>), so the table does not cut it off.
+/// </summary>
+public sealed record PriorityChoice(string Name, string Id, IReadOnlyList<TicketPriority> Options, TicketPriority Selected, bool Floating = false);
 
 public sealed record FilterOption(string Value, string Text, string CssClass, bool Checked);
 

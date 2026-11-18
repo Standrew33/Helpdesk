@@ -41,6 +41,35 @@ public partial class TicketListTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task Status_and_priority_change_in_the_row_as_far_as_the_user_may_change_them()
+    {
+        var customer = await SignedInAsync("Customer");
+        var open = await customer.CreateTicketAsync("Still open");
+        var done = await customer.CreateTicketAsync("Already done");
+        await customer.PostTicketActionAsync(done, "Status", new Dictionary<string, string> { ["status"] = "Closed", ["reason"] = "Not needed" });
+        var op = await SignedInAsync("Operator");
+
+        var mine = await customer.GetHtmlAsync("/Tickets");
+        var staff = await op.GetHtmlAsync("/Tickets");
+
+        // An open ticket: both change through the handlers of its page; a customer is asked why when closing.
+        Assert.Contains($"action=\"/Tickets/Details/{open}?handler=Status\"", mine);
+        Assert.Contains("data-close-reason=\"required\"", mine);
+        Assert.Contains($"action=\"/Tickets/Details/{open}?handler=Priority\"", mine);
+        Assert.Contains("id=\"close-reason\"", mine);
+        Assert.DoesNotContain("type=\"radio\" name=\"priority\" value=\"Urgent\"", mine);
+        Assert.Contains("type=\"radio\" name=\"priority\" value=\"Urgent\"", staff);
+        Assert.Contains($"action=\"/Tickets/Details/{open}?handler=Status\"", staff);
+        Assert.DoesNotContain("data-close-reason=\"required\"", staff);
+        Assert.DoesNotContain("id=\"close-reason\"", staff);
+
+        // A closed ticket: the customer cannot reopen it, staff can; its priority stays as it is.
+        Assert.DoesNotContain($"/Tickets/Details/{done}?handler=", mine);
+        Assert.Contains($"/Tickets/Details/{done}?handler=Status", staff);
+        Assert.DoesNotContain($"/Tickets/Details/{done}?handler=Priority", staff);
+    }
+
+    [Fact]
     public async Task Long_lists_are_split_into_pages()
     {
         var customer = await SignedInAsync("Customer");

@@ -1,6 +1,7 @@
 @model PriorityChoice
 <div class="dropdown choice" data-choice>
-    <button type="button" id="@Model.Id" class="form-select choice-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="@(Model.Id)Label @Model.Id">
+    <button type="button" id="@Model.Id" class="form-select choice-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="@(Model.Id)Label @Model.Id"
+            data-bs-popper-config="@(Model.Floating ? "{\"strategy\":\"fixed\"}" : null)">
         <span data-choice-label>@Model.Selected</span>
     </button>
     <div class="dropdown-menu choice-menu">
