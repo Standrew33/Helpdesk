@@ -23,6 +23,9 @@ public class IndexModel(TicketService tickets) : PageModel
     [BindProperty(SupportsGet = true)]
     public List<TicketScope> Scope { get; set; } = [];
 
+    /// <summary>Today in UTC, the day due dates are measured against.</summary>
+    public DateOnly Today { get; } = Ticket.Today(DateTimeOffset.UtcNow);
+
     public static readonly IReadOnlyList<(TicketSort Column, string Title)> Columns =
     [
         (TicketSort.Number, "#"),

@@ -20,7 +20,7 @@ public class TicketService(
 
     public async Task<PagedList<TicketListItem>> ListAsync(Actor actor, TicketFilter filter, CancellationToken ct = default)
     {
-        var now = time.GetUtcNow();
+        var today = Ticket.Today(time.GetUtcNow());
         var tickets = db.Tickets.AsNoTracking().Where(t => t.WorkspaceId == actor.WorkspaceId);
 
         if (!actor.Role.IsStaff())
@@ -48,7 +48,7 @@ public class TicketService(
             tickets = tickets.Where(t =>
                 (mine && t.AssigneeId == actor.Id)
                 || (unassigned && t.AssigneeId == null)
-                || (overdue && t.Status != TicketStatus.Closed && t.DueAt < now));
+                || (overdue && t.Status != TicketStatus.Closed && t.DueDate < today));
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
@@ -78,7 +78,7 @@ public class TicketService(
                 Priority = t.Priority,
                 CustomerName = c.DisplayName,
                 AssigneeName = a.DisplayName,
-                DueAt = t.DueAt,
+                DueDate = t.DueDate,
                 UpdatedAt = t.UpdatedAt,
             },
             filter.Sort,
@@ -89,8 +89,8 @@ public class TicketService(
 
         var items = rows
             .Select(r => new TicketListItem(
-                r.Number, r.Subject, r.Status, r.Priority, r.CustomerName, r.AssigneeName, r.DueAt,
-                IsOverdue: r.Status != TicketStatus.Closed && now > r.DueAt))
+                r.Number, r.Subject, r.Status, r.Priority, r.CustomerName, r.AssigneeName, r.DueDate,
+                IsOverdue: r.Status != TicketStatus.Closed && r.DueDate < today))
             .ToList();
 
         return new PagedList<TicketListItem>(items, total, page, PageSize);
@@ -154,7 +154,7 @@ public class TicketService(
 
     /// <summary>Creates a ticket; throws <see cref="DomainException"/> when the input breaks a rule.</summary>
     /// <returns>The number of the new ticket in the actor's workspace.</returns>
-    public async Task<int> CreateAsync(Actor actor, string subject, string description, TicketPriority priority)
+    public async Task<int> CreateAsync(Actor actor, string subject, string description, TicketPriority priority, DateOnly? dueDate = null)
     {
         // The number and the ticket are saved together: a ticket that is refused does not use up a number.
         Ticket? ticket = null;
@@ -170,7 +170,7 @@ public class TicketService(
 
             await using var transaction = await db.Database.BeginTransactionAsync();
             var number = await TicketNumbers.ReserveAsync(db, actor.WorkspaceId);
-            ticket = Ticket.Create(number, subject, description, priority, actor, time.GetUtcNow());
+            ticket = Ticket.Create(number, subject, description, priority, actor, time.GetUtcNow(), dueDate);
             db.Tickets.Add(ticket);
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -348,7 +348,10 @@ public class TicketService(
                 : 0, descending),
             TicketSort.Customer => By(rows, r => r.CustomerName, descending),
             TicketSort.Assignee => By(rows, r => r.AssigneeName, descending),
-            TicketSort.Due => By(rows, r => r.DueAt, descending),
+            // Tickets without a due date come after the dated ones, whichever way the dates run.
+            TicketSort.Due => descending
+                ? rows.OrderBy(r => r.DueDate == null).ThenByDescending(r => r.DueDate)
+                : rows.OrderBy(r => r.DueDate == null).ThenBy(r => r.DueDate),
             _ => By(rows, r => r.UpdatedAt, descending),
         };
 
@@ -395,7 +398,7 @@ internal sealed class ListRow
 
     public string? AssigneeName { get; init; }
 
-    public DateTimeOffset DueAt { get; init; }
+    public DateOnly? DueDate { get; init; }
 
     public DateTimeOffset UpdatedAt { get; init; }
 }

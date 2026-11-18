@@ -30,9 +30,16 @@
                         <textarea asp-for="Input.Description" class="form-control description-input" rows="7"></textarea>
                         <span asp-validation-for="Input.Description" class="field-validation-error"></span>
                     </div>
-                    <div class="mb-4">
-                        <label id="PriorityLabel" for="Priority" class="form-label">Priority</label>
-                        <partial name="_PriorityChoice" model="Model.PriorityChoice" />
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <label id="PriorityLabel" for="Priority" class="form-label">Priority</label>
+                            <partial name="_PriorityChoice" model="Model.PriorityChoice" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Input.DueDate" class="form-label">Due date <span class="text-secondary fw-normal">(optional)</span></label>
+                            <input asp-for="Input.DueDate" type="date" class="form-control" min="@TicketDisplay.DayValue(Model.Today)" />
+                            <span asp-validation-for="Input.DueDate" class="field-validation-error"></span>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Create ticket</button>
                     <a class="btn btn-link" asp-page="Index">Cancel</a>

@@ -29,14 +29,14 @@ public class TicketTests
     }
 
     [Fact]
-    public void Create_sets_initial_state_and_deadline()
+    public void Create_sets_initial_state_without_a_due_date()
     {
         var ticket = NewTicket(TicketPriority.High);
 
         Assert.Equal(TicketStatus.New, ticket.Status);
         Assert.Equal(Customer.Id, ticket.CustomerId);
         Assert.Null(ticket.AssigneeId);
-        Assert.Equal(Now.AddHours(8), ticket.DueAt);
+        Assert.Null(ticket.DueDate);
         Assert.Single(ticket.History);
         Assert.Equal("Created", ticket.History[0].Field);
     }
@@ -238,14 +238,72 @@ public class TicketTests
     }
 
     [Fact]
-    public void A_new_priority_recalculates_the_deadline_from_creation_time()
+    public void A_due_date_chosen_when_opening_is_kept()
+    {
+        var ticket = Ticket.Create(1, "Printer is down", "", TicketPriority.Low, Customer, Now, new DateOnly(2026, 3, 10));
+
+        Assert.Equal(new DateOnly(2026, 3, 10), ticket.DueDate);
+    }
+
+    [Fact]
+    public void The_due_date_can_be_today_but_not_in_the_past()
+    {
+        Assert.Equal(new DateOnly(2026, 3, 2), Ticket.Create(1, "Today", "", TicketPriority.Low, Customer, Now, new DateOnly(2026, 3, 2)).DueDate);
+        Assert.Throws<DomainException>(() => Ticket.Create(1, "Yesterday", "", TicketPriority.Low, Customer, Now, new DateOnly(2026, 3, 1)));
+        Assert.Throws<DomainException>(() => NewTicket().SetDueDate(Operator, new DateOnly(2026, 3, 1), Now));
+    }
+
+    [Fact]
+    public void A_new_priority_leaves_the_due_date_alone()
     {
         var ticket = NewTicket(TicketPriority.Low);
+        ticket.SetDueDate(Customer, new DateOnly(2026, 3, 20), Now);
 
         ticket.Edit(Operator, ticket.Subject, ticket.Description, TicketPriority.Urgent, Now.AddHours(1));
 
-        Assert.Equal(Now.AddHours(4), ticket.DueAt);
+        Assert.Equal(new DateOnly(2026, 3, 20), ticket.DueDate);
         Assert.Equal("Priority", ticket.History[^1].Field);
+    }
+
+    [Fact]
+    public void Staff_and_the_customer_set_change_and_remove_the_due_date_and_each_change_is_recorded()
+    {
+        var ticket = NewTicket();
+
+        ticket.SetDueDate(Customer, new DateOnly(2026, 3, 9), Now);
+        ticket.SetDueDate(Operator, new DateOnly(2026, 3, 12), Now.AddHours(1));
+        ticket.SetDueDate(Admin, null, Now.AddHours(2));
+
+        Assert.Null(ticket.DueDate);
+        Assert.Equal(Now.AddHours(2), ticket.UpdatedAt);
+        Assert.Equal(
+            [(null, "2026-03-09"), ("2026-03-09", "2026-03-12"), ("2026-03-12", null)],
+            ticket.History.Where(h => h.Field == "Due date").Select(h => (h.OldValue, h.NewValue)));
+    }
+
+    [Fact]
+    public void The_same_due_date_again_records_nothing()
+    {
+        var ticket = NewTicket();
+        ticket.SetDueDate(Customer, new DateOnly(2026, 3, 9), Now);
+
+        ticket.SetDueDate(Customer, new DateOnly(2026, 3, 9), Now.AddHours(1));
+        ticket.SetDueDate(Operator, new DateOnly(2026, 3, 9), Now.AddDays(30));
+
+        Assert.Single(ticket.History, h => h.Field == "Due date");
+        Assert.Equal(Now, ticket.UpdatedAt);
+    }
+
+    [Fact]
+    public void Nobody_else_sets_the_due_date_and_not_on_a_closed_ticket()
+    {
+        var ticket = NewTicket();
+
+        Assert.Throws<DomainException>(() => ticket.SetDueDate(OtherCustomer, new DateOnly(2026, 3, 9), Now));
+        Assert.Throws<DomainException>(() => ticket.SetDueDate(Operator with { WorkspaceId = OtherWorkspace }, new DateOnly(2026, 3, 9), Now));
+
+        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now);
+        Assert.Throws<DomainException>(() => ticket.SetDueDate(Operator, new DateOnly(2026, 3, 9), Now));
     }
 
     [Fact]
@@ -266,7 +324,6 @@ public class TicketTests
         Assert.Equal("Printer jams", ticket.Subject);
         Assert.Equal("Paper gets stuck.", ticket.Description);
         Assert.Equal(TicketPriority.Backlog, ticket.Priority);
-        Assert.Equal(Now.AddDays(30), ticket.DueAt);
         Assert.Equal(Now.AddHours(2), ticket.UpdatedAt);
         Assert.Equal(["Subject", "Description", "Priority"], ticket.History.Skip(1).Select(h => h.Field));
         Assert.Equal(("Printer is down", "Printer jams"), (ticket.History[1].OldValue, ticket.History[1].NewValue));
@@ -387,20 +444,31 @@ public class TicketTests
     }
 
     [Fact]
-    public void IsSlaBreached_checks_open_tickets_against_now()
+    public void An_open_ticket_is_overdue_from_the_day_after_its_due_date()
     {
         var ticket = NewTicket(TicketPriority.Urgent);
+        ticket.SetDueDate(Operator, new DateOnly(2026, 3, 3), Now);
 
-        Assert.False(ticket.IsSlaBreached(Now.AddHours(3)));
-        Assert.True(ticket.IsSlaBreached(Now.AddHours(5)));
+        Assert.False(ticket.IsOverdue(new DateTimeOffset(2026, 3, 3, 23, 59, 0, TimeSpan.Zero)));
+        Assert.True(ticket.IsOverdue(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero)));
     }
 
     [Fact]
-    public void IsSlaBreached_uses_closing_time_for_closed_tickets()
-    {
-        var ticket = NewTicket(TicketPriority.Urgent);
-        ticket.ChangeStatus(Customer, TicketStatus.Closed, Now.AddHours(3));
+    public void A_ticket_without_a_due_date_is_never_overdue()
+        => Assert.False(NewTicket().IsOverdue(Now.AddYears(1)));
 
-        Assert.False(ticket.IsSlaBreached(Now.AddDays(30)));
+    [Fact]
+    public void A_closed_ticket_is_judged_by_the_day_it_was_closed()
+    {
+        var onTime = NewTicket();
+        onTime.SetDueDate(Operator, new DateOnly(2026, 3, 3), Now);
+        onTime.ChangeStatus(Customer, TicketStatus.Closed, Now.AddDays(1));
+
+        var late = NewTicket();
+        late.SetDueDate(Operator, new DateOnly(2026, 3, 3), Now);
+        late.ChangeStatus(Customer, TicketStatus.Closed, Now.AddDays(2));
+
+        Assert.False(onTime.IsOverdue(Now.AddDays(30)));
+        Assert.True(late.IsOverdue(Now.AddDays(30)));
     }
 }

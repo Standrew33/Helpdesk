@@ -278,7 +278,7 @@
                             }
                         </dd>
                     </div>
-                    <div><dt>Due</dt><dd class="@(ticket.IsSlaBreached(DateTimeOffset.UtcNow) ? "overdue" : "")">@TicketDisplay.Date(ticket.DueAt)</dd></div>
+                    <div><dt>Due</dt><dd class="@(ticket.IsOverdue(DateTimeOffset.UtcNow) ? "overdue" : "")">@TicketDisplay.Day(ticket.DueDate, Ticket.Today(DateTimeOffset.UtcNow))</dd></div>
                     <div><dt>Last update</dt><dd>@TicketDisplay.Date(ticket.UpdatedAt)</dd></div>
                 </dl>
             </div>

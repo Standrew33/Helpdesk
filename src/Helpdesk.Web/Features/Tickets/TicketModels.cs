@@ -9,7 +9,7 @@ public sealed record TicketListItem(
     TicketPriority Priority,
     string CustomerName,
     string? AssigneeName,
-    DateTimeOffset DueAt,
+    DateOnly? DueDate,
     bool IsOverdue);
 
 /// <summary>Narrows the queue for staff; customers always see only their own tickets.</summary>

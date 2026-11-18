@@ -54,6 +54,6 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         builder.HasIndex(t => new { t.WorkspaceId, t.Number }).IsUnique();
         builder.HasIndex(t => t.CustomerId);
         builder.HasIndex(t => t.AssigneeId);
-        builder.HasIndex(t => new { t.Status, t.DueAt });
+        builder.HasIndex(t => new { t.Status, t.DueDate });
     }
 }

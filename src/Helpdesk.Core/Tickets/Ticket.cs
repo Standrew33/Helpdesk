@@ -43,7 +43,8 @@ public sealed class Ticket
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    public DateTimeOffset DueAt { get; private set; }
+    /// <summary>The day the ticket should be resolved by. A ticket has one only when someone set it.</summary>
+    public DateOnly? DueDate { get; private set; }
 
     public DateTimeOffset? ClosedAt { get; private set; }
 
@@ -56,8 +57,12 @@ public sealed class Ticket
 
     public IReadOnlyList<TicketHistoryEntry> History => _history;
 
-    /// <summary>Opens a ticket in the customer's workspace, under the number the workspace gave out for it.</summary>
-    public static Ticket Create(int number, string subject, string description, TicketPriority priority, Actor customer, DateTimeOffset now)
+    /// <summary>
+    /// Opens a ticket in the customer's workspace, under the number the workspace gave out for it, with a due date
+    /// when the customer chose one.
+    /// </summary>
+    public static Ticket Create(
+        int number, string subject, string description, TicketPriority priority, Actor customer, DateTimeOffset now, DateOnly? dueDate = null)
     {
         ArgumentNullException.ThrowIfNull(customer);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(customer.WorkspaceId);
@@ -73,6 +78,8 @@ public sealed class Ticket
             throw new DomainException("Only staff can set urgent priority.");
         }
 
+        EnsureNotPast(dueDate, now);
+
         var ticket = new Ticket
         {
             WorkspaceId = customer.WorkspaceId,
@@ -84,7 +91,7 @@ public sealed class Ticket
             CustomerId = customer.Id,
             CreatedAt = now,
             UpdatedAt = now,
-            DueAt = SlaPolicy.CalculateDueAt(priority, now),
+            DueDate = dueDate,
         };
 
         ticket.Record(customer, "Created", null, null, now);
@@ -176,7 +183,6 @@ public sealed class Ticket
         {
             Record(actor, "Priority", Priority.ToString(), priority.ToString(), now);
             Priority = priority;
-            DueAt = SlaPolicy.CalculateDueAt(priority, CreatedAt);
             changed = true;
         }
 
@@ -184,6 +190,26 @@ public sealed class Ticket
         {
             UpdatedAt = now;
         }
+    }
+
+    /// <summary>
+    /// Sets the day the ticket should be resolved by, or removes it with null. Staff and the customer who opened the
+    /// ticket may do so while it is open; a new date cannot lie in the past.
+    /// </summary>
+    public void SetDueDate(Actor actor, DateOnly? dueDate, DateTimeOffset now)
+    {
+        EnsureCanView(actor);
+        EnsureNotClosed();
+
+        if (dueDate == DueDate)
+        {
+            return;
+        }
+
+        EnsureNotPast(dueDate, now);
+        Record(actor, "Due date", Iso(DueDate), Iso(dueDate), now);
+        DueDate = dueDate;
+        UpdatedAt = now;
     }
 
     public Comment AddComment(Actor actor, string body, bool isInternal, DateTimeOffset now)
@@ -251,8 +277,14 @@ public sealed class Ticket
         return attachment;
     }
 
-    /// <summary>True when the ticket is not resolved in time, or was closed after its deadline.</summary>
-    public bool IsSlaBreached(DateTimeOffset now) => (ClosedAt ?? now) > DueAt;
+    /// <summary>
+    /// True when the due date has passed and the ticket is still open, or when it was closed after that day.
+    /// Days are counted in UTC.
+    /// </summary>
+    public bool IsOverdue(DateTimeOffset now) => DueDate is { } due && Today(ClosedAt ?? now) > due;
+
+    /// <summary>The day a moment falls on, in UTC.</summary>
+    public static DateOnly Today(DateTimeOffset now) => DateOnly.FromDateTime(now.UtcDateTime);
 
     private void SetStatus(Actor actor, TicketStatus target, DateTimeOffset now)
     {
@@ -280,6 +312,17 @@ public sealed class Ticket
             throw new DomainException("The ticket is closed. Reopen it first.");
         }
     }
+
+    private static void EnsureNotPast(DateOnly? dueDate, DateTimeOffset now)
+    {
+        if (dueDate < Today(now))
+        {
+            throw new DomainException("The due date cannot be in the past.");
+        }
+    }
+
+    private static string? Iso(DateOnly? date)
+        => date?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
     private static void RequireStaff(Actor actor, string action)
     {

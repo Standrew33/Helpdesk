@@ -61,6 +61,24 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task A_due_date_is_shown_only_when_one_was_chosen_and_never_a_past_one()
+    {
+        var customer = await SignedInAsync("Customer");
+        var due = DateTime.UtcNow.Date.AddDays(400);
+
+        var dated = await customer.PostFormAsync("/Tickets/Create", "/Tickets/Create", Fields(
+            ("Input.Subject", "With a date"), ("Input.Priority", "Normal"), ("Input.DueDate", due.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))));
+        var past = await customer.PostFormAsync("/Tickets/Create", "/Tickets/Create", Fields(
+            ("Input.Subject", "In the past"), ("Input.Priority", "Normal"), ("Input.DueDate", "2020-01-01")));
+        var undated = await customer.CreateTicketAsync("Without a date");
+
+        Assert.Equal(HttpStatusCode.Redirect, dated.StatusCode);
+        Assert.Contains($"<dt>Due</dt><dd class=\"\">{due.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)}</dd>", await (await customer.FollowAsync(dated)).Content.ReadAsStringAsync());
+        Assert.Contains("The due date cannot be in the past", await past.Content.ReadAsStringAsync());
+        Assert.Contains("<dt>Due</dt><dd class=\"\">&#x2013;</dd>", await customer.GetHtmlAsync($"/Tickets/Details/{undated}"));
+    }
+
+    [Fact]
     public async Task Customer_cannot_open_an_urgent_ticket()
     {
         var customer = await SignedInAsync("Customer");
@@ -257,7 +275,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
-    public async Task Changes_are_stored_with_history_and_sla_deadline()
+    public async Task Changes_are_stored_with_history_and_leave_the_due_date_empty()
     {
         var customer = await SignedInAsync("Customer");
         var id = await customer.CreateTicketAsync("Audited", priority: "High");
@@ -271,7 +289,7 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
 
         Assert.Equal(TicketStatus.InProgress, ticket.Status);
         Assert.Equal(TicketPriority.Urgent, ticket.Priority);
-        Assert.Equal(ticket.CreatedAt.AddHours(4), ticket.DueAt);
+        Assert.Null(ticket.DueDate);
         Assert.Equal(["Created", "Status", "Priority"], ticket.History.OrderBy(h => h.Id).Select(h => h.Field));
         Assert.All(ticket.History, h => Assert.False(string.IsNullOrEmpty(h.ActorId)));
     }

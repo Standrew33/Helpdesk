@@ -58,6 +58,17 @@ public static class TicketDisplay
         var text = utc.ToString("d MMM yyyy, HH:mm", CultureInfo.InvariantCulture) + " UTC";
         return new HtmlString($"<time datetime=\"{iso}\" data-local-time>{text}</time>");
     }
+
+    /// <summary>A day as "18 Nov", with the year when it is not this year; a dash when there is none.</summary>
+    public static string Day(DateOnly? value, DateOnly today) => value switch
+    {
+        null => "–",
+        { } day when day.Year == today.Year => day.ToString("d MMM", CultureInfo.InvariantCulture),
+        { } day => day.ToString("d MMM yyyy", CultureInfo.InvariantCulture),
+    };
+
+    /// <summary>A day as the value of a date field.</summary>
+    public static string DayValue(DateOnly? value) => value?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty;
 }
 
 /// <summary>A one-choice priority picker: the form field name, the options offered and the one chosen.</summary>

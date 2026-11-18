@@ -120,7 +120,7 @@
                     <dt>Assignee</dt>
                     <dd>@details.NameOf(ticket.AssigneeId)</dd>
                     <dt>Due</dt>
-                    <dd>@TicketDisplay.Date(ticket.DueAt)</dd>
+                    <dd>@TicketDisplay.Day(ticket.DueDate, Ticket.Today(DateTimeOffset.UtcNow))</dd>
                 </dl>
             </div>
         </div>

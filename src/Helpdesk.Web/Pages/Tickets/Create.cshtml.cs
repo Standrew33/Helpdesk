@@ -16,6 +16,9 @@ public class CreateModel(TicketService tickets) : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
+    /// <summary>Today in UTC: the earliest due date that can be chosen.</summary>
+    public DateOnly Today { get; } = Ticket.Today(DateTimeOffset.UtcNow);
+
     public PriorityChoice PriorityChoice => new("Input.Priority", "Priority", TicketDisplay.PrioritiesFor(isStaff: false), Input.Priority);
 
     public void OnGet()
@@ -31,7 +34,7 @@ public class CreateModel(TicketService tickets) : PageModel
 
         try
         {
-            var number = await tickets.CreateAsync(User.ToActor(), Input.Subject, Input.Description ?? string.Empty, Input.Priority);
+            var number = await tickets.CreateAsync(User.ToActor(), Input.Subject, Input.Description ?? string.Empty, Input.Priority, Input.DueDate);
             return RedirectToPage("Details", new { number });
         }
         catch (DomainException ex)
@@ -52,5 +55,8 @@ public class CreateModel(TicketService tickets) : PageModel
         public string? Description { get; set; }
 
         public TicketPriority Priority { get; set; } = TicketPriority.Normal;
+
+        [Display(Name = "Due date")]
+        public DateOnly? DueDate { get; set; }
     }
 }

@@ -128,8 +128,8 @@ namespace Helpdesk.Web.Data.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<DateTimeOffset>("DueAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date");
 
                     b.Property<int>("Number")
                         .HasColumnType("int");
@@ -167,7 +167,7 @@ namespace Helpdesk.Web.Data.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("Status", "DueAt");
+                    b.HasIndex("Status", "DueDate");
 
                     b.HasIndex("WorkspaceId", "Number")
                         .IsUnique();

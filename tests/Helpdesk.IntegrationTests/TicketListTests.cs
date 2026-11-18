@@ -1,6 +1,10 @@
+using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
 using Helpdesk.IntegrationTests.Infrastructure;
+using Helpdesk.Web.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Helpdesk.IntegrationTests;
 
@@ -253,6 +257,57 @@ public partial class TicketListTests(SqlServerFixture sql) : WebTestBase(sql)
         var html = await op.GetHtmlAsync("/Tickets?scope=Overdue");
 
         Assert.Equal(0, RowCount(html));
+    }
+
+    private static string Day(int daysFromToday)
+        => DateTime.UtcNow.Date.AddDays(daysFromToday).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private static async Task<int> CreateDueAsync(AppClient customer, string subject, string? dueDate)
+    {
+        var response = await customer.PostFormAsync("/Tickets/Create", "/Tickets/Create", new Dictionary<string, string>
+        {
+            ["Input.Subject"] = subject,
+            ["Input.Priority"] = "Normal",
+            ["Input.DueDate"] = dueDate ?? string.Empty,
+        });
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        return int.Parse(response.Headers.Location!.OriginalString.Split('/')[^1], CultureInfo.InvariantCulture);
+    }
+
+    [Fact]
+    public async Task Overdue_lists_open_tickets_whose_due_date_has_passed()
+    {
+        var customer = await SignedInAsync("Customer");
+        var late = await CreateDueAsync(customer, "Late ticket", Day(0));
+        await CreateDueAsync(customer, "Due today", Day(0));
+        await CreateDueAsync(customer, "No due date", null);
+
+        // Nobody can choose a day in the past, so the day goes by in the database instead.
+        await using (var scope = Factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<HelpdeskDbContext>();
+            await db.Tickets.IgnoreQueryFilters().Where(t => t.Number == late)
+                .ExecuteUpdateAsync(s => s.SetProperty(t => t.DueDate, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1))));
+        }
+
+        var op = await SignedInAsync("Operator");
+        var overdue = await op.GetHtmlAsync("/Tickets?scope=Overdue");
+
+        Assert.Equal(["Late ticket"], SubjectsIn(overdue));
+        Assert.Contains("class=\"text-nowrap overdue\"", overdue);
+    }
+
+    [Fact]
+    public async Task Tickets_without_a_due_date_come_last_whichever_way_the_dates_are_sorted()
+    {
+        var customer = await SignedInAsync("Customer");
+        await CreateDueAsync(customer, "No date", null);
+        await CreateDueAsync(customer, "Later", Day(9));
+        await CreateDueAsync(customer, "Sooner", Day(2));
+
+        Assert.Equal(["Sooner", "Later", "No date"], SubjectsIn(await customer.GetHtmlAsync("/Tickets?sort=Due&dir=asc")));
+        Assert.Equal(["Later", "Sooner", "No date"], SubjectsIn(await customer.GetHtmlAsync("/Tickets?sort=Due&dir=desc")));
     }
 
     [Fact]
