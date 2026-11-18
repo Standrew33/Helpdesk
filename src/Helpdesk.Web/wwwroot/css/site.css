@@ -1020,6 +1020,15 @@ form[aria-busy="true"] select {
   height: 1.05rem;
 }
 
+.icon-btn-round {
+  border-radius: 50%;
+}
+
+.icon-btn-round svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
 .description {
   white-space: pre-wrap;
   margin: 0;
