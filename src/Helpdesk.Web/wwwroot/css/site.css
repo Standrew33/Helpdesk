@@ -718,12 +718,17 @@ a.user-chip.active {
 /* In the ticket header the status and priority are the buttons themselves: no box until pointed at. */
 .choice-inline .choice-toggle {
   width: auto;
-  min-height: 0;
+  min-height: 2.3rem;
   padding: 0.3rem 1.6rem 0.3rem 0.45rem;
   border: 1px solid transparent;
   border-radius: 0.5rem;
   background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236b7c79' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") no-repeat right 0.45rem center / 0.7rem;
   box-shadow: none;
+  /* The priority button is also a form field elsewhere; here it looks and reacts exactly like the status. */
+  font-size: inherit;
+  line-height: 1.5;
+  color: inherit;
+  transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out;
 }
 
 .choice-inline .choice-toggle:hover,
