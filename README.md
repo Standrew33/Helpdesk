@@ -4,7 +4,7 @@
 
 A help desk service built with ASP.NET Core Razor Pages, EF Core and SQL Server. Everyone who
 signs up gets a help desk of their own: they invite their team by e-mail, let customers in
-through a public link, and work the requests against priority deadlines.
+through a public link, and work the requests by priority and by the due dates they agree on.
 
 Work in progress.
 
@@ -12,7 +12,7 @@ Work in progress.
 
 - Separate help desks (workspaces) in one application, isolated from each other in every query
 - A platform owner (superadmin) who looks after every help desk, set by configuration
-- Tickets with a lifecycle (new, in progress, waiting for customer, closed), priorities, assignee and SLA deadlines
+- Tickets with a lifecycle (new, in progress, waiting for customer, closed), priorities, assignee and an optional due date
 - Roles within a help desk: customer, operator, admin (policy-based authorization)
 - Comments and attachments (Azure Blob Storage)
 - Audit log of ticket changes
