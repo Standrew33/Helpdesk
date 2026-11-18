@@ -965,7 +965,9 @@ form[aria-busy="true"] select {
   padding: 0.1rem 0.5rem;
 }
 
-.inline-field-text {
+/* A description box may be pulled taller, but only so far: the page keeps its shape. */
+.inline-field-text,
+.description-input {
   min-height: 6rem;
   max-height: 24rem;
   resize: vertical;
