@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Helpdesk.Web.Features.Platform;
 using Helpdesk.Web.Features.Tickets;
+using Helpdesk.Web.Features.Toasts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -11,12 +12,6 @@ public class WorkspaceModel(PlatformService platform) : PageModel
 {
     [FromRoute]
     public int Id { get; set; }
-
-    [TempData]
-    public string? Error { get; set; }
-
-    [TempData]
-    public string? Notice { get; set; }
 
     public WorkspaceOverview Overview { get; private set; } = null!;
 
@@ -44,7 +39,7 @@ public class WorkspaceModel(PlatformService platform) : PageModel
             return NotFound();
         }
 
-        Notice = blocked ? "The workspace is deactivated; its people are signed out." : "The workspace is active again.";
+        TempData.Success(blocked ? "The workspace is deactivated; its people are signed out." : "The workspace is active again.");
         return RedirectToPage(new { id = Id });
     }
 
@@ -59,11 +54,11 @@ public class WorkspaceModel(PlatformService platform) : PageModel
 
         if (result.Succeeded)
         {
-            Notice = active ? "Account activated." : "Account deactivated; the person is signed out.";
+            TempData.Success(active ? "Account activated." : "Account deactivated; the person is signed out.");
         }
         else
         {
-            Error = result.Message;
+            TempData.Failure(result.Message ?? "The change could not be saved.");
         }
 
         return RedirectToPage(new { id = Id });
@@ -80,11 +75,11 @@ public class WorkspaceModel(PlatformService platform) : PageModel
 
         if (result.Succeeded)
         {
-            Notice = "Account deleted. What the person wrote stays, signed \"Deleted user\".";
+            TempData.Success("Account deleted. What the person wrote stays, signed \"Deleted user\".");
         }
         else
         {
-            Error = result.Message;
+            TempData.Failure(result.Message ?? "The change could not be saved.");
         }
 
         return RedirectToPage(new { id = Id });
@@ -101,11 +96,11 @@ public class WorkspaceModel(PlatformService platform) : PageModel
 
         if (!result.Succeeded)
         {
-            Error = result.Message;
+            TempData.Failure(result.Message ?? "The change could not be saved.");
             return RedirectToPage(new { id = Id });
         }
 
-        TempData["Notice"] = "The workspace is deleted with everything in it.";
+        TempData.Success("The workspace is deleted with everything in it.");
         return RedirectToPage("Index");
     }
 

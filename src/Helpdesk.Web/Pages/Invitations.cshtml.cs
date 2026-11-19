@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Tickets;
+using Helpdesk.Web.Features.Toasts;
 using Helpdesk.Web.Features.Workspaces;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -16,12 +17,6 @@ public class InvitationsModel(InvitationService invitations, JoinLinkService joi
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
-
-    [TempData]
-    public string? Error { get; set; }
-
-    [TempData]
-    public string? Notice { get; set; }
 
     public IReadOnlyList<InvitationRow> Waiting { get; private set; } = [];
 
@@ -48,7 +43,7 @@ public class InvitationsModel(InvitationService invitations, JoinLinkService joi
 
             if (result.Succeeded)
             {
-                Notice = $"Invitation sent to {Input.Email.Trim().ToLowerInvariant()}.";
+                TempData.Success($"Invitation sent to {Input.Email.Trim().ToLowerInvariant()}.");
                 return RedirectToPage();
             }
 
@@ -70,11 +65,11 @@ public class InvitationsModel(InvitationService invitations, JoinLinkService joi
 
         if (result.Succeeded)
         {
-            Notice = "Invitation withdrawn.";
+            TempData.Success("Invitation withdrawn.");
         }
         else
         {
-            Error = result.Message;
+            TempData.Failure(result.Message ?? "The change could not be saved.");
         }
 
         return RedirectToPage();
@@ -92,11 +87,11 @@ public class InvitationsModel(InvitationService invitations, JoinLinkService joi
 
         if (result.Succeeded)
         {
-            Notice = success;
+            TempData.Success(success);
         }
         else
         {
-            Error = result.Message;
+            TempData.Failure(result.Message ?? "The change could not be saved.");
         }
 
         return RedirectToPage();

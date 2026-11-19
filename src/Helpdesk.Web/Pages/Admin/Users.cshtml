@@ -12,14 +12,6 @@
     </div>
 </div>
 
-@if (Model.Error is not null)
-{
-    <div class="alert alert-danger" role="alert">@Model.Error</div>
-}
-@if (Model.Notice is not null)
-{
-    <div class="alert alert-success" role="status">@Model.Notice</div>
-}
 
 <form method="get" class="toolbar">
     <input type="search" name="q" value="@Model.Search" class="form-control toolbar-search" placeholder="Search by name or e-mail" aria-label="Search users" />

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Helpdesk.Web.Data;
+using Helpdesk.Web.Features.Toasts;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,9 +23,6 @@ public class SettingsModel(
 
     /// <summary>False for accounts created with an e-mail code that never set a password.</summary>
     public bool HasPassword { get; private set; }
-
-    [TempData]
-    public string? Notice { get; set; }
 
     public string Email { get; private set; } = string.Empty;
 
@@ -62,7 +60,7 @@ public class SettingsModel(
 
         // The name is part of the sign-in cookie, so sign in again to show the new one right away.
         await signInManager.RefreshSignInAsync(user);
-        Notice = "Name updated.";
+        TempData.Success("Name updated.");
         return RedirectToPage();
     }
 
@@ -103,7 +101,7 @@ public class SettingsModel(
 
         SecurityLog.PasswordChanged(logger, user.Id);
         await signInManager.RefreshSignInAsync(user);
-        Notice = "Password changed.";
+        TempData.Success("Password changed.");
         return RedirectToPage();
     }
 
@@ -135,7 +133,7 @@ public class SettingsModel(
 
         SecurityLog.PasswordChanged(logger, user.Id);
         await signInManager.RefreshSignInAsync(user);
-        Notice = "Password set.";
+        TempData.Success("Password set.");
         return RedirectToPage();
     }
 

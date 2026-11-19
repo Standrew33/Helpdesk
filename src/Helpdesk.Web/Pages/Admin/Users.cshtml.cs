@@ -1,5 +1,6 @@
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Tickets;
+using Helpdesk.Web.Features.Toasts;
 using Helpdesk.Web.Features.Users;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -11,12 +12,6 @@ public class UsersModel(UserAdminService admin) : PageModel
 {
     [BindProperty(Name = "q", SupportsGet = true)]
     public string? Search { get; set; }
-
-    [TempData]
-    public string? Error { get; set; }
-
-    [TempData]
-    public string? Notice { get; set; }
 
     public IReadOnlyList<UserRow> Users { get; private set; } = [];
 
@@ -47,11 +42,11 @@ public class UsersModel(UserAdminService admin) : PageModel
 
         if (result.Succeeded)
         {
-            Notice = success;
+            TempData.Success(success);
         }
         else
         {
-            Error = result.Message;
+            TempData.Failure(result.Message ?? "The change could not be saved.");
         }
 
         return RedirectToPage(new { q = Search });
