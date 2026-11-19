@@ -66,6 +66,12 @@
 
         event.preventDefault();
         modal.hide();
+
+        // The status the reason belongs to shows that it is being saved; it is drawn anew once it is.
+        if (source) {
+            source.setAttribute('aria-busy', 'true');
+        }
+
         window.helpdeskSend(form);
     });
 }());
