@@ -28,7 +28,7 @@ public class IndexModel(PlatformService platform) : PageModel
             return NotFound();
         }
 
-        Notice = blocked ? "The help desk is blocked; its people are signed out." : "The help desk works again.";
+        Notice = blocked ? "The workspace is blocked; its people are signed out." : "The workspace works again.";
         return RedirectToPage();
     }
 }

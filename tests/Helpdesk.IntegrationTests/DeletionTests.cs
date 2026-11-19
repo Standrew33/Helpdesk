@@ -147,11 +147,11 @@ public class DeletionTests(SqlServerFixture sql) : WebTestBase(sql)
             .Where(t => t.WorkspaceId == acme).SelectMany(t => t.Attachments).Select(a => a.StoredName).SingleAsync());
 
         var wrong = await DeleteWorkspaceAsync(owner, acme, "acme support");
-        Assert.Contains("Type the name of the help desk exactly", await (await owner.FollowAsync(wrong)).Content.ReadAsStringAsync());
+        Assert.Contains("Type the name of the workspace exactly", await (await owner.FollowAsync(wrong)).Content.ReadAsStringAsync());
         Assert.NotNull(await UserAsync(Boss));
 
         var done = await DeleteWorkspaceAsync(owner, acme, "Acme support");
-        Assert.Contains("The help desk is deleted", await (await owner.FollowAsync(done)).Content.ReadAsStringAsync());
+        Assert.Contains("The workspace is deleted", await (await owner.FollowAsync(done)).Content.ReadAsStringAsync());
 
         Assert.DoesNotContain("Acme support", await owner.GetHtmlAsync("/Platform"));
         Assert.Null(await UserAsync(Boss));

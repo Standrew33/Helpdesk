@@ -212,7 +212,7 @@ public partial class PlatformService(
 
         if (!string.Equals(confirmName?.Trim(), workspace.Name, StringComparison.Ordinal))
         {
-            return ServiceResult.Invalid("Type the name of the help desk exactly as it is shown to delete it.");
+            return ServiceResult.Invalid("Type the name of the workspace exactly as it is shown to delete it.");
         }
 
         var tickets = db.Tickets.IgnoreQueryFilters().Where(t => t.WorkspaceId == id);

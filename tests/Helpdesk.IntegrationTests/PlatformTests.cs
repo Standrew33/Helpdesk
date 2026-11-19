@@ -75,7 +75,7 @@ public class PlatformTests(SqlServerFixture sql) : WebTestBase(sql)
 
         var platform = await client.GetHtmlAsync("/Platform");
         Assert.Contains($"<span class=\"user-email\">{Owner}</span>", platform);
-        Assert.Contains("Help desks", platform);
+        Assert.Contains("Workspaces", platform);
         Assert.DoesNotContain("href=\"/Tickets\"", platform);
     }
 

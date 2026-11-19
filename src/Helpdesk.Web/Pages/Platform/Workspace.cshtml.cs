@@ -44,7 +44,7 @@ public class WorkspaceModel(PlatformService platform) : PageModel
             return NotFound();
         }
 
-        Notice = blocked ? "The help desk is blocked; its people are signed out." : "The help desk works again.";
+        Notice = blocked ? "The workspace is blocked; its people are signed out." : "The workspace works again.";
         return RedirectToPage(new { id = Id });
     }
 
@@ -105,7 +105,7 @@ public class WorkspaceModel(PlatformService platform) : PageModel
             return RedirectToPage(new { id = Id });
         }
 
-        TempData["Notice"] = "The help desk is deleted with everything in it.";
+        TempData["Notice"] = "The workspace is deleted with everything in it.";
         return RedirectToPage("Index");
     }
 
