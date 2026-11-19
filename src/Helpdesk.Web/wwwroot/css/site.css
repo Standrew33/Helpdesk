@@ -96,9 +96,9 @@ a:hover {
   flex: 1;
 }
 
-/* The ticket list uses the width of the screen; reading pages keep a comfortable line length. */
+/* The ticket list takes the whole width next to the sidebar; reading pages keep a comfortable line length. */
 .page.page-wide {
-  max-width: 100rem;
+  max-width: none;
 }
 
 .brand {
