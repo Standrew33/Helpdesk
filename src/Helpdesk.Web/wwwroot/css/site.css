@@ -952,8 +952,26 @@ form[aria-busy="true"] select {
 
 /* A row opens with a double click; the icon at its end opens it with one click or from the keyboard. */
 .ticket-table tbody tr[data-open] {
-  cursor: default;
+  cursor: pointer;
   user-select: none;
+}
+
+/* The row under the pointer is tinted and marked on its left edge, so it reads as something to open. */
+.ticket-table tbody tr[data-open] > td {
+  transition: background-color 0.12s ease-in-out, box-shadow 0.12s ease-in-out;
+}
+
+.ticket-table tbody tr[data-open]:hover > td {
+  background-color: #eef8f6;
+  --bs-table-bg-state: transparent;
+}
+
+.ticket-table tbody tr[data-open]:hover > td:first-child {
+  box-shadow: inset 3px 0 0 var(--hd-accent);
+}
+
+.ticket-table tbody tr[data-open]:hover .ticket-subject {
+  color: var(--hd-accent-dark);
 }
 
 /* The status and priority buttons of a row sit in the line of text, without making the row taller. */
