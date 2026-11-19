@@ -23,9 +23,11 @@ public class HelpdeskDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
 
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     /// <summary>
-    /// The only workspace whose tickets this context reads. It is read anew for every query.
-    /// Without one (start-up work, a signed-out request) no ticket is read at all, unless a query asks for every
+    /// The only workspace whose tickets and notifications this context reads. It is read anew for every query.
+    /// Without one (start-up work, a signed-out request) none is read at all, unless a query asks for every
     /// workspace on purpose with <c>IgnoreQueryFilters</c>.
     /// </summary>
     public int? WorkspaceId => _workspace?.Id;
@@ -37,5 +39,6 @@ public class HelpdeskDbContext : IdentityDbContext<ApplicationUser>
 
         // A second guard behind the checks of the services: a query that forgets the workspace still stays inside it.
         builder.Entity<Ticket>().HasQueryFilter(t => t.WorkspaceId == WorkspaceId);
+        builder.Entity<Notification>().HasQueryFilter(n => n.WorkspaceId == WorkspaceId);
     }
 }

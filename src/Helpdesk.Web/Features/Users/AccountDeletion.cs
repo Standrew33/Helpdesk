@@ -43,6 +43,9 @@ public class AccountDeletion(HelpdeskDbContext db, UserManager<ApplicationUser> 
         steps.Add(await userManager.UpdateSecurityStampAsync(user));
         await db.SignInChallenges.Where(c => c.Email == oldEmail).ExecuteDeleteAsync();
 
+        // What the person was told is of no use to anyone now; what others were told of their doing stays.
+        await db.Notifications.IgnoreQueryFilters().Where(n => n.RecipientId == user.Id).ExecuteDeleteAsync();
+
         return steps.All(s => s.Succeeded);
     }
 }

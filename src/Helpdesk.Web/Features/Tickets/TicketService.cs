@@ -1,4 +1,5 @@
 using Helpdesk.Core;
+using Helpdesk.Core.Notifications;
 using Helpdesk.Core.Tickets;
 using Helpdesk.Core.Users;
 using Helpdesk.Web.Data;
@@ -158,22 +159,30 @@ public class TicketService(
     /// <returns>The number of the new ticket in the actor's workspace.</returns>
     public async Task<int> CreateAsync(Actor actor, string subject, string description, TicketPriority priority, DateOnly? dueDate = null)
     {
-        // The number and the ticket are saved together: a ticket that is refused does not use up a number.
+        // The number, the ticket and the notifications of the staff are saved together: a ticket that is refused does
+        // not use up a number.
         Ticket? ticket = null;
+        List<Notification> notifications = [];
         var strategy = db.Database.CreateExecutionStrategy();
 
         await strategy.ExecuteAsync(async () =>
         {
-            // A retried attempt starts over; the ticket of the failed one must not be saved twice.
+            // A retried attempt starts over; what the failed one added must not be saved twice.
             if (ticket is not null)
             {
                 db.Entry(ticket).State = EntityState.Detached;
+                notifications.ForEach(n => db.Entry(n).State = EntityState.Detached);
             }
 
             await using var transaction = await db.Database.BeginTransactionAsync();
             var number = await TicketNumbers.ReserveAsync(db, actor.WorkspaceId);
-            ticket = Ticket.Create(number, subject, description, priority, actor, time.GetUtcNow(), dueDate);
+            var now = time.GetUtcNow();
+            ticket = Ticket.Create(number, subject, description, priority, actor, now, dueDate);
             db.Tickets.Add(ticket);
+            await db.SaveChangesAsync();
+
+            var staff = await AssignableStaff(actor).Select(u => u.Id).ToListAsync();
+            notifications = await NotifyAsync(ticket, actor, staff.Select(id => new TicketNotice(id, NotificationKind.NewTicket)), now);
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
         });
@@ -284,7 +293,10 @@ public class TicketService(
 
         try
         {
-            await change(ticket, time.GetUtcNow());
+            var now = time.GetUtcNow();
+            var before = TicketNotifications.Snapshot(ticket);
+            await change(ticket, now);
+            await NotifyAsync(ticket, actor, TicketNotifications.ForChange(ticket, actor, before), now);
             await db.SaveChangesAsync();
             return ServiceResult.Success();
         }
@@ -296,6 +308,43 @@ public class TicketService(
         {
             return ServiceResult.Conflict("The ticket was changed by someone else. Reload the page and try again.");
         }
+    }
+
+    /// <summary>
+    /// Adds the notifications of a change, to be saved with it. Only people who can still use the workspace are told:
+    /// a deactivated or deleted account is left out.
+    /// </summary>
+    private async Task<List<Notification>> NotifyAsync(Ticket ticket, Actor actor, IEnumerable<TicketNotice> notices, DateTimeOffset now)
+    {
+        var wanted = notices.ToList();
+
+        if (wanted.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = wanted.Select(n => n.RecipientId).ToList();
+        var reachable = await db.Users
+            .Where(u => ids.Contains(u.Id) && u.WorkspaceId == ticket.WorkspaceId && u.IsActive && u.DeletedAt == null)
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        var notifications = wanted
+            .Where(n => reachable.Contains(n.RecipientId))
+            .Select(n => new Notification
+            {
+                WorkspaceId = ticket.WorkspaceId,
+                RecipientId = n.RecipientId,
+                TicketId = ticket.Id,
+                ActorId = actor.Id,
+                Kind = n.Kind,
+                Detail = n.Detail,
+                CreatedAt = now,
+            })
+            .ToList();
+
+        db.Notifications.AddRange(notifications);
+        return notifications;
     }
 
     /// <summary>A ticket is known by its number within the workspace; the same number in another workspace is another ticket.</summary>
