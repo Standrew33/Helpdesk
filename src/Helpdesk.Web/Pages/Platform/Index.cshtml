@@ -9,7 +9,7 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">Workspaces</h1>
-        <p class="page-subtitle">Every workspace on the platform: the help desk of one company. You can look into any of them and deactivate it.</p>
+        <p class="page-subtitle">Every workspace on the platform: the help desk of one company.</p>
     </div>
 </div>
 
@@ -27,6 +27,7 @@ else
                     <tr>
                         <th>Workspace</th>
                         <th class="text-end">People</th>
+                        <th class="text-end">Open tickets</th>
                         <th class="text-end">Tickets</th>
                         <th>Last activity</th>
                         <th>Status</th>
@@ -42,6 +43,7 @@ else
                                 <div class="text-secondary small">Since @TicketDisplay.Date(workspace.CreatedAt)</div>
                             </td>
                             <td class="text-end">@workspace.People</td>
+                            <td class="text-end">@workspace.OpenTickets</td>
                             <td class="text-end">@workspace.Tickets</td>
                             <td class="text-nowrap">@(workspace.LastActivity is { } last ? TicketDisplay.Date(last) : new Microsoft.AspNetCore.Html.HtmlString("&ndash;"))</td>
                             <td><span class="pill @(workspace.IsBlocked ? "pill-closed" : "pill-active")">@(workspace.IsBlocked ? "Deactivated" : "Active")</span></td>

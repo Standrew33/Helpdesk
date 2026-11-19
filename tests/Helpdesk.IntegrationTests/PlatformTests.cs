@@ -126,6 +126,8 @@ public class PlatformTests(SqlServerFixture sql) : WebTestBase(sql)
         var list = await owner.GetHtmlAsync("/Platform");
         Assert.Contains("Acme support", list);
         Assert.Contains("Other desk", list);
+        Assert.Contains("Open tickets", list);
+        Assert.DoesNotContain("You can look into", list);
 
         var workspace = await owner.GetHtmlAsync($"/Platform/Workspace/{acme}");
         Assert.Contains(Boss, workspace);

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Helpdesk.Web.Features.Platform;
 
-public sealed record WorkspaceRow(int Id, string Name, DateTimeOffset CreatedAt, int People, int Tickets, DateTimeOffset? LastActivity, bool IsBlocked);
+public sealed record WorkspaceRow(int Id, string Name, DateTimeOffset CreatedAt, int People, int Tickets, int OpenTickets, DateTimeOffset? LastActivity, bool IsBlocked);
 
 public sealed record PersonRow(string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsOwner);
 
@@ -47,6 +47,7 @@ public partial class PlatformService(
                 w.CreatedAt,
                 db.Users.Count(u => u.WorkspaceId == w.Id && u.DeletedAt == null),
                 tickets.Count(t => t.WorkspaceId == w.Id),
+                tickets.Count(t => t.WorkspaceId == w.Id && t.Status != TicketStatus.Closed),
                 tickets.Where(t => t.WorkspaceId == w.Id).Max(t => (DateTimeOffset?)t.UpdatedAt),
                 w.IsBlocked))
             .ToListAsync(ct);
