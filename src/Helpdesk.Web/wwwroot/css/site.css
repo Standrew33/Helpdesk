@@ -931,6 +931,13 @@ form[aria-busy="true"] select {
   width: auto;
 }
 
+/* The browser's own clear button is left out: the round cross after the filters clears the search with them. */
+.toolbar-search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
 .toolbar-choice {
   flex: 0 0 auto;
 }
