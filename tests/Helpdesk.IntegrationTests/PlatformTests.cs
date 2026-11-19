@@ -168,7 +168,7 @@ public class PlatformTests(SqlServerFixture sql) : WebTestBase(sql)
 
         await BlockAsync(owner, acme, blocked: true);
 
-        Assert.Contains("Blocked", await owner.GetHtmlAsync("/Platform"));
+        Assert.Contains("Deactivated", await owner.GetHtmlAsync("/Platform"));
         foreach (var client in new[] { boss, customer })
         {
             var response = await client.GetAsync("/Tickets");

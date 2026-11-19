@@ -14,12 +14,12 @@
         <h1 class="page-title">@overview.Name</h1>
         <p class="page-subtitle">
             Since @TicketDisplay.Date(overview.CreatedAt) &middot;
-            <span class="pill @(overview.IsBlocked ? "pill-closed" : "pill-active")">@(overview.IsBlocked ? "Blocked" : "Active")</span>
+            <span class="pill @(overview.IsBlocked ? "pill-closed" : "pill-active")">@(overview.IsBlocked ? "Deactivated" : "Active")</span>
         </p>
     </div>
     <form method="post" asp-page-handler="Block" asp-route-id="@overview.Id">
         <input type="hidden" name="blocked" value="@((!overview.IsBlocked).ToString().ToLowerInvariant())" />
-        <button type="submit" class="btn btn-outline-secondary">@(overview.IsBlocked ? "Unblock the workspace" : "Block the workspace")</button>
+        <button type="submit" class="btn btn-outline-secondary">@(overview.IsBlocked ? "Activate the workspace" : "Deactivate the workspace")</button>
     </form>
 </div>
 

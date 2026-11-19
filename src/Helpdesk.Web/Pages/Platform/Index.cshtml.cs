@@ -28,7 +28,7 @@ public class IndexModel(PlatformService platform) : PageModel
             return NotFound();
         }
 
-        Notice = blocked ? "The workspace is blocked; its people are signed out." : "The workspace works again.";
+        Notice = blocked ? "The workspace is deactivated; its people are signed out." : "The workspace is active again.";
         return RedirectToPage();
     }
 }
