@@ -101,6 +101,11 @@ a:hover {
   max-width: none;
 }
 
+/* A ticket has a side column next to its text, so it gets more room than a reading page, though not all of it. */
+.page.page-ticket {
+  max-width: 88rem;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
