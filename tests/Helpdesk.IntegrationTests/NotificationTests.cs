@@ -136,4 +136,55 @@ public class NotificationTests(SqlServerFixture sql) : WebTestBase(sql)
         Assert.Contains("deleted", await (await owner.FollowAsync(deleted)).Content.ReadAsStringAsync());
         Assert.Empty(await ToldAsync());
     }
+
+    private static string Count(string html)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(html, "class=\"bell-count\" data-unread-count( hidden=\"hidden\")?>([^<]*)<");
+        Assert.True(match.Success, "The page has no bell.");
+        return match.Groups[1].Success ? "none" : match.Groups[2].Value;
+    }
+
+    [Fact]
+    public async Task The_bell_counts_what_is_unread_and_the_list_says_what_happened()
+    {
+        var customer = await SignedInAsync("Customer");
+        var first = await customer.CreateTicketAsync("Printer is down");
+        var second = await customer.CreateTicketAsync("Scanner too");
+        var op = await SignedInAsync("Operator");
+        await op.PostTicketActionAsync(first, "Comment", Fields(("body", "Try another cable.")));
+        await op.PostTicketActionAsync(second, "Status", Fields(("status", "InProgress")));
+
+        Assert.Equal("2", Count(await customer.GetHtmlAsync("/Tickets")));
+        var list = await customer.GetHtmlAsync("/Notifications");
+        Assert.Contains("<strong>Test operator</strong> moved", list);
+        Assert.Contains("#2 Scanner too</span>", list);
+        Assert.Contains("to In progress", list);
+        Assert.Contains("<strong>Test operator</strong> replied on", list);
+        Assert.Contains("Mark all as read", list);
+
+        // Opening a ticket reads what was told about it, and the page drawn already counts it so.
+        Assert.Equal("1", Count(await customer.GetHtmlAsync($"/Tickets/Details/{first}")));
+
+        await customer.PostFormAsync("/Notifications", "/Notifications?handler=ReadAll", new Dictionary<string, string>());
+        Assert.Equal("none", Count(await customer.GetHtmlAsync("/Tickets")));
+        Assert.DoesNotContain("Mark all as read", await customer.GetHtmlAsync("/Notifications"));
+    }
+
+    [Fact]
+    public async Task Everyone_sees_only_their_own_notifications_and_the_owner_has_no_bell()
+    {
+        await StandardUserIdAsync("Operator");
+        var customer = await SignedInAsync("Customer");
+        await customer.CreateTicketAsync("Printer is down");
+        var op = await SignedInAsync("Operator");
+
+        Assert.Contains("opened", await op.GetHtmlAsync("/Notifications"));
+        Assert.Contains("Nothing yet", await customer.GetHtmlAsync("/Notifications"));
+        Assert.Equal("none", Count(await customer.GetHtmlAsync("/Tickets")));
+
+        var owner = NewClient();
+        await SignUpAsync(owner, "owner@platform.test", "Olivia Owner");
+        Assert.DoesNotContain("data-bell", await owner.GetHtmlAsync("/Platform"));
+        Assert.NotEqual(System.Net.HttpStatusCode.OK, (await owner.GetAsync("/Notifications")).StatusCode);
+    }
 }

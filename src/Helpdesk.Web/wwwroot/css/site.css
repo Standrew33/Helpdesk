@@ -67,8 +67,10 @@ a:hover {
   min-height: 100vh;
 }
 
+/* Above the page, so the bell's list can open over it. */
 .sidebar {
   position: sticky;
+  z-index: 20;
   top: 0;
   align-self: flex-start;
   height: 100vh;
@@ -123,6 +125,162 @@ a:hover {
 
 .brand svg {
   display: block;
+}
+
+/* The brand and the bell share the top line of the sidebar. */
+.side-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.bell-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  color: var(--hd-ink-text);
+}
+
+.bell-toggle:hover,
+.bell-toggle[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.bell-toggle:focus-visible {
+  outline: 2px solid #7ee7d6;
+  outline-offset: 1px;
+}
+
+.bell-toggle svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.bell-count {
+  position: absolute;
+  top: 0.1rem;
+  right: 0.05rem;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: #f97066;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--hd-ink);
+}
+
+.bell-count[hidden] {
+  display: none;
+}
+
+.bell-menu {
+  width: 24rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0;
+  overflow: hidden;
+  border-color: var(--hd-border);
+  box-shadow: 0 12px 32px rgba(14, 28, 27, 0.18);
+}
+
+.bell-menu .notification-items {
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+/* ---------- Notifications (page and bell) ---------- */
+
+.notification-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--hd-border);
+}
+
+.notification-title {
+  font-weight: 600;
+}
+
+.notification-empty {
+  margin: 0;
+  padding: 1.5rem 1rem;
+  color: var(--hd-muted);
+  text-align: center;
+}
+
+.notification-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notification-items li + li {
+  border-top: 1px solid var(--hd-border);
+}
+
+.notification {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--hd-text);
+}
+
+.notification:hover {
+  background: #f6f9f8;
+  color: var(--hd-text);
+  text-decoration: none;
+}
+
+.notification.is-unread {
+  background: #f0f9f7;
+}
+
+.notification.is-unread:hover {
+  background: #e6f4f1;
+}
+
+.notification-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.notification-text {
+  font-size: 0.9rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.notification-ticket {
+  font-weight: 600;
+}
+
+.notification-time {
+  font-size: 0.78rem;
+  color: var(--hd-muted);
+}
+
+.notification-dot {
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.4rem;
+  border-radius: 50%;
+  background: var(--hd-accent);
 }
 
 .side-nav {

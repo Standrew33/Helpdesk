@@ -1,6 +1,7 @@
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Attachments;
 using Helpdesk.Web.Features.Email;
+using Helpdesk.Web.Features.Notifications;
 using Helpdesk.Web.Features.Platform;
 using Helpdesk.Web.Features.SignIn;
 using Helpdesk.Web.Features.Tickets;
@@ -27,6 +28,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Admin", Policies.AdminOnly);
     options.Conventions.AuthorizeFolder("/Platform", Policies.Platform);
     options.Conventions.AuthorizePage("/Tickets/Details", Policies.Workspace);
+    options.Conventions.AuthorizePage("/Notifications", Policies.Workspace);
 });
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAttachmentStore(builder.Configuration);
@@ -35,6 +37,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentWorkspace>();
 builder.Services.AddScoped<AccountAccess>();
 builder.Services.AddScoped<TicketService>();
+builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<AccountDeletion>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddScoped<WorkspaceSignUp>();

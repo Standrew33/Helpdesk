@@ -1,0 +1,54 @@
+@page
+@model Helpdesk.Web.Pages.NotificationsModel
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Notifications</h1>
+        <p class="page-subtitle">What happened to your tickets lately. Opening a ticket marks its notifications as read.</p>
+    </div>
+</div>
+
+@* The bell in the sidebar shows this list as it is drawn here (js/notifications.js). *@
+<div id="notification-list" class="card overflow-hidden">
+    <div class="notification-head">
+        <span class="notification-title">Latest</span>
+        @if (Model.Unread > 0)
+        {
+            <form method="post" asp-page="/Notifications" asp-page-handler="ReadAll" data-read-all>
+                <button type="submit" class="btn btn-link btn-sm p-0">Mark all as read</button>
+            </form>
+        }
+    </div>
+    @if (Model.Items.Count == 0)
+    {
+        <p class="notification-empty">Nothing yet. You will be told here when something happens to your tickets.</p>
+    }
+    else
+    {
+        <ul class="notification-items">
+            @foreach (var item in Model.Items)
+            {
+                <li>
+                    <a class="notification @(item.IsRead ? "" : "is-unread")" asp-page="/Tickets/Details" asp-route-number="@item.TicketNumber">
+                        <span class="avatar" aria-hidden="true">@(item.ActorName.Length > 0 ? item.ActorName[..1].ToUpperInvariant() : "?")</span>
+                        <span class="notification-body">
+                            <span class="notification-text">
+                                <strong>@item.ActorName</strong> @Helpdesk.Web.Features.Notifications.NotificationDisplay.Verb(item.Kind)
+                                <span class="notification-ticket">#@item.TicketNumber @item.TicketSubject</span>
+                                @Helpdesk.Web.Features.Notifications.NotificationDisplay.Ending(item)
+                            </span>
+                            <span class="notification-time">@TicketDisplay.Date(item.CreatedAt)</span>
+                        </span>
+                        @if (!item.IsRead)
+                        {
+                            <span class="notification-dot"><span class="visually-hidden">Unread</span></span>
+                        }
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+</div>

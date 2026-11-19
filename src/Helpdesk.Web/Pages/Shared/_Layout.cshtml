@@ -1,4 +1,5 @@
-﻿@{
+﻿@inject Helpdesk.Web.Features.Notifications.NotificationService Notifications
+@{
     var page = ViewContext.RouteData.Values["page"] as string ?? "";
     var isSignedIn = User.Identity?.IsAuthenticated == true;
     var displayName = User.DisplayName();
@@ -12,6 +13,9 @@
     var home = inWorkspace ? "/Tickets/Index" : "/Platform/Index";
     var onTickets = page is "/Tickets/Index" or "/Tickets/Details";
     var body = RenderBody();
+
+    // Counted after the page did its work, so a ticket just opened is no longer unread.
+    var unread = inWorkspace && role.Length > 0 ? await Notifications.UnreadCountAsync(User.ToActor()) : 0;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -29,13 +33,31 @@
     {
         <div class="shell">
             <aside class="sidebar">
-                <a class="brand" asp-page="@home">
-                    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
-                        <rect width="30" height="30" rx="8" fill="#14b8a6" />
-                        <path d="M9 11h12M9 15h12M9 19h7" stroke="#06211e" stroke-width="2" stroke-linecap="round" fill="none" />
-                    </svg>
-                    <span>Helpdesk</span>
-                </a>
+                <div class="side-top">
+                    <a class="brand" asp-page="@home">
+                        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+                            <rect width="30" height="30" rx="8" fill="#14b8a6" />
+                            <path d="M9 11h12M9 15h12M9 19h7" stroke="#06211e" stroke-width="2" stroke-linecap="round" fill="none" />
+                        </svg>
+                        <span>Helpdesk</span>
+                    </a>
+
+                    @* The bell opens the latest notifications in place (js/notifications.js); without scripts it is a link. *@
+                    @if (inWorkspace && role.Length > 0)
+                    {
+                        <div class="dropdown bell" data-bell>
+                            <a asp-page="/Notifications" class="bell-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                               aria-expanded="false" title="Notifications"
+                               aria-label="@(unread > 0 ? $"Notifications, {unread} unread" : "Notifications")">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+                                <span class="bell-count" data-unread-count hidden="@(unread == 0)">@Helpdesk.Web.Features.Notifications.NotificationDisplay.Count(unread)</span>
+                            </a>
+                            <div class="dropdown-menu bell-menu" data-bell-menu>
+                                <p class="notification-empty">Loading&hellip;</p>
+                            </div>
+                        </div>
+                    }
+                </div>
 
                 <nav class="side-nav" aria-label="Main">
                     @if (inWorkspace)
@@ -125,6 +147,7 @@
     <script src="~/js/password-toggle.js" asp-append-version="true"></script>
     <script src="~/js/choice.js" asp-append-version="true"></script>
     <script src="~/js/local-time.js" asp-append-version="true"></script>
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

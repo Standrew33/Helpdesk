@@ -1,6 +1,7 @@
 using System.Globalization;
 using Helpdesk.Core.Tickets;
 using Helpdesk.Core.Users;
+using Helpdesk.Web.Features.Notifications;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ namespace Helpdesk.Web.Pages.Tickets;
 
 // Slightly above the file limit, so oversized uploads are cut off early and answered with a clear message.
 [RequestSizeLimit(AttachmentPolicy.MaxFileBytes + 512 * 1024)]
-public class DetailsModel(TicketService tickets) : PageModel
+public class DetailsModel(TicketService tickets, NotificationService notifications) : PageModel
 {
     /// <summary>The number of the ticket within the user's workspace.</summary>
     [FromRoute]
@@ -51,6 +52,9 @@ public class DetailsModel(TicketService tickets) : PageModel
 
         Details = details;
         IsStaff = actor.Role.IsStaff();
+
+        // Seeing the ticket is reading what one was told about it; the bell of this very page already counts it.
+        await notifications.MarkTicketReadAsync(actor, details.Ticket.Id, ct);
         StatusOptions = Enum.GetValues<TicketStatus>()
             .Where(s => s == details.Ticket.Status || TicketWorkflow.IsAllowed(details.Ticket.Status, s, actor.Role))
             .ToList();
