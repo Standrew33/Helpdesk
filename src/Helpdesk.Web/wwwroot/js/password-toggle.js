@@ -44,10 +44,26 @@
 
     button.addEventListener('click', function () {
       var show = input.type === 'password';
-      input.type = show ? 'text' : 'password';
-      button.setAttribute('aria-pressed', show ? 'true' : 'false');
-      button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+
+      partnersOf(input).forEach(function (field) {
+        field.type = show ? 'text' : 'password';
+        var toggle = field.parentNode.querySelector('.password-toggle');
+        toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+        toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      });
+
       input.focus();
     });
   });
+
+  // A new password and its confirmation are shown and hidden together; the current password goes on its own.
+  function partnersOf(input) {
+    if (!input.form || input.autocomplete !== 'new-password') {
+      return [input];
+    }
+
+    return Array.prototype.filter.call(input.form.querySelectorAll('.password-field input'), function (field) {
+      return field.autocomplete === 'new-password';
+    });
+  }
 })();
