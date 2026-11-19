@@ -87,7 +87,7 @@ else
                                             <input type="hidden" name="active" value="@((!user.IsActive).ToString().ToLowerInvariant())" />
                                             <button type="submit" class="btn btn-outline-secondary btn-sm">@(user.IsActive ? "Deactivate" : "Activate")</button>
                                         </form>
-                                        <partial name="_DeleteAccount" model="@(new Helpdesk.Web.Features.Users.DeleteAccountForm(user.Id, user.DisplayName, "id", new Dictionary<string, string?> { ["q"] = Model.Search }))" />
+                                        <partial name="_DeleteAccount" model="@(new Helpdesk.Web.Features.Users.DeleteAccountButton(user.Id, user.DisplayName))" />
                                     </div>
                                 }
                             </td>
@@ -102,4 +102,10 @@ else
     {
         <p class="text-secondary small mt-2">Showing the first @Model.MaxListSize users. Use the search to narrow the list.</p>
     }
+}
+
+<partial name="_DeleteAccountDialog" model="@(new Helpdesk.Web.Features.Users.DeleteAccountDialog("id", new Dictionary<string, string?> { ["q"] = Model.Search }))" />
+
+@section Scripts {
+    <script src="~/js/delete-account.js" asp-append-version="true"></script>
 }

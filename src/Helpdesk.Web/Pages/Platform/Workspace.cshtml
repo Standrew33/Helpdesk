@@ -63,7 +63,7 @@
                                         <input type="hidden" name="active" value="@((!person.IsActive).ToString().ToLowerInvariant())" />
                                         <button type="submit" class="btn btn-outline-secondary btn-sm">@(person.IsActive ? "Deactivate" : "Activate")</button>
                                     </form>
-                                    <partial name="_DeleteAccount" model="@(new Helpdesk.Web.Features.Users.DeleteAccountForm(person.Id, person.DisplayName, "userId", new Dictionary<string, string?> { ["id"] = overview.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) }))" />
+                                    <partial name="_DeleteAccount" model="@(new Helpdesk.Web.Features.Users.DeleteAccountButton(person.Id, person.DisplayName))" />
                                 </div>
                             }
                         </td>
@@ -130,3 +130,9 @@ else
         </form>
     </div>
 </div>
+
+<partial name="_DeleteAccountDialog" model="@(new Helpdesk.Web.Features.Users.DeleteAccountDialog("userId", new Dictionary<string, string?> { ["id"] = overview.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) }))" />
+
+@section Scripts {
+    <script src="~/js/delete-account.js" asp-append-version="true"></script>
+}
