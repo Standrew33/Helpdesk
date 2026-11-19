@@ -292,11 +292,12 @@
                         <dd class="@(ticket.IsOverdue(DateTimeOffset.UtcNow) ? "overdue" : "")">
                             @if (Model.IsOpen)
                             {
-                                @* The calendar of the browser; an empty field means no due date. *@
+                                @* A calendar (js/date-picker.js); no day chosen means no due date. *@
                                 <form method="post" asp-page-handler="DueDate" data-instant>
                                     <input type="hidden" name="rowVersion" value="@Model.Details.RowVersion" />
                                     <input id="dueDate" type="date" name="dueDate" value="@TicketDisplay.DayValue(ticket.DueDate)"
-                                           min="@TicketDisplay.DayValue(Model.EarliestDueDate)" class="form-control form-control-sm meta-date" />
+                                           min="@TicketDisplay.DayValue(Model.EarliestDueDate)" class="form-control form-control-sm"
+                                           data-date-picker data-placeholder="No due date" />
                                     <noscript><button type="submit" class="btn btn-outline-primary btn-sm mt-2">Save</button></noscript>
                                 </form>
                             }
@@ -319,6 +320,7 @@
 }
 
 @section Scripts {
+    <script src="~/js/date-picker.js" asp-append-version="true"></script>
     <script src="~/js/ticket-page.js" asp-append-version="true"></script>
     <script src="~/js/close-reason.js" asp-append-version="true"></script>
 }

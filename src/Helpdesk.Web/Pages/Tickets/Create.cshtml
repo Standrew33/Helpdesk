@@ -37,7 +37,8 @@
                         </div>
                         <div class="col-sm-6">
                             <label asp-for="Input.DueDate" class="form-label">Due date <span class="text-secondary fw-normal">(optional)</span></label>
-                            <input asp-for="Input.DueDate" type="date" class="form-control" min="@TicketDisplay.DayValue(Model.Today)" />
+                            <input asp-for="Input.DueDate" type="date" class="form-control" min="@TicketDisplay.DayValue(Model.Today)"
+                                   data-date-picker data-placeholder="No due date" />
                             <span asp-validation-for="Input.DueDate" class="field-validation-error"></span>
                         </div>
                     </div>
@@ -51,4 +52,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/date-picker.js" asp-append-version="true"></script>
 }

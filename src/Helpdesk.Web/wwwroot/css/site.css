@@ -765,15 +765,148 @@ form[aria-busy="true"] select {
   min-width: 0;
 }
 
-.meta-select,
-.meta-date {
+.meta-select {
   width: auto;
   max-width: 100%;
 }
 
-.overdue .meta-date {
+/* ---------- Calendar (js/date-picker.js) ---------- */
+
+.date-picker {
+  display: inline-block;
+  width: 100%;
+}
+
+.meta-list .date-picker {
+  width: auto;
+}
+
+/* The whole field is the button: a click anywhere opens the calendar. */
+.date-picker-toggle {
+  display: flex;
+  align-items: center;
+  min-width: 9.5rem;
+  padding-right: 2.25rem;
+  text-align: left;
+  cursor: pointer;
+  background: var(--bs-body-bg, #fff) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7c79' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3crect x='3' y='4' width='18' height='18' rx='2'/%3e%3cpath d='M16 2v4M8 2v4M3 10h18'/%3e%3c/svg%3e") no-repeat right 0.7rem center / 1rem;
+}
+
+.date-picker-toggle.form-control-sm {
+  min-width: 8.5rem;
+  padding-right: 2rem;
+  background-position: right 0.55rem center;
+  background-size: 0.9rem;
+}
+
+.date-picker-toggle:hover {
+  border-color: #b9c9c6;
+}
+
+.date-picker-toggle[aria-expanded="true"] {
+  border-color: var(--hd-accent);
+  box-shadow: 0 0 0 0.2rem rgba(15, 143, 126, 0.15);
+}
+
+.date-picker-placeholder {
+  color: var(--hd-muted);
+}
+
+.meta-list .date-picker-toggle {
+  font-weight: 500;
+}
+
+.overdue .date-picker-toggle {
   color: var(--hd-danger);
   font-weight: 600;
+}
+
+.date-picker-menu {
+  width: 17.5rem;
+  padding: 0.75rem;
+  border-color: var(--hd-border);
+  box-shadow: 0 8px 24px rgba(14, 28, 27, 0.12);
+}
+
+.date-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.date-picker-head .icon-btn {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.date-picker-head .icon-btn:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.date-picker-title {
+  font-weight: 600;
+}
+
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+}
+
+.date-picker-weekday {
+  padding: 0.25rem 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--hd-muted);
+}
+
+.date-picker-day {
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--hd-text);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.date-picker-day:hover {
+  background: var(--hd-accent-soft);
+}
+
+.date-picker-day:focus-visible {
+  outline: 2px solid var(--hd-accent);
+  outline-offset: -2px;
+}
+
+.date-picker-day.is-today {
+  font-weight: 700;
+  color: var(--hd-accent-dark);
+  box-shadow: inset 0 0 0 1px var(--hd-accent);
+}
+
+.date-picker-day.is-chosen {
+  background: var(--hd-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.date-picker-day:disabled {
+  color: #b9c4c2;
+  background: transparent;
+  cursor: default;
+}
+
+.date-picker-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--hd-border);
 }
 
 /* ---------- Ticket list ---------- */
