@@ -4,6 +4,7 @@ using Helpdesk.Core.Tickets;
 using Helpdesk.Core.Users;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Attachments;
+using Helpdesk.Web.Features.Notifications;
 using Helpdesk.Web.Security;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,7 @@ public class TicketService(
     HelpdeskDbContext db,
     IAttachmentStore attachments,
     TimeProvider time,
+    NotificationPush push,
     ILogger<TicketService> logger)
 {
     public const int PageSize = 15;
@@ -187,6 +189,7 @@ public class TicketService(
             await transaction.CommitAsync();
         });
 
+        await push.TellAsync(notifications.Select(n => n.RecipientId));
         return ticket!.Number;
     }
 
@@ -296,8 +299,11 @@ public class TicketService(
             var now = time.GetUtcNow();
             var before = TicketNotifications.Snapshot(ticket);
             await change(ticket, now);
-            await NotifyAsync(ticket, actor, TicketNotifications.ForChange(ticket, actor, before), now);
+            var told = await NotifyAsync(ticket, actor, TicketNotifications.ForChange(ticket, actor, before), now);
             await db.SaveChangesAsync();
+
+            // Pages that are open hear of it once it is saved, never of a change that did not happen.
+            await push.TellAsync(told.Select(n => n.RecipientId));
             return ServiceResult.Success();
         }
         catch (DomainException ex)

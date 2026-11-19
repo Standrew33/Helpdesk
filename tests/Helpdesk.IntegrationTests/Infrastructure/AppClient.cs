@@ -1,24 +1,42 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Mvc.Testing.Handlers;
+using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Helpdesk.IntegrationTests.Infrastructure;
 
 /// <summary>A browser-like client: keeps cookies, does not follow redirects, handles anti-forgery tokens.</summary>
 public sealed partial class AppClient : IDisposable
 {
+    private readonly WebApplicationFactory<Program> _factory;
     private readonly HttpClient _http;
 
     public AppClient(WebApplicationFactory<Program> factory)
     {
-        _http = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            AllowAutoRedirect = false,
+        _factory = factory;
 
-            // Over HTTPS, as in production: secure cookies are not sent over plain http.
-            BaseAddress = new Uri("https://localhost"),
-            HandleCookies = true,
-        });
+        // Over HTTPS, as in production: secure cookies are not sent over plain http. Redirects are not followed.
+        _http = factory.CreateDefaultClient(new Uri("https://localhost"), new CookieContainerHandler(Cookies));
+    }
+
+    /// <summary>The cookies of this "browser", shared with its SignalR connections.</summary>
+    public CookieContainer Cookies { get; } = new();
+
+    /// <summary>Opens a SignalR connection the way a page of the signed-in user does.</summary>
+    public async Task<HubConnection> ConnectAsync(string path)
+    {
+        var connection = new HubConnectionBuilder()
+            .WithUrl(new Uri(_http.BaseAddress!, path), options =>
+            {
+                options.Transports = HttpTransportType.LongPolling;
+                options.HttpMessageHandlerFactory = _ => new CookieContainerHandler(Cookies) { InnerHandler = _factory.Server.CreateHandler() };
+            })
+            .Build();
+
+        await connection.StartAsync();
+        return connection;
     }
 
     /// <summary>Sends this header with every request, for example X-Forwarded-For as a proxy would.</summary>

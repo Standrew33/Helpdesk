@@ -1,6 +1,8 @@
 using Helpdesk.Core.Notifications;
 using Helpdesk.IntegrationTests.Infrastructure;
 using Helpdesk.Web.Data;
+using Helpdesk.Web.Features.Notifications;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -186,5 +188,52 @@ public class NotificationTests(SqlServerFixture sql) : WebTestBase(sql)
         await SignUpAsync(owner, "owner@platform.test", "Olivia Owner");
         Assert.DoesNotContain("data-bell", await owner.GetHtmlAsync("/Platform"));
         Assert.NotEqual(System.Net.HttpStatusCode.OK, (await owner.GetAsync("/Notifications")).StatusCode);
+    }
+
+    /// <summary>An open page of a user: it counts the times the server said something new is there.</summary>
+    private sealed class OpenPage(HubConnection connection) : IAsyncDisposable
+    {
+        private readonly TaskCompletionSource _heard = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public static async Task<OpenPage> OfAsync(AppClient client)
+        {
+            var connection = await client.ConnectAsync(NotificationHub.Path);
+            var page = new OpenPage(connection);
+            connection.On(NotificationHub.Notified, () => page._heard.TrySetResult());
+            return page;
+        }
+
+        public async Task<bool> HeardWithinAsync(TimeSpan time)
+            => await Task.WhenAny(_heard.Task, Task.Delay(time)) == _heard.Task;
+
+        public ValueTask DisposeAsync() => connection.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task An_open_page_of_the_recipient_hears_of_a_new_notification_at_once_and_the_others_do_not()
+    {
+        var customer = await SignedInAsync("Customer");
+        var number = await customer.CreateTicketAsync("Printer is down");
+        var op = await SignedInAsync("Operator");
+        var admin = await SignedInAsync("Admin");
+        await using var customerPage = await OpenPage.OfAsync(customer);
+        await using var operatorPage = await OpenPage.OfAsync(op);
+        await using var adminPage = await OpenPage.OfAsync(admin);
+
+        await op.PostTicketActionAsync(number, "Comment", Fields(("body", "Try another cable.")));
+
+        Assert.True(await customerPage.HeardWithinAsync(TimeSpan.FromSeconds(10)));
+        Assert.False(await operatorPage.HeardWithinAsync(TimeSpan.FromSeconds(1)));
+        Assert.False(await adminPage.HeardWithinAsync(TimeSpan.Zero));
+    }
+
+    [Fact]
+    public async Task Only_members_of_a_workspace_open_the_line()
+    {
+        await Assert.ThrowsAnyAsync<Exception>(() => NewClient().ConnectAsync(NotificationHub.Path));
+
+        var owner = NewClient();
+        await SignUpAsync(owner, "owner@platform.test", "Olivia Owner");
+        await Assert.ThrowsAnyAsync<Exception>(() => owner.ConnectAsync(NotificationHub.Path));
     }
 }

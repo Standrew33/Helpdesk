@@ -38,6 +38,8 @@ builder.Services.AddScoped<CurrentWorkspace>();
 builder.Services.AddScoped<AccountAccess>();
 builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<NotificationPush>();
+builder.Services.AddSignalR();
 builder.Services.AddScoped<AccountDeletion>();
 builder.Services.AddScoped<UserAdminService>();
 builder.Services.AddScoped<WorkspaceSignUp>();
@@ -225,6 +227,7 @@ app.UseAuthorization();
 app.MapStaticAssets().AllowAnonymous();
 app.MapRazorPages()
    .WithStaticAssets();
+app.MapHub<NotificationHub>(NotificationHub.Path);
 
 app.Run();
 

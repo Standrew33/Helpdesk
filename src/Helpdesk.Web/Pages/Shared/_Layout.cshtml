@@ -45,7 +45,7 @@
                     @* The bell opens the latest notifications in place (js/notifications.js); without scripts it is a link. *@
                     @if (inWorkspace && role.Length > 0)
                     {
-                        <div class="dropdown bell" data-bell>
+                        <div class="dropdown bell" data-bell data-hub="@Helpdesk.Web.Features.Notifications.NotificationHub.Path">
                             <a asp-page="/Notifications" class="bell-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside"
                                aria-expanded="false" title="Notifications"
                                aria-label="@(unread > 0 ? $"Notifications, {unread} unread" : "Notifications")">
@@ -147,7 +147,11 @@
     <script src="~/js/password-toggle.js" asp-append-version="true"></script>
     <script src="~/js/choice.js" asp-append-version="true"></script>
     <script src="~/js/local-time.js" asp-append-version="true"></script>
-    <script src="~/js/notifications.js" asp-append-version="true"></script>
+    @if (inWorkspace && role.Length > 0)
+    {
+        <script src="~/lib/microsoft-signalr/signalr.min.js"></script>
+        <script src="~/js/notifications.js" asp-append-version="true"></script>
+    }
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
