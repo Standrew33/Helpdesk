@@ -1093,9 +1093,10 @@ form[aria-busy="true"] select {
   user-select: none;
 }
 
-/* The row under the pointer is tinted and marked on its left edge, so it reads as something to open. */
+/* The row under the pointer is tinted and marked on its left edge, so it reads as something to open. The mark is
+   a background of its own: Bootstrap tints table cells with a box shadow, and animating between the two flickers. */
 .ticket-table tbody tr[data-open] > td {
-  transition: background-color 0.12s ease-in-out, box-shadow 0.12s ease-in-out;
+  transition: background-color 0.12s ease-in-out;
 }
 
 .ticket-table tbody tr[data-open]:hover > td {
@@ -1104,7 +1105,9 @@ form[aria-busy="true"] select {
 }
 
 .ticket-table tbody tr[data-open]:hover > td:first-child {
-  box-shadow: inset 3px 0 0 var(--hd-accent);
+  background-image: linear-gradient(var(--hd-accent), var(--hd-accent));
+  background-repeat: no-repeat;
+  background-size: 3px 100%;
 }
 
 .ticket-table tbody tr[data-open]:hover .ticket-subject {
