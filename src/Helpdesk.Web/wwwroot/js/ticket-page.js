@@ -27,6 +27,11 @@
             return;
         }
 
+        // The answer says how the change went.
+        if (window.helpdeskToasts) {
+            window.helpdeskToasts(next);
+        }
+
         // The control that was used is drawn anew; the keyboard should stay on it.
         var focusedId = document.activeElement ? document.activeElement.id : '';
         var freshVersion = next.querySelector('input[name="rowVersion"]');

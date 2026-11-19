@@ -9,13 +9,6 @@
 
 <a class="back-link" asp-page="Index">&larr; All tickets</a>
 
-<div id="ticket-alert" data-live>
-    @if (!string.IsNullOrEmpty(Model.Error))
-    {
-        <div class="alert alert-danger" role="alert">@Model.Error</div>
-    }
-</div>
-
 <div id="ticket-header" class="ticket-header" data-live>
     <div class="ticket-header-top">
         <p class="page-subtitle m-0">Ticket #@ticket.Number</p>

@@ -3,6 +3,7 @@ using Helpdesk.Core;
 using Helpdesk.Core.Tickets;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Tickets;
+using Helpdesk.Web.Features.Toasts;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,7 @@ public class CreateModel(TicketService tickets) : PageModel
         try
         {
             var number = await tickets.CreateAsync(User.ToActor(), Input.Subject, Input.Description ?? string.Empty, Input.Priority, Input.DueDate);
+            TempData.Success($"Ticket #{number} created.");
             return RedirectToPage("Details", new { number });
         }
         catch (DomainException ex)

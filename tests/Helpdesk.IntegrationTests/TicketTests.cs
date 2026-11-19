@@ -287,6 +287,36 @@ public class TicketTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task Each_change_says_how_it_went_on_the_page_drawn_next_and_only_there()
+    {
+        var customer = await SignedInAsync("Customer");
+        var created = await customer.PostFormAsync("/Tickets/Create", "/Tickets/Create", Fields(
+            ("Input.Subject", "Tell me how it went"), ("Input.Priority", "Normal")));
+        var id = int.Parse(created.Headers.Location!.OriginalString.Split('/')[^1], System.Globalization.CultureInfo.InvariantCulture);
+
+        var first = await FollowedHtmlAsync(customer, created);
+        Assert.Contains("result-toast-success", first);
+        Assert.Contains($"Ticket #{id} created.", first);
+        Assert.DoesNotContain($"Ticket #{id} created.", await customer.GetHtmlAsync($"/Tickets/Details/{id}"));
+
+        var op = await SignedInAsync("Operator");
+        var day = DateTime.UtcNow.Date.AddDays(3).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Contains($"Status of #{id} changed to In progress.", await FollowedHtmlAsync(op,
+            await op.PostTicketActionAsync(id, "Status", Fields(("status", "InProgress")))));
+        Assert.Contains($"Priority of #{id} changed to High.", await FollowedHtmlAsync(op,
+            await op.PostTicketActionAsync(id, "Priority", Fields(("priority", "High")))));
+        Assert.Contains($"Due date of #{id} set to {day}.", await FollowedHtmlAsync(op,
+            await op.PostTicketActionAsync(id, "DueDate", Fields(("dueDate", DayValue(3))))));
+        Assert.Contains($"Comment added to #{id}.", await FollowedHtmlAsync(op,
+            await op.PostTicketActionAsync(id, "Comment", Fields(("body", "On it")))));
+
+        var refused = await FollowedHtmlAsync(op, await op.PostTicketActionAsync(id, "Priority", Fields()));
+        Assert.Contains("result-toast-failure", refused);
+        Assert.Contains("Choose a priority.", refused);
+        Assert.DoesNotContain("result-toast-success", refused);
+    }
+
+    [Fact]
     public async Task Stale_page_cannot_overwrite_a_newer_change()
     {
         var customer = await SignedInAsync("Customer");

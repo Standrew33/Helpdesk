@@ -101,16 +101,8 @@
 
     // ----- Status and priority change in the row: the ticket page saves the change, then the list is drawn again. -----
 
-    var notice = document.getElementById('ticket-list-alert');
-
-    function tell(message) {
-        notice.textContent = message;
-        notice.hidden = !message;
-    }
-
     function sendRow(rowForm) {
         rowForm.setAttribute('aria-busy', 'true');
-        tell('');
 
         return fetch(rowForm.action, { method: 'POST', body: new FormData(rowForm), credentials: 'same-origin' })
             .then(function (response) {
@@ -125,8 +117,11 @@
                     return;
                 }
 
-                var refused = page.querySelector('#ticket-alert .alert');
-                tell(refused ? refused.textContent.trim() : '');
+                // The ticket page says how the change went; the list itself is drawn again either way.
+                if (window.helpdeskToasts) {
+                    window.helpdeskToasts(page);
+                }
+
                 load(window.location.pathname + window.location.search);
             })
             .catch(function () {
