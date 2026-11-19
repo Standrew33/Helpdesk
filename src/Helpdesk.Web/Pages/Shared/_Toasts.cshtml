@@ -1,0 +1,24 @@
+@using Helpdesk.Web.Features.Toasts
+@{
+    var success = TempData[Toast.SuccessKey] as string;
+    var failure = TempData[Toast.FailureKey] as string;
+}
+@* How the last operation went. Shown as they are without scripts; js/toasts.js lets a success fade away. *@
+<div id="toasts" class="toast-stack" data-toasts>
+    @if (!string.IsNullOrEmpty(failure))
+    {
+        <div class="toast result-toast result-toast-failure show" role="alert" data-bs-autohide="false">
+            <svg class="result-toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
+            <div class="result-toast-text">@failure</div>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(success))
+    {
+        <div class="toast result-toast result-toast-success show" role="status" data-bs-delay="4000">
+            <svg class="result-toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="m8 12 3 3 5-6" /></svg>
+            <div class="result-toast-text">@success</div>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    }
+</div>

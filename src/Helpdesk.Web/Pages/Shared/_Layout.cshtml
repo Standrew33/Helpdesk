@@ -29,6 +29,8 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    <partial name="_Toasts" />
+
     @if (isSignedIn)
     {
         <div class="shell">
@@ -144,6 +146,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/toasts.js" asp-append-version="true"></script>
     <script src="~/js/password-toggle.js" asp-append-version="true"></script>
     <script src="~/js/choice.js" asp-append-version="true"></script>
     <script src="~/js/local-time.js" asp-append-version="true"></script>
