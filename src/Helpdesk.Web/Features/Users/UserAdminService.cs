@@ -1,5 +1,6 @@
 using Helpdesk.Core.Users;
 using Helpdesk.Web.Data;
+using Helpdesk.Web.Features.Notifications;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Identity;
@@ -18,7 +19,8 @@ public sealed record UserRow(
     bool IsSelf,
     string? ProtectedAs,
     DateTimeOffset? SignedUpAt,
-    DateTimeOffset? LastSignInAt)
+    DateTimeOffset? LastSignInAt,
+    Seen Seen)
 {
     public bool IsProtected => ProtectedAs is not null;
 }
@@ -32,6 +34,7 @@ public class UserAdminService(
     UserManager<ApplicationUser> userManager,
     IOptions<PlatformOptions> platform,
     AccountDeletion deletion,
+    Presence presence,
     ILogger<UserAdminService> logger)
 {
     public const int MaxListSize = 100;
@@ -75,7 +78,8 @@ public class UserAdminService(
                 IsSelf: u.Id == admin.Id,
                 ProtectedAs: ProtectedAs(u),
                 SignedUpAt: u.CreatedAt,
-                LastSignInAt: u.LastSignInAt))
+                LastSignInAt: u.LastSignInAt,
+                Seen: new Seen(presence.IsOnline(u.Id), u.LastSeenAt)))
             .OrderBy(r => Array.IndexOf(RoleOrder, r.Role) is var i and >= 0 ? i : RoleOrder.Length)
             .ThenBy(r => r.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();

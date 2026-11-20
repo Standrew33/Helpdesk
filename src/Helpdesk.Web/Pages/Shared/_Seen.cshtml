@@ -1,0 +1,13 @@
+@model Helpdesk.Web.Features.Users.Seen
+@if (Model.IsOnline)
+{
+    <span class="presence presence-online">Online</span>
+}
+else if (Model.LastSeenAt is { } last)
+{
+    <span class="presence">Seen @Helpdesk.Web.Features.Tickets.TicketDisplay.Date(last)</span>
+}
+else
+{
+    <span class="presence">&ndash;</span>
+}

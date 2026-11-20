@@ -37,6 +37,7 @@ else
                         <th>Role</th>
                         <th>Signed up</th>
                         <th>Last sign-in</th>
+                        <th>Online</th>
                         <th>Status</th>
                         <th class="text-end">Actions</th>
                     </tr>
@@ -71,6 +72,7 @@ else
                             </td>
                             <td class="text-nowrap">@Helpdesk.Web.Features.Tickets.TicketDisplay.DateOrDash(user.SignedUpAt)</td>
                             <td class="text-nowrap">@Helpdesk.Web.Features.Tickets.TicketDisplay.DateOrDash(user.LastSignInAt)</td>
+                            <td class="text-nowrap"><partial name="_Seen" model="user.Seen" /></td>
                             <td>
                                 <span class="pill @(user.IsActive ? "pill-active" : "pill-closed")">@(user.IsActive ? "Active" : "Deactivated")</span>
                             </td>

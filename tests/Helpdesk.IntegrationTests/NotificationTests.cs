@@ -236,4 +236,34 @@ public class NotificationTests(SqlServerFixture sql) : WebTestBase(sql)
         await SignUpAsync(owner, "owner@platform.test", "Olivia Owner");
         await Assert.ThrowsAnyAsync<Exception>(() => owner.ConnectAsync(NotificationHub.Path));
     }
+    [Fact]
+    public async Task A_person_is_online_while_a_page_is_open_and_seen_when_the_last_one_closes()
+    {
+        var id = await CreateUserAsync("Customer", "present@example.test");
+        var customer = NewClient();
+        await customer.SignInAsync("present@example.test", TestPassword);
+        var presence = Factory.Services.GetRequiredService<Presence>();
+        var admin = await SignedInAsync("Admin");
+
+        var first = await OpenPage.OfAsync(customer);
+        var second = await OpenPage.OfAsync(customer);
+        Assert.True(presence.IsOnline(id));
+        Assert.Contains("presence presence-online", await admin.GetHtmlAsync("/Admin/Users?q=present"));
+
+        await first.DisposeAsync();
+        await Task.Delay(300);
+        Assert.True(presence.IsOnline(id));
+
+        await second.DisposeAsync();
+
+        for (var i = 0; i < 50 && presence.IsOnline(id); i++)
+        {
+            await Task.Delay(100);
+        }
+
+        Assert.False(presence.IsOnline(id));
+        var users = await admin.GetHtmlAsync("/Admin/Users?q=present");
+        Assert.DoesNotContain("presence presence-online", users);
+        Assert.Contains("Seen ", users);
+    }
 }

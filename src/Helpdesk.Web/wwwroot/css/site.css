@@ -1926,3 +1926,26 @@ form[aria-busy="true"] select {
 .delete-workspace-fields .form-control {
   flex: 1 1 16rem;
 }
+
+/* Online now, or when the person was last seen. */
+.presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--hd-muted);
+  font-size: 0.875rem;
+}
+
+.presence-online {
+  color: var(--hd-accent-dark);
+  font-weight: 600;
+}
+
+.presence-online::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #22a06b;
+  box-shadow: 0 0 0 3px rgba(34, 160, 107, 0.18);
+}

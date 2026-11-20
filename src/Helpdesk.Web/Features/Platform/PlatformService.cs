@@ -1,6 +1,7 @@
 using Helpdesk.Core.Tickets;
 using Helpdesk.Web.Data;
 using Helpdesk.Web.Features.Attachments;
+using Helpdesk.Web.Features.Notifications;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Features.Users;
 using Helpdesk.Web.Security;
@@ -12,7 +13,7 @@ namespace Helpdesk.Web.Features.Platform;
 public sealed record WorkspaceRow(int Id, string Name, DateTimeOffset CreatedAt, int People, int Tickets, int OpenTickets, DateTimeOffset? LastActivity, bool IsBlocked);
 
 public sealed record PersonRow(
-    string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsOwner, DateTimeOffset? SignedUpAt, DateTimeOffset? LastSignInAt);
+    string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsOwner, DateTimeOffset? SignedUpAt, DateTimeOffset? LastSignInAt, Seen Seen);
 
 public sealed record WorkspaceTicketRow(int Number, string Subject, TicketStatus Status, TicketPriority Priority, string CustomerName, DateTimeOffset UpdatedAt);
 
@@ -27,6 +28,7 @@ public partial class PlatformService(
     UserManager<ApplicationUser> userManager,
     Microsoft.Extensions.Options.IOptions<PlatformOptions> platform,
     AccountDeletion deletion,
+    Presence presence,
     IAttachmentStore attachments,
     ILogger<PlatformService> logger)
 {
@@ -81,7 +83,8 @@ public partial class PlatformService(
                 u.IsActive,
                 platform.Value.IsOwner(u.Email),
                 u.CreatedAt,
-                u.LastSignInAt))
+                u.LastSignInAt,
+                new Seen(presence.IsOnline(u.Id), u.LastSeenAt)))
             .OrderBy(p => Array.IndexOf(RoleOrder, p.Role) is var i and >= 0 ? i : RoleOrder.Length)
             .ThenBy(p => p.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();

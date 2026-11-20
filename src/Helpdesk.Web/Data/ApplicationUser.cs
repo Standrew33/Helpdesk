@@ -22,4 +22,7 @@ public class ApplicationUser : IdentityUser
 
     /// <summary>When the person last signed in, by code, link or password; a renewed cookie does not count.</summary>
     public DateTimeOffset? LastSignInAt { get; set; }
+
+    /// <summary>When the person last closed their last open page; while one is open they are online.</summary>
+    public DateTimeOffset? LastSeenAt { get; set; }
 }

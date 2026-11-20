@@ -34,6 +34,7 @@
                     <th>Role</th>
                     <th>Signed up</th>
                     <th>Last sign-in</th>
+                    <th>Online</th>
                     <th>Status</th>
                     <th class="text-end">Actions</th>
                 </tr>
@@ -49,6 +50,7 @@
                         <td>@person.Role</td>
                         <td class="text-nowrap">@TicketDisplay.DateOrDash(person.SignedUpAt)</td>
                         <td class="text-nowrap">@TicketDisplay.DateOrDash(person.LastSignInAt)</td>
+                        <td class="text-nowrap"><partial name="_Seen" model="person.Seen" /></td>
                         <td><span class="pill @(person.IsActive ? "pill-active" : "pill-closed")">@(person.IsActive ? "Active" : "Deactivated")</span></td>
                         <td class="text-end">
                             @if (!person.IsOwner)

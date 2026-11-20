@@ -289,6 +289,9 @@ namespace Helpdesk.Web.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<DateTimeOffset?>("LastSeenAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<DateTimeOffset?>("LastSignInAt")
                         .HasColumnType("datetimeoffset");
 
