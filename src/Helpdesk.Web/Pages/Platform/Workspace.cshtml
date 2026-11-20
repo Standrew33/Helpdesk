@@ -32,6 +32,8 @@
                 <tr>
                     <th>Name</th>
                     <th>Role</th>
+                    <th>Signed up</th>
+                    <th>Last sign-in</th>
                     <th>Status</th>
                     <th class="text-end">Actions</th>
                 </tr>
@@ -45,6 +47,8 @@
                             <div class="text-secondary small">@person.Email</div>
                         </td>
                         <td>@person.Role</td>
+                        <td class="text-nowrap">@TicketDisplay.DateOrDash(person.SignedUpAt)</td>
+                        <td class="text-nowrap">@TicketDisplay.DateOrDash(person.LastSignInAt)</td>
                         <td><span class="pill @(person.IsActive ? "pill-active" : "pill-closed")">@(person.IsActive ? "Active" : "Deactivated")</span></td>
                         <td class="text-end">
                             @if (!person.IsOwner)

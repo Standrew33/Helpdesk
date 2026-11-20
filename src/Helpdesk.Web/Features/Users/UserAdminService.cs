@@ -9,7 +9,16 @@ using Microsoft.Extensions.Options;
 namespace Helpdesk.Web.Features.Users;
 
 /// <param name="ProtectedAs">Why the account cannot be changed here, if it cannot.</param>
-public sealed record UserRow(string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsSelf, string? ProtectedAs)
+public sealed record UserRow(
+    string Id,
+    string DisplayName,
+    string Email,
+    string Role,
+    bool IsActive,
+    bool IsSelf,
+    string? ProtectedAs,
+    DateTimeOffset? SignedUpAt,
+    DateTimeOffset? LastSignInAt)
 {
     public bool IsProtected => ProtectedAs is not null;
 }
@@ -64,7 +73,9 @@ public class UserAdminService(
                 rolesByUser.GetValueOrDefault(u.Id, "-"),
                 u.IsActive,
                 IsSelf: u.Id == admin.Id,
-                ProtectedAs: ProtectedAs(u)))
+                ProtectedAs: ProtectedAs(u),
+                SignedUpAt: u.CreatedAt,
+                LastSignInAt: u.LastSignInAt))
             .OrderBy(r => Array.IndexOf(RoleOrder, r.Role) is var i and >= 0 ? i : RoleOrder.Length)
             .ThenBy(r => r.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();

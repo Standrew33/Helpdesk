@@ -11,7 +11,8 @@ namespace Helpdesk.Web.Features.Platform;
 
 public sealed record WorkspaceRow(int Id, string Name, DateTimeOffset CreatedAt, int People, int Tickets, int OpenTickets, DateTimeOffset? LastActivity, bool IsBlocked);
 
-public sealed record PersonRow(string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsOwner);
+public sealed record PersonRow(
+    string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsOwner, DateTimeOffset? SignedUpAt, DateTimeOffset? LastSignInAt);
 
 public sealed record WorkspaceTicketRow(int Number, string Subject, TicketStatus Status, TicketPriority Priority, string CustomerName, DateTimeOffset UpdatedAt);
 
@@ -78,7 +79,9 @@ public partial class PlatformService(
                 u.Email ?? string.Empty,
                 RoleOrder.FirstOrDefault(r => roles.Any(x => x.UserId == u.Id && x.Name == r)) ?? "-",
                 u.IsActive,
-                platform.Value.IsOwner(u.Email)))
+                platform.Value.IsOwner(u.Email),
+                u.CreatedAt,
+                u.LastSignInAt))
             .OrderBy(p => Array.IndexOf(RoleOrder, p.Role) is var i and >= 0 ? i : RoleOrder.Length)
             .ThenBy(p => p.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();

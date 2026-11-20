@@ -16,4 +16,10 @@ public class ApplicationUser : IdentityUser
     /// that identified the person is gone and the account can never be used again.
     /// </summary>
     public DateTimeOffset? DeletedAt { get; set; }
+
+    /// <summary>When the account was made; empty for accounts made before this was recorded.</summary>
+    public DateTimeOffset? CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>When the person last signed in, by code, link or password; a renewed cookie does not count.</summary>
+    public DateTimeOffset? LastSignInAt { get; set; }
 }

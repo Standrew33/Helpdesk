@@ -59,6 +59,9 @@ public static class TicketDisplay
         return new HtmlString($"<time datetime=\"{iso}\" data-local-time>{text}</time>");
     }
 
+    /// <summary>A moment as <see cref="Date"/> does, or a dash when there is none.</summary>
+    public static IHtmlContent DateOrDash(DateTimeOffset? value) => value is { } moment ? Date(moment) : new HtmlString("&ndash;");
+
     /// <summary>A day as "18 Nov", with the year when it is not this year; a dash when there is none.</summary>
     public static string Day(DateOnly? value, DateOnly today) => value switch
     {

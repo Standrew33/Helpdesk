@@ -190,4 +190,32 @@ public class UserAdministrationTests(SqlServerFixture sql) : WebTestBase(sql)
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+    [Fact]
+    public async Task The_list_tells_when_each_person_signed_up_and_last_signed_in()
+    {
+        var since = DateTimeOffset.UtcNow.AddSeconds(-1);
+        var id = await CreateUserAsync("Customer", "late@example.test");
+        Assert.Null((await StoredUserAsync(id)).LastSignInAt);
+
+        var customer = NewClient();
+        await customer.SignInAsync("late@example.test", TestPassword);
+        var signedIn = (await StoredUserAsync(id)).LastSignInAt;
+        Assert.NotNull(signedIn);
+        Assert.True(signedIn >= since);
+        Assert.True((await StoredUserAsync(id)).CreatedAt >= since);
+
+        // A cookie drawn anew after a change of name is not a sign-in.
+        await customer.PostFormAsync("/Account/Settings", "/Account/Settings?handler=Profile", new Dictionary<string, string> { ["Profile.DisplayName"] = "Late Comer" });
+        Assert.Equal(signedIn, (await StoredUserAsync(id)).LastSignInAt);
+
+        var list = await (await RealAdminAsync()).GetHtmlAsync("/Admin/Users");
+        Assert.Contains("Signed up", list);
+        Assert.Contains("Last sign-in", list);
+    }
+
+    private async Task<ApplicationUser> StoredUserAsync(string id)
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        return (await scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>().FindByIdAsync(id))!;
+    }
 }
