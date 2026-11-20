@@ -1,0 +1,5 @@
+@model Helpdesk.Web.Features.Platform.WorkspaceTabs
+<nav class="workspace-tabs" aria-label="Workspace">
+    <a asp-page="/Platform/Workspace" asp-route-id="@Model.Id" class="workspace-tab @(Model.OnTickets ? "" : "active")" aria-current="@(Model.OnTickets ? null : "page")">People</a>
+    <a asp-page="/Tickets/Index" asp-route-workspaceId="@Model.Id" class="workspace-tab @(Model.OnTickets ? "active" : "")" aria-current="@(Model.OnTickets ? "page" : null)">Tickets</a>
+</nav>

@@ -23,8 +23,8 @@
     </form>
 </div>
 
+<partial name="_WorkspaceTabs" model="@(new Helpdesk.Web.Features.Platform.WorkspaceTabs(overview.Id, OnTickets: false))" />
 
-<h2 class="h5 mb-3">People</h2>
 <div class="card overflow-hidden mb-4">
     <div class="table-responsive">
         <table class="table align-middle ticket-table">
@@ -71,49 +71,6 @@
         </table>
     </div>
 </div>
-
-<h2 class="h5 mb-3">Tickets</h2>
-@if (overview.Tickets.Count == 0)
-{
-    <div class="card"><div class="empty-state"><h2>No tickets yet</h2><p>Nobody has opened a ticket in this workspace.</p></div></div>
-}
-else
-{
-    <div class="card overflow-hidden">
-        <div class="table-responsive">
-            <table class="table align-middle ticket-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Subject</th>
-                        <th>Status</th>
-                        <th>Priority</th>
-                        <th>Customer</th>
-                        <th>Updated</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var ticket in overview.Tickets)
-                    {
-                        <tr>
-                            <td class="ticket-id">@ticket.Number</td>
-                            <td><a class="ticket-subject" asp-page="Ticket" asp-route-workspaceId="@overview.Id" asp-route-number="@ticket.Number">@ticket.Subject</a></td>
-                            <td><span class="pill @TicketDisplay.StatusClass(ticket.Status)">@TicketDisplay.StatusText(ticket.Status)</span></td>
-                            <td><partial name="_Priority" model="ticket.Priority" /></td>
-                            <td>@ticket.CustomerName</td>
-                            <td class="text-nowrap">@TicketDisplay.Date(ticket.UpdatedAt)</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    @if (overview.Tickets.Count >= Model.MaxTicketsShown)
-    {
-        <p class="text-secondary small mt-2">Showing the @Model.MaxTicketsShown tickets changed most recently.</p>
-    }
-}
 
 <div class="card danger-card mt-5">
     <div class="card-body p-4">

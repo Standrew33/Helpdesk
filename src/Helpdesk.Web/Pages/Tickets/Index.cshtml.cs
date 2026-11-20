@@ -1,5 +1,6 @@
 using Helpdesk.Core.Tickets;
 using Helpdesk.Core.Users;
+using Helpdesk.Web.Features.Platform;
 using Helpdesk.Web.Features.Tickets;
 using Helpdesk.Web.Security;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -8,8 +9,13 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Helpdesk.Web.Pages.Tickets;
 
-public class IndexModel(TicketService tickets) : PageModel
+public class IndexModel(TicketService tickets, PlatformService platform) : PageModel
 {
+    /// <summary>The help desk the owner of the platform works in here; null for its own people.</summary>
+    public int? VisitedWorkspaceId => User.VisitedWorkspaceId();
+
+    public string? VisitedWorkspaceName { get; private set; }
+
     [BindProperty(Name = "q", SupportsGet = true)]
     public string? Search { get; set; }
 
@@ -74,6 +80,12 @@ public class IndexModel(TicketService tickets) : PageModel
         }
 
         var actor = User.ToActor();
+
+        if (VisitedWorkspaceId is { } visited)
+        {
+            VisitedWorkspaceName = await platform.GetWorkspaceNameAsync(visited, ct);
+        }
+
         Role = actor.Role;
         IsCustomer = actor.Role == UserRole.Customer;
         Result = await tickets.ListAsync(actor, new TicketFilter(Search, Status, Priority, Scope, PageNumber, Sort ?? TicketSort.Updated, IsDescending), ct);
@@ -142,6 +154,6 @@ public class IndexModel(TicketService tickets) : PageModel
             query.Add("p", page.ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
 
-        return Url.Page("Index") + query.ToQueryString();
+        return Url.Page("Index", new { workspaceId = VisitedWorkspaceId }) + query.ToQueryString();
     }
 }

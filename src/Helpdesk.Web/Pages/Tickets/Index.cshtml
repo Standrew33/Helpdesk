@@ -6,9 +6,14 @@
     var result = Model.Result;
 }
 
+@if (Model.VisitedWorkspaceId is not null)
+{
+    <a class="back-link" asp-page="/Platform/Index">&larr; All workspaces</a>
+}
+
 <div class="page-header">
     <div>
-        <h1 class="page-title">Tickets</h1>
+        <h1 class="page-title">@(Model.VisitedWorkspaceName ?? "Tickets")</h1>
         <p class="page-subtitle">
             @(Model.IsCustomer ? "Your requests" : "All requests")
             <span id="ticket-summary" data-live>&middot; @result.Total @(result.Total == 1 ? "ticket" : "tickets") @(Model.IsFiltered ? "match" : "in total")</span>
@@ -21,6 +26,11 @@
         </a>
     }
 </div>
+
+@if (Model.VisitedWorkspaceId is { } tabsOf)
+{
+    <partial name="_WorkspaceTabs" model="@(new Helpdesk.Web.Features.Platform.WorkspaceTabs(tabsOf, OnTickets: true))" />
+}
 
 <form method="get" class="toolbar" role="search" data-live-filters>
     <input type="search" name="q" value="@Model.Search" maxlength="100" class="form-control toolbar-search"
@@ -45,7 +55,7 @@
     <span id="ticket-reset" data-live>
         @if (Model.IsFiltered)
         {
-            <a class="icon-btn icon-btn-round" asp-page="Index" title="Reset filters" aria-label="Reset filters">
+            <a class="icon-btn icon-btn-round" asp-page="Index" asp-route-workspaceId="@Model.VisitedWorkspaceId" title="Reset filters" aria-label="Reset filters">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15 9-6 6M9 9l6 6" /></svg>
             </a>
         }
@@ -62,7 +72,7 @@
             @if (Model.IsFiltered)
             {
                 <p>Nothing matches these filters.</p>
-                <a class="btn btn-outline-secondary" asp-page="Index">Reset filters</a>
+                <a class="btn btn-outline-secondary" asp-page="Index" asp-route-workspaceId="@Model.VisitedWorkspaceId">Reset filters</a>
             }
             else if (Model.IsCustomer)
             {
@@ -95,14 +105,14 @@ else
                 <tbody>
                     @foreach (var item in result.Items)
                     {
-                        <tr data-open="@Url.Page("Details", new { number = item.Number })">
+                        <tr data-open="@Url.Page("Details", new { number = item.Number, workspaceId = Model.VisitedWorkspaceId })">
                             <td class="ticket-id">@item.Number</td>
                             <td><span class="ticket-subject">@item.Subject</span></td>
                             @* Status and priority change right here, through the handlers of the ticket page. *@
                             <td>
                                 @if (Model.StatusOptionsFor(item.Status) is { Count: > 1 } statuses)
                                 {
-                                    <form method="post" asp-page="Details" asp-page-handler="Status" asp-route-number="@item.Number"
+                                    <form method="post" asp-page="Details" asp-page-handler="Status" asp-route-number="@item.Number" asp-route-workspaceId="@Model.VisitedWorkspaceId"
                                           data-row-instant data-close-reason="@(Model.IsCustomer ? "required" : "")">
                                         <input type="hidden" name="rowVersion" value="@item.RowVersion" />
                                         <span id="Status@(item.Number)Label" class="visually-hidden">Status of ticket #@item.Number</span>
@@ -131,7 +141,7 @@ else
                             <td>
                                 @if (item.Status != TicketStatus.Closed)
                                 {
-                                    <form method="post" asp-page="Details" asp-page-handler="Priority" asp-route-number="@item.Number"
+                                    <form method="post" asp-page="Details" asp-page-handler="Priority" asp-route-number="@item.Number" asp-route-workspaceId="@Model.VisitedWorkspaceId"
                                           class="choice-inline" data-row-instant>
                                         <input type="hidden" name="rowVersion" value="@item.RowVersion" />
                                         <span id="Priority@(item.Number)Label" class="visually-hidden">Priority of ticket #@item.Number</span>
@@ -147,7 +157,7 @@ else
                             <td>@(item.AssigneeName ?? "–")</td>
                             <td class="text-nowrap @(item.IsOverdue ? "overdue" : "")">@TicketDisplay.Day(item.DueDate, Model.Today)</td>
                             <td class="ticket-open-col">
-                                <a class="icon-btn" asp-page="Details" asp-route-number="@item.Number" title="Open ticket #@item.Number" aria-label="Open ticket #@item.Number">
+                                <a class="icon-btn" asp-page="Details" asp-route-number="@item.Number" asp-route-workspaceId="@Model.VisitedWorkspaceId" title="Open ticket #@item.Number" aria-label="Open ticket #@item.Number">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>
                                 </a>
                             </td>

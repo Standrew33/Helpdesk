@@ -169,12 +169,12 @@ public class DetailsModel(TicketService tickets, NotificationService notificatio
         }
 
         TempData.Success(done);
-        return RedirectToPage(new { number = Number });
+        return RedirectToPage(new { number = Number, workspaceId = User.VisitedWorkspaceId() });
     }
 
     private RedirectToPageResult Refused(string message)
     {
         TempData.Failure(message);
-        return RedirectToPage(new { number = Number });
+        return RedirectToPage(new { number = Number, workspaceId = User.VisitedWorkspaceId() });
     }
 }

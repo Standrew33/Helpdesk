@@ -15,6 +15,12 @@ public static class AppClaimTypes
 
     /// <summary>Present ("true") for the owner of the platform, the superadmin.</summary>
     public const string PlatformOwner = "platform_owner";
+
+    /// <summary>
+    /// Present ("true") while the owner of the platform works in a help desk through its pages under /Platform;
+    /// never stored in the cookie (see <see cref="PlatformVisit"/>).
+    /// </summary>
+    public const string Visiting = "visiting";
 }
 
 /// <summary>Adds the display name to the sign-in cookie, so pages can greet the user by name instead of by e-mail.</summary>

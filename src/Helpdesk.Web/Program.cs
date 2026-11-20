@@ -29,7 +29,11 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Platform", Policies.Platform);
     options.Conventions.AuthorizePage("/Tickets/Details", Policies.Workspace);
     options.Conventions.AuthorizePage("/Notifications", Policies.Workspace);
+
+    // The owner of the platform reaches the tickets of a help desk at these addresses (see PlatformVisit).
+    PlatformVisit.AddRoutes(options.Conventions);
 });
+builder.Services.AddTransient<Microsoft.AspNetCore.Authentication.IClaimsTransformation, PlatformVisit>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAttachmentStore(builder.Configuration);
 builder.Services.AddEmail(builder.Configuration, builder.Environment);

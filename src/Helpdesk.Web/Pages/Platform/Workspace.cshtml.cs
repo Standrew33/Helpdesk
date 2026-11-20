@@ -15,8 +15,6 @@ public class WorkspaceModel(PlatformService platform) : PageModel
 
     public WorkspaceOverview Overview { get; private set; } = null!;
 
-    public int MaxTicketsShown => PlatformService.MaxTicketsShown;
-
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
     {
         var overview = await platform.GetWorkspaceAsync(Id, ct);

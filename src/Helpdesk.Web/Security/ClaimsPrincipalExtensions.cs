@@ -57,4 +57,11 @@ public static class ClaimsPrincipalExtensions
         return principal.HasClaim(AppClaimTypes.PlatformOwner, "true");
     }
 
+    /// <summary>The help desk the owner of the platform works in on this request; null for everybody else.</summary>
+    public static int? VisitedWorkspaceId(this ClaimsPrincipal principal)
+    {
+        ArgumentNullException.ThrowIfNull(principal);
+        return principal.HasClaim(AppClaimTypes.Visiting, "true") ? principal.WorkspaceId() : null;
+    }
+
 }

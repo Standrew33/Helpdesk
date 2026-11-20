@@ -15,13 +15,11 @@ public sealed record WorkspaceRow(int Id, string Name, DateTimeOffset CreatedAt,
 public sealed record PersonRow(
     string Id, string DisplayName, string Email, string Role, bool IsActive, bool IsOwner, DateTimeOffset? SignedUpAt, DateTimeOffset? LastSignInAt, Seen Seen);
 
-public sealed record WorkspaceTicketRow(int Number, string Subject, TicketStatus Status, TicketPriority Priority, string CustomerName, DateTimeOffset UpdatedAt);
-
-public sealed record WorkspaceOverview(int Id, string Name, DateTimeOffset CreatedAt, bool IsBlocked, IReadOnlyList<PersonRow> People, IReadOnlyList<WorkspaceTicketRow> Tickets);
+public sealed record WorkspaceOverview(int Id, string Name, DateTimeOffset CreatedAt, bool IsBlocked, IReadOnlyList<PersonRow> People);
 
 /// <summary>
-/// What the owner of the platform sees and does: every help desk, its people and its tickets, read as they are,
-/// and the switch that blocks a help desk or a person. The owner never writes into a ticket.
+/// What the owner of the platform sees and does: every help desk and its people, and the switch that blocks a help
+/// desk or a person. Tickets are worked on through the pages of the help desk itself (see PlatformVisit).
 /// </summary>
 public partial class PlatformService(
     HelpdeskDbContext db,
@@ -32,9 +30,6 @@ public partial class PlatformService(
     IAttachmentStore attachments,
     ILogger<PlatformService> logger)
 {
-    /// <summary>The newest tickets of a help desk the overview shows; older ones are reached by number.</summary>
-    public const int MaxTicketsShown = 100;
-
     private static readonly string[] RoleOrder = [RoleNames.Admin, RoleNames.Operator, RoleNames.Customer];
 
     public async Task<IReadOnlyList<WorkspaceRow>> ListWorkspacesAsync(CancellationToken ct = default)
@@ -89,52 +84,11 @@ public partial class PlatformService(
             .ThenBy(p => p.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
 
-        var tickets = await (
-            from t in db.Tickets.IgnoreQueryFilters()
-            where t.WorkspaceId == id
-            join c in db.Users on t.CustomerId equals c.Id
-            orderby t.UpdatedAt descending
-            select new WorkspaceTicketRow(t.Number, t.Subject, t.Status, t.Priority, c.DisplayName, t.UpdatedAt))
-            .Take(MaxTicketsShown)
-            .ToListAsync(ct);
-
-        return new WorkspaceOverview(workspace.Id, workspace.Name, workspace.CreatedAt, workspace.IsBlocked, people, tickets);
+        return new WorkspaceOverview(workspace.Id, workspace.Name, workspace.CreatedAt, workspace.IsBlocked, people);
     }
 
-    /// <summary>A ticket of any help desk, with everything in it, internal notes included.</summary>
-    public async Task<(string WorkspaceName, TicketDetails Details)?> GetTicketAsync(int workspaceId, int number, CancellationToken ct = default)
-    {
-        var workspaceName = await db.Workspaces.Where(w => w.Id == workspaceId).Select(w => w.Name).FirstOrDefaultAsync(ct);
-        var ticket = await db.Tickets
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .Include(t => t.Comments)
-            .Include(t => t.Attachments)
-            .Include(t => t.History)
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(t => t.WorkspaceId == workspaceId && t.Number == number, ct);
-
-        if (workspaceName is null || ticket is null)
-        {
-            return null;
-        }
-
-        var userIds = new HashSet<string> { ticket.CustomerId };
-
-        if (ticket.AssigneeId is not null)
-        {
-            userIds.Add(ticket.AssigneeId);
-        }
-
-        userIds.UnionWith(ticket.Comments.Select(c => c.AuthorId));
-        userIds.UnionWith(ticket.Attachments.Select(a => a.UploadedById));
-        userIds.UnionWith(ticket.History.Select(h => h.ActorId));
-        userIds.UnionWith(ticket.History.Where(h => h.Field == "Assignee").SelectMany(h => new[] { h.OldValue, h.NewValue }).OfType<string>());
-
-        var names = await db.Users.Where(u => userIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.DisplayName, ct);
-        var comments = ticket.Comments.OrderBy(c => c.CreatedAt).ToList();
-        return (workspaceName, new TicketDetails(ticket, comments, names));
-    }
+    public Task<string?> GetWorkspaceNameAsync(int id, CancellationToken ct = default)
+        => db.Workspaces.Where(w => w.Id == id).Select(w => w.Name).FirstOrDefaultAsync(ct);
 
     /// <summary>Blocks a help desk or lets it work again; its people are signed out at their next request.</summary>
     public async Task<ServiceResult> SetWorkspaceBlockedAsync(string ownerId, int id, bool blocked, CancellationToken ct = default)

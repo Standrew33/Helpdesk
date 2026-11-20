@@ -1949,3 +1949,29 @@ form[aria-busy="true"] select {
   background: #22a06b;
   box-shadow: 0 0 0 3px rgba(34, 160, 107, 0.18);
 }
+
+/* The people and the tickets of a workspace, for the owner of the platform. */
+.workspace-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0 0 1.25rem;
+  border-bottom: 1px solid var(--hd-border);
+}
+
+.workspace-tab {
+  margin-bottom: -1px;
+  padding: 0.5rem 0.9rem;
+  border-bottom: 2px solid transparent;
+  color: var(--hd-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.workspace-tab:hover {
+  color: var(--hd-text);
+}
+
+.workspace-tab.active {
+  border-bottom-color: var(--hd-accent);
+  color: var(--hd-text);
+}

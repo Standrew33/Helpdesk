@@ -7,8 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Helpdesk.IntegrationTests;
 
 /// <summary>
-/// The owner of the platform, named by configuration, looks into every help desk and can block help desks and
-/// people. Nobody else gets there, and the owner reads tickets without writing into them.
+/// The owner of the platform, named by configuration, looks into every help desk, can block help desks and people,
+/// and works on their tickets through the same pages as their staff. Nobody else gets there.
 /// </summary>
 public class PlatformTests(SqlServerFixture sql) : WebTestBase(sql)
 {
@@ -87,13 +87,28 @@ public class PlatformTests(SqlServerFixture sql) : WebTestBase(sql)
 
         foreach (var client in new[] { boss, customer, sharedAdmin })
         {
-            foreach (var url in new[] { "/Platform", $"/Platform/Workspace/{acme}", $"/Platform/Ticket/{acme}/1" })
+            foreach (var url in new[] { "/Platform", $"/Platform/Workspace/{acme}" })
             {
                 var response = await client.GetAsync(url);
                 Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
                 Assert.Contains("/Account/AccessDenied", response.Headers.Location!.OriginalString);
             }
+
+            // The owner's way into the tickets of a help desk is nobody else's, not even for their own help desk.
+            foreach (var url in new[] { $"/Platform/Workspace/{acme}/Tickets", $"/Platform/Workspace/{acme}/Tickets/1" })
+            {
+                Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(url)).StatusCode);
+            }
+
+            var comment = await client.PostFormAsync("/Tickets", $"/Platform/Workspace/{acme}/Tickets/1?handler=Comment", new Dictionary<string, string>
+            {
+                ["rowVersion"] = "AAAAAAAAB9E=",
+                ["body"] = "Through the back door",
+            });
+            Assert.Equal(HttpStatusCode.NotFound, comment.StatusCode);
         }
+
+        Assert.DoesNotContain("Through the back door", await boss.GetHtmlAsync("/Tickets/Details/1"));
 
         var block = await boss.PostFormAsync("/Tickets", "/Platform?handler=Block", new Dictionary<string, string>
         {
@@ -132,10 +147,18 @@ public class PlatformTests(SqlServerFixture sql) : WebTestBase(sql)
         var workspace = await owner.GetHtmlAsync($"/Platform/Workspace/{acme}");
         Assert.Contains(Boss, workspace);
         Assert.Contains("carl@client.test", workspace);
-        Assert.Contains("The invoice page is blank", workspace);
         Assert.DoesNotContain("eve@other.test", workspace);
+        Assert.Contains($"href=\"/Platform/Workspace/{acme}/Tickets\"", workspace);
 
-        var ticket = await owner.GetHtmlAsync($"/Platform/Ticket/{acme}/1");
+        // The same list as the help desk's own staff have, with every link leading to the owner's addresses.
+        var tickets = await owner.GetHtmlAsync($"/Platform/Workspace/{acme}/Tickets");
+        Assert.Contains("Acme support", tickets);
+        Assert.Contains("The invoice page is blank", tickets);
+        Assert.Contains("data-live-filters", tickets);
+        Assert.Contains($"action=\"/Platform/Workspace/{acme}/Tickets/1?handler=Status\"", tickets);
+        Assert.Contains($"href=\"/Platform/Workspace/{acme}/Tickets/1\"", tickets);
+
+        var ticket = await owner.GetHtmlAsync($"/Platform/Workspace/{acme}/Tickets/1");
         Assert.Contains("Nothing shows after I log in.", ticket);
         Assert.Contains("We are looking into it.", ticket);
         Assert.Contains("Caused by the last release.", ticket);
@@ -143,13 +166,37 @@ public class PlatformTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
-    public async Task The_owner_reads_tickets_but_does_not_write_into_them()
+    public async Task The_owner_works_on_the_tickets_of_a_help_desk_like_its_administrator()
     {
-        var (boss, _, acme) = await AcmeAsync();
+        var (boss, customer, acme) = await AcmeAsync();
         var owner = await OwnerAsync();
+        var address = $"/Platform/Workspace/{acme}/Tickets/1";
+        var page = await owner.GetHtmlAsync(address);
+        Assert.Contains($"action=\"{address}?handler=Assign\"", page);
+        Assert.Contains("href=\"/Platform/Workspace/" + acme + "/Tickets\"", page);
 
-        Assert.DoesNotContain("handler=", await owner.GetHtmlAsync($"/Platform/Ticket/{acme}/1"));
+        var reply = await owner.PostFormAsync(address, $"{address}?handler=Comment", new Dictionary<string, string>
+        {
+            ["rowVersion"] = AppClient.ExtractRowVersion(page),
+            ["body"] = "Fixed on our side.",
+        });
+        Assert.Equal(address, reply.Headers.Location!.OriginalString);
+        Assert.Contains("Comment added to #1.", await (await owner.FollowAsync(reply)).Content.ReadAsStringAsync());
 
+        var status = await owner.PostFormAsync(address, $"{address}?handler=Status", new Dictionary<string, string>
+        {
+            ["rowVersion"] = AppClient.ExtractRowVersion(await owner.GetHtmlAsync(address)),
+            ["status"] = "InProgress",
+        });
+        Assert.Equal(address, status.Headers.Location!.OriginalString);
+        Assert.Contains("Status of #1 changed to In progress.", await (await owner.FollowAsync(status)).Content.ReadAsStringAsync());
+
+        var seen = await customer.GetHtmlAsync("/Tickets/Details/1");
+        Assert.Contains("Fixed on our side.", seen);
+        Assert.Contains("Olivia Owner", seen);
+        Assert.Contains("pill pill-progress", seen);
+
+        // Outside those addresses the owner is in no help desk.
         var comment = await owner.PostFormAsync("/Platform", "/Tickets/Details/1?handler=Comment", new Dictionary<string, string>
         {
             ["rowVersion"] = "AAAAAAAAB9E=",
@@ -240,6 +287,7 @@ public class PlatformTests(SqlServerFixture sql) : WebTestBase(sql)
         var owner = await OwnerAsync();
 
         Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync("/Platform/Workspace/9999")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync($"/Platform/Ticket/{SharedWorkspace.Id}/9999")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync($"/Platform/Workspace/{SharedWorkspace.Id}/Tickets/9999")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync("/Platform/Workspace/9999/Tickets")).StatusCode);
     }
 }

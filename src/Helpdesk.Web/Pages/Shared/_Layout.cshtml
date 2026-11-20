@@ -4,12 +4,15 @@
     var isSignedIn = User.Identity?.IsAuthenticated == true;
     var displayName = User.DisplayName();
     var email = User.Email();
-    var role = User.IsInRole(RoleNames.Admin) ? RoleNames.Admin
+    // The owner of the platform working in a help desk keeps the platform's own menu, not the help desk's.
+    var visiting = User.VisitedWorkspaceId() is not null;
+    var role = visiting ? ""
+        : User.IsInRole(RoleNames.Admin) ? RoleNames.Admin
         : User.IsInRole(RoleNames.Operator) ? RoleNames.Operator
         : User.IsInRole(RoleNames.Customer) ? RoleNames.Customer
         : "";
     var isOwner = User.IsPlatformOwner();
-    var inWorkspace = User.WorkspaceId() is not null;
+    var inWorkspace = User.WorkspaceId() is not null && !visiting;
     var home = inWorkspace ? "/Tickets/Index" : "/Platform/Index";
     var onTickets = page is "/Tickets/Index" or "/Tickets/Details";
     var body = RenderBody();
@@ -97,7 +100,7 @@
                     @if (isOwner)
                     {
                         <div class="side-section">Platform</div>
-                        <a asp-page="/Platform/Index" class="side-link @(page.StartsWith("/Platform/", StringComparison.Ordinal) ? "active" : "")">
+                        <a asp-page="/Platform/Index" class="side-link @(page.StartsWith("/Platform/", StringComparison.Ordinal) || visiting ? "active" : "")">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" /></svg>
                             Workspaces
                         </a>
