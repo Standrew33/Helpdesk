@@ -22,7 +22,7 @@
                 <div class="invite-email">
                     <label asp-for="Input.Email" class="form-label"></label>
                     <input asp-for="Input.Email" class="form-control" type="email" autocomplete="off" />
-                    <span asp-validation-for="Input.Email" class="field-validation-error"></span>
+                    <span asp-validation-for="Input.Email" class="field-validation-error field-message"></span>
                 </div>
                 @if (Model.Roles.Count > 1)
                 {

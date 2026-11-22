@@ -1892,6 +1892,18 @@ form[aria-busy="true"] select {
   flex: 0 1 11rem;
 }
 
+/* The line under the e-mail field is kept free for its message, so nothing moves when one appears. */
+.field-message {
+  display: block;
+  min-height: 1.4rem;
+  padding-top: 0.2rem;
+}
+
+.invite-role,
+.invite-send {
+  padding-bottom: 1.4rem;
+}
+
 .join-link {
   font-family: var(--bs-font-monospace);
   font-size: 0.875rem;
