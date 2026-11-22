@@ -1904,16 +1904,40 @@ form[aria-busy="true"] select {
   padding-bottom: 1.4rem;
 }
 
+/* The link for customers with its actions inside the field, on the left. */
+.join-link-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.join-link-actions {
+  position: absolute;
+  left: 0.3rem;
+  display: flex;
+  gap: 0.1rem;
+}
+
+.join-link-actions form {
+  display: flex;
+}
+
+.join-link-actions + label + .join-link {
+  padding-left: 2.8rem;
+}
+
+.join-link-actions:has(form + form) + label + .join-link {
+  padding-left: 4.9rem;
+}
+
+.join-link-actions svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
 .join-link {
   font-family: var(--bs-font-monospace);
   font-size: 0.875rem;
-}
-
-.join-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
 }
 
 /* Actions of a table row side by side */

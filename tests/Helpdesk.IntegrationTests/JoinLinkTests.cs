@@ -67,12 +67,12 @@ public partial class JoinLinkTests(SqlServerFixture sql) : WebTestBase(sql)
     public async Task A_new_help_desk_has_a_working_link_and_the_shared_one_does_not()
     {
         var boss = await AcmeAdminAsync();
-        Assert.Contains("Anyone with this link", await boss.GetHtmlAsync("/Invitations"));
+        Assert.Contains("Customers who open it sign up by themselves", await boss.GetHtmlAsync("/Invitations"));
 
         // The shared help desk existed before links did, so its link stays off until an administrator turns it on.
         var shared = await SignedInAsync("Admin");
         var sharedPage = await shared.GetHtmlAsync("/Invitations");
-        Assert.Contains("The link is turned off", sharedPage);
+        Assert.Contains("The link is off", sharedPage);
         Assert.Contains("Turn the link on", sharedPage);
     }
 
@@ -86,7 +86,7 @@ public partial class JoinLinkTests(SqlServerFixture sql) : WebTestBase(sql)
         var visitor = NewClient();
         Assert.Contains("This link does not work", await visitor.GetHtmlAsync(link));
         Assert.DoesNotContain("Contact Acme support", await visitor.GetHtmlAsync("/Account/Login"));
-        Assert.Contains("The link is turned off", await boss.GetHtmlAsync("/Invitations"));
+        Assert.Contains("The link is off", await boss.GetHtmlAsync("/Invitations"));
 
         await SetLinkOpenAsync(boss, open: true);
         Assert.Equal(HttpStatusCode.Redirect, (await NewClient().GetAsync(link)).StatusCode);
@@ -135,7 +135,7 @@ public partial class JoinLinkTests(SqlServerFixture sql) : WebTestBase(sql)
 
         var refused = await (await olga.FollowAsync(await SetLinkOpenAsync(olga, open: false))).Content.ReadAsStringAsync();
         Assert.Contains("Only the administrators of this help desk can change its link", refused);
-        Assert.Contains("Anyone with this link", await boss.GetHtmlAsync("/Invitations"));
+        Assert.Contains("Customers who open it sign up by themselves", await boss.GetHtmlAsync("/Invitations"));
     }
 
     [Fact]
