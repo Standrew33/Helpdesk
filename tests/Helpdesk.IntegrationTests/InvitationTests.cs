@@ -130,6 +130,24 @@ public class InvitationTests(SqlServerFixture sql) : WebTestBase(sql)
     }
 
     [Fact]
+    public async Task A_resent_invitation_comes_with_a_fresh_link_and_the_old_one_stops_working()
+    {
+        var boss = await AcmeAdminAsync();
+        await InviteAsync(boss, "olga@acme.test", "Operator");
+        var first = LinkFor("olga@acme.test");
+        var id = await ReadAsync(db => db.Invitations.Where(i => i.Email == "olga@acme.test").Select(i => i.Id).SingleAsync());
+
+        var resent = await boss.PostFormAsync("/Invitations", "/Invitations?handler=Resend", new Dictionary<string, string> { ["id"] = id.ToString() });
+        Assert.Contains("Invitation sent again.", await (await boss.FollowAsync(resent)).Content.ReadAsStringAsync());
+
+        var second = LinkFor("olga@acme.test");
+        Assert.NotEqual(first, second);
+        Assert.Contains("no longer works", await NewClient().GetHtmlAsync(first));
+        Assert.Contains("Join Acme support", await NewClient().GetHtmlAsync(second));
+        Assert.Equal("Operator", await ReadAsync(db => db.Invitations.Where(i => i.Email == "olga@acme.test" && i.AcceptedAt == null && i.ExpiresAt > DateTimeOffset.UtcNow).Select(i => i.Role).SingleAsync()));
+    }
+
+    [Fact]
     public async Task An_invitation_older_than_its_lifetime_no_longer_works()
     {
         var boss = await AcmeAdminAsync();

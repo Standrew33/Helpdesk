@@ -149,6 +149,22 @@ public partial class InvitationService(
         return ServiceResult.Success();
     }
 
+    /// <summary>
+    /// Sends a waiting invitation again, as a new one with the same address and role: a fresh link and a full
+    /// lifetime, while the link sent before stops working. It counts for the daily limit like any invitation.
+    /// </summary>
+    public async Task<ServiceResult> ResendAsync(Actor actor, Guid id, string baseUrl, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(actor);
+        var now = time.GetUtcNow();
+        var waiting = await db.Invitations
+            .Where(i => i.Id == id && i.WorkspaceId == actor.WorkspaceId && i.AcceptedAt == null && i.ExpiresAt > now)
+            .Select(i => new { i.Email, i.Role })
+            .FirstOrDefaultAsync(ct);
+
+        return waiting is null ? ServiceResult.NotFound() : await InviteAsync(actor, waiting.Email, waiting.Role, baseUrl, ct);
+    }
+
     public Task<OpenInvitation?> FindOpenAsync(string? token, CancellationToken ct = default)
     {
         var hash = Hash(token ?? string.Empty);

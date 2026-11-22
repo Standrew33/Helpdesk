@@ -65,11 +65,33 @@ public class InvitationsModel(InvitationService invitations, JoinLinkService joi
 
         if (result.Succeeded)
         {
-            TempData.Success("Invitation withdrawn.");
+            TempData.Success("Invitation revoked.");
         }
         else
         {
             TempData.Failure(result.Message ?? "The change could not be saved.");
+        }
+
+        return RedirectToPage();
+    }
+
+    /// <summary>Sends a waiting invitation again with a fresh link; the link sent before stops working.</summary>
+    public async Task<IActionResult> OnPostResendAsync(Guid id, CancellationToken ct)
+    {
+        var result = await invitations.ResendAsync(User.ToActor(), id, site.Value.BaseUrl(Request), ct);
+
+        if (result.Outcome == ServiceOutcome.NotFound)
+        {
+            return NotFound();
+        }
+
+        if (result.Succeeded)
+        {
+            TempData.Success("Invitation sent again.");
+        }
+        else
+        {
+            TempData.Failure(result.Message ?? "The invitation could not be sent.");
         }
 
         return RedirectToPage();

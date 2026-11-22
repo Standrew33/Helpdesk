@@ -129,10 +129,16 @@ else
                             <td class="text-end">
                                 @if (invitation.CanWithdraw)
                                 {
-                                    <form method="post" asp-page-handler="Withdraw">
-                                        <input type="hidden" name="id" value="@invitation.Id" />
-                                        <button type="submit" class="btn btn-outline-secondary btn-sm">Withdraw</button>
-                                    </form>
+                                    <div class="row-actions">
+                                        <form method="post" asp-page-handler="Resend">
+                                            <input type="hidden" name="id" value="@invitation.Id" />
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm">Resend</button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Withdraw">
+                                            <input type="hidden" name="id" value="@invitation.Id" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Revoke</button>
+                                        </form>
+                                    </div>
                                 }
                             </td>
                         </tr>
